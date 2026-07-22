@@ -1,13 +1,24 @@
+import { TalentManager } from './TalentManager';
+
 export type GameStatus = 'PLAYING' | 'GAME_OVER' | 'VICTORY';
 
 export class GameState {
-  public gold = 50; // Started with 50g
-  public baseHp = 20;
-  public maxBaseHp = 20;
+  public gold: number;
+  public baseHp: number;
+  public maxBaseHp: number;
   public currentWave = 0;
   public maxWaves = 10;
   public status: GameStatus = 'PLAYING';
   public isPaused = false;
+
+  constructor(talentManager?: TalentManager) {
+    const goldBonus = talentManager ? talentManager.getStartingGoldBonus() : 0;
+    const hpBonus = talentManager ? talentManager.getBaseHpBonus() : 0;
+
+    this.gold = 50 + goldBonus;
+    this.maxBaseHp = 20 + hpBonus;
+    this.baseHp = 20 + hpBonus;
+  }
 
   public togglePause(): boolean {
     if (this.status !== 'PLAYING') return false;

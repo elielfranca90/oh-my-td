@@ -1,4 +1,5 @@
-import type { IEnemy2D, Vector2D } from '../types';
+import type { IEnemy2D, TowerType, Vector2D } from '../types';
+import { AnalyticsManager } from './AnalyticsManager';
 import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
 import { Projectile2D } from './Projectile';
@@ -15,16 +16,17 @@ export class ProjectileManager2D {
     radius?: number,
     splashRadius?: number,
     slowFactor?: number,
-    isCrit?: boolean
+    isCrit?: boolean,
+    towerType?: TowerType
   ) {
     this.projectiles.push(
-      new Projectile2D(startPos, target, damage, color, speed, radius, splashRadius, slowFactor, isCrit)
+      new Projectile2D(startPos, target, damage, color, speed, radius, splashRadius, slowFactor, isCrit, towerType)
     );
   }
 
-  public update(allEnemies: Enemy2D[], fxManager: FXManager) {
+  public update(allEnemies: Enemy2D[], fxManager: FXManager, analyticsManager?: AnalyticsManager) {
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
-      const hit = this.projectiles[i].update(allEnemies, fxManager);
+      const hit = this.projectiles[i].update(allEnemies, fxManager, analyticsManager);
       if (hit) {
         this.projectiles.splice(i, 1);
       }

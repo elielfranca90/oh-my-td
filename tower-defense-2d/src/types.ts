@@ -15,12 +15,13 @@ export interface IEnemy2D {
   speed: number;
   goldReward: number;
   waypointIndex: number;
+  pathIndex: number;
   position: Vector2D;
   isDead: boolean;
   radius: number;
   color: string;
-  armorFactor: number; // 0.6 = absorbs 40% damage
-  dodgeChance: number; // 0.25 = 25% chance to dodge
+  armorFactor: number;
+  dodgeChance: number;
   // Status Effects
   slowTimer: number;
   slowFactor: number;

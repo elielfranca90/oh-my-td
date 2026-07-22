@@ -1,7 +1,10 @@
+import { AnalyticsManager } from '../engine/AnalyticsManager';
 import { Game2D } from '../engine/Game';
 import { GameState } from '../engine/GameState';
 import { AudioManager } from '../engine/AudioManager';
+import type { MapId } from '../engine/MapManager';
 import { SpellManager } from '../engine/SpellManager';
+import { TalentManager } from '../engine/TalentManager';
 import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager } from '../engine/WaveManager';
 import type { TowerType } from '../types';
@@ -12,6 +15,8 @@ export class UIManager {
   private towerManager: TowerManager2D;
   private spellManager: SpellManager;
   private audioManager: AudioManager;
+  private talentManager: TalentManager;
+  private analyticsManager: AnalyticsManager;
   private game: Game2D;
   private onRestartCallback: () => void;
 
@@ -23,6 +28,8 @@ export class UIManager {
     towerManager: TowerManager2D,
     spellManager: SpellManager,
     audioManager: AudioManager,
+    talentManager: TalentManager,
+    analyticsManager: AnalyticsManager,
     game: Game2D,
     onRestart: () => void
   ) {
@@ -31,6 +38,8 @@ export class UIManager {
     this.towerManager = towerManager;
     this.spellManager = spellManager;
     this.audioManager = audioManager;
+    this.talentManager = talentManager;
+    this.analyticsManager = analyticsManager;
     this.game = game;
     this.onRestartCallback = onRestart;
 
@@ -44,11 +53,44 @@ export class UIManager {
     container.innerHTML = `
       <!-- TOP STATUS & WAVE CONTROL BAR -->
       <div id="top-bar" class="ui-panel">
-        <div class="stats-header">
+        <!-- ROW 1: STATS & MAP SELECTOR -->
+        <div class="stats-row">
           <div class="stat"><span class="icon">🪙</span> Gold: <strong id="gold-val">50</strong></div>
           <div class="stat"><span class="icon">❤️</span> Base HP: <strong id="hp-val">20/20</strong></div>
           <div class="stat"><span class="icon">🌊</span> Wave: <strong id="wave-val">0/10</strong></div>
-          
+          <div class="stat"><span class="icon">🌟</span> Stars: <strong id="stars-val">0</strong></div>
+          <div class="stat"><span class="icon">🏆</span> Best: <strong id="highscore-val">0</strong></div>
+
+          <div class="map-selector-row">
+            <span class="icon">🗺️</span>
+            <select id="map-select" class="map-select">
+              <option value="MAP_1">Map 1: Green Valley</option>
+              <option value="MAP_2">Map 2: Death Pass (Dual Spawn)</option>
+              <option value="MAP_3">Map 3: Citadel (Short Route)</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- ROW 2: ACTIONS & SPEED CONTROLS -->
+        <div class="actions-row">
+          <div class="toggles-group">
+            <div class="auto-mode-row">
+              <span>⚡ Auto</span>
+              <label class="switch">
+                <input type="checkbox" id="auto-mode-toggle" />
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="auto-mode-row endless">
+              <span>♾️ Endless</span>
+              <label class="switch">
+                <input type="checkbox" id="endless-mode-toggle" />
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
           <div class="speed-controls">
             <button id="sound-btn" class="btn sound-btn" title="Toggle Sound">🔊</button>
             <button id="pause-btn" class="btn pause-btn" title="Pause/Resume">⏸️</button>
@@ -56,24 +98,6 @@ export class UIManager {
             <button id="speed-2x" class="btn speed-btn">2x</button>
             <button id="speed-4x" class="btn speed-btn">4x</button>
             <button id="reset-btn" class="btn secondary reset-btn" title="Start a New Game">🔄 New Game</button>
-          </div>
-        </div>
-        
-        <div class="toggles-header">
-          <div class="auto-mode-row">
-            <span>⚡ Auto Waves</span>
-            <label class="switch">
-              <input type="checkbox" id="auto-mode-toggle" />
-              <span class="slider round"></span>
-            </label>
-          </div>
-
-          <div class="auto-mode-row endless">
-            <span>♾️ Endless Mode</span>
-            <label class="switch">
-              <input type="checkbox" id="endless-mode-toggle" />
-              <span class="slider round"></span>
-            </label>
           </div>
 
           <button id="next-wave-btn" class="btn primary wave-start-btn">Start Wave 1</button>
@@ -134,6 +158,29 @@ export class UIManager {
           </div>
         </div>
 
+        <!-- SKILL TREE TALENTS PANEL -->
+        <div id="talents-panel" class="ui-panel">
+          <div class="title">🌟 Skill Tree</div>
+          <div class="talents-list">
+            <div class="talent-item">
+              <span>🏹 Archery (<span id="dmg-lvl">0/3</span>)</span>
+              <button id="talent-dmg-btn" class="btn talent-btn">Upgrade (2★)</button>
+            </div>
+            <div class="talent-item">
+              <span>💰 Economy (<span id="gold-lvl">0/2</span>)</span>
+              <button id="talent-gold-btn" class="btn talent-btn">Upgrade (3★)</button>
+            </div>
+            <div class="talent-item">
+              <span>🏰 Fortress (<span id="hp-lvl">0/2</span>)</span>
+              <button id="talent-hp-btn" class="btn talent-btn">Upgrade (2★)</button>
+            </div>
+            <div class="talent-item">
+              <span>⚡ Channeling (<span id="cd-lvl">0/2</span>)</span>
+              <button id="talent-cd-btn" class="btn talent-btn">Upgrade (3★)</button>
+            </div>
+          </div>
+        </div>
+
         <!-- TOWER INSPECTOR PANEL -->
         <div id="inspector-panel" class="ui-panel inspector-slot">
           <div id="inspector-content" class="hidden">
@@ -151,12 +198,34 @@ export class UIManager {
         </div>
       </div>
 
-      <!-- END GAME MODAL -->
+      <!-- END GAME MODAL WITH ANALYTICS -->
       <div id="modal-overlay" class="modal-overlay hidden">
-        <div class="modal-card">
+        <div class="modal-card analytics-modal">
           <h1 id="modal-title">Game Over</h1>
           <p id="modal-desc">Your base was destroyed!</p>
-          <button id="restart-btn" class="btn primary">Play Again</button>
+
+          <!-- Post-Game Analytics Details -->
+          <div id="analytics-details" class="analytics-details">
+            <div id="record-badge" class="record-badge hidden">✨ NEW RECORD! ✨</div>
+            <div class="analytics-row">
+              <span>🏆 High Score:</span>
+              <strong id="modal-highscore">Wave 0</strong>
+            </div>
+            <div class="analytics-row">
+              <span>👑 MVP Tower:</span>
+              <strong id="modal-mvp">Basic Tower (0 Dmg)</strong>
+            </div>
+            <div class="analytics-row">
+              <span>⚔️ Total Kills:</span>
+              <strong id="modal-kills">0 enemies</strong>
+            </div>
+            <div class="analytics-row">
+              <span>🪙 Gold Earned / Spent:</span>
+              <strong id="modal-gold">0g / 0g</strong>
+            </div>
+          </div>
+
+          <button id="restart-btn" class="btn primary modal-restart-btn">Play Again</button>
         </div>
       </div>
     `;
@@ -167,6 +236,15 @@ export class UIManager {
   }
 
   private setupEvents() {
+    const mapSelect = document.getElementById('map-select') as HTMLSelectElement;
+    if (mapSelect) {
+      mapSelect.value = this.game['mapManager'].currentMapId;
+      mapSelect.addEventListener('change', (e) => {
+        const val = (e.target as HTMLSelectElement).value as MapId;
+        this.game.changeMap(val);
+      });
+    }
+
     document.getElementById('next-wave-btn')?.addEventListener('click', () => {
       this.waveManager.startNextWave();
     });
@@ -218,6 +296,23 @@ export class UIManager {
       this.spellManager.triggerGlobalFreeze(this.game['enemyManager'].getEnemies());
     });
 
+    // Talent Upgrades
+    document.getElementById('talent-dmg-btn')?.addEventListener('click', () => {
+      this.talentManager.upgradeTalent('damageLvl');
+    });
+
+    document.getElementById('talent-gold-btn')?.addEventListener('click', () => {
+      this.talentManager.upgradeTalent('goldLvl');
+    });
+
+    document.getElementById('talent-hp-btn')?.addEventListener('click', () => {
+      this.talentManager.upgradeTalent('hpLvl');
+    });
+
+    document.getElementById('talent-cd-btn')?.addEventListener('click', () => {
+      this.talentManager.upgradeTalent('cdLvl');
+    });
+
     // Inspector
     document.getElementById('targeting-btn')?.addEventListener('click', () => {
       this.towerManager.cycleSelectedTowerTargeting();
@@ -258,6 +353,17 @@ export class UIManager {
 
     const hpVal = document.getElementById('hp-val');
     if (hpVal) hpVal.innerText = `${this.gameState.baseHp}/${this.gameState.maxBaseHp}`;
+
+    const starsVal = document.getElementById('stars-val');
+    if (starsVal) starsVal.innerText = `${this.talentManager.stars}`;
+
+    const highscoreVal = document.getElementById('highscore-val');
+    if (highscoreVal) highscoreVal.innerText = `${this.analyticsManager.highScoreWave}`;
+
+    const mapSelect = document.getElementById('map-select') as HTMLSelectElement;
+    if (mapSelect && mapSelect.value !== this.game['mapManager'].currentMapId) {
+      mapSelect.value = this.game['mapManager'].currentMapId;
+    }
 
     const soundBtn = document.getElementById('sound-btn');
     if (soundBtn) {
@@ -305,7 +411,7 @@ export class UIManager {
       }
     }
 
-    // Spells UI - Dynamic Costs and Cooldowns
+    // Spells UI
     const meteorBtn = document.getElementById('spell-meteor-btn') as HTMLButtonElement;
     if (meteorBtn) {
       const isMeteorActive = this.spellManager.activeSpell === 'METEOR';
@@ -353,6 +459,31 @@ export class UIManager {
         }
       }
     }
+
+    // Talents UI
+    const updateTalentUI = (id: string, btnId: string, type: keyof typeof this.talentManager.talents) => {
+      const lvlEl = document.getElementById(id);
+      const btn = document.getElementById(btnId) as HTMLButtonElement;
+      if (!lvlEl || !btn) return;
+
+      const current = this.talentManager.talents[type];
+      const max = this.talentManager.getTalentMaxLvl(type);
+      lvlEl.innerText = `${current}/${max}`;
+
+      if (current >= max) {
+        btn.disabled = true;
+        btn.innerText = 'MAX';
+      } else {
+        const cost = this.talentManager.getTalentCost(type);
+        btn.disabled = this.talentManager.stars < cost;
+        btn.innerText = `Upgrade (${cost}★)`;
+      }
+    };
+
+    updateTalentUI('dmg-lvl', 'talent-dmg-btn', 'damageLvl');
+    updateTalentUI('gold-lvl', 'talent-gold-btn', 'goldLvl');
+    updateTalentUI('hp-lvl', 'talent-hp-btn', 'hpLvl');
+    updateTalentUI('cd-lvl', 'talent-cd-btn', 'cdLvl');
 
     // Inspector
     const tower = this.towerManager.selectedTower;
@@ -406,22 +537,43 @@ export class UIManager {
       if (inspectorPlaceholder) inspectorPlaceholder.classList.remove('hidden');
     }
 
-    // Modal Status Check
-    if (this.gameState.status === 'GAME_OVER') {
+    // Modal Status Check & Post-Game Analytics Display
+    if (this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') {
       this.overlayEl.classList.remove('hidden');
       const title = document.getElementById('modal-title');
-      if (title) title.innerText = '💀 Game Over';
       const desc = document.getElementById('modal-desc');
-      if (desc) {
+
+      if (this.gameState.status === 'GAME_OVER') {
+        if (title) title.innerText = '💀 Game Over';
         const survivedWave = Math.max(1, this.waveManager.currentWaveIndex + 1);
-        desc.innerText = `Enemies overwhelmed your base! You survived until Wave ${survivedWave}!`;
+        if (desc) desc.innerText = `Enemies overwhelmed your base! You survived until Wave ${survivedWave}!`;
+      } else {
+        if (title) title.innerText = '🏆 Campaign Victory!';
+        if (desc) desc.innerText = 'You defended the base through all 10 Campaign Waves!';
       }
-    } else if (this.gameState.status === 'VICTORY') {
-      this.overlayEl.classList.remove('hidden');
-      const title = document.getElementById('modal-title');
-      if (title) title.innerText = '🏆 Campaign Victory!';
-      const desc = document.getElementById('modal-desc');
-      if (desc) desc.innerText = 'You defended the base through all 10 Campaign Waves!';
+
+      // Populate Analytics details
+      const recordBadge = document.getElementById('record-badge');
+      if (recordBadge) {
+        if (this.analyticsManager.isNewRecord) {
+          recordBadge.classList.remove('hidden');
+        } else {
+          recordBadge.classList.add('hidden');
+        }
+      }
+
+      const modalHs = document.getElementById('modal-highscore');
+      if (modalHs) modalHs.innerText = `Wave ${this.analyticsManager.highScoreWave}`;
+
+      const mvp = this.analyticsManager.getMvpTower();
+      const modalMvp = document.getElementById('modal-mvp');
+      if (modalMvp) modalMvp.innerText = `${mvp.type} Tower (${mvp.damage} Dmg)`;
+
+      const modalKills = document.getElementById('modal-kills');
+      if (modalKills) modalKills.innerText = `${this.analyticsManager.getTotalKills()} enemies`;
+
+      const modalGold = document.getElementById('modal-gold');
+      if (modalGold) modalGold.innerText = `${this.analyticsManager.goldEarned}g / ${this.analyticsManager.goldSpent}g`;
     } else {
       this.overlayEl.classList.add('hidden');
     }

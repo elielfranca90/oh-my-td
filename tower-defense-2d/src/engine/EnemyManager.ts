@@ -1,27 +1,33 @@
 import type { EnemyType, Vector2D } from '../types';
 
+import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { GameState } from './GameState';
+import { MapManager2D } from './MapManager';
 import { WaveManager } from './WaveManager';
 
 export class EnemyManager2D {
   private enemies: Enemy2D[] = [];
-  private waypoints: Vector2D[];
+  private mapManager: MapManager2D;
   private gameState: GameState;
   private waveManager: WaveManager;
   private audioManager: AudioManager;
+  private analyticsManager?: AnalyticsManager;
+  private spawnToggle = false;
 
   constructor(
-    waypoints: Vector2D[],
+    mapManager: MapManager2D,
     gameState: GameState,
     waveManager: WaveManager,
-    audioManager: AudioManager
+    audioManager: AudioManager,
+    analyticsManager?: AnalyticsManager
   ) {
-    this.waypoints = waypoints;
+    this.mapManager = mapManager;
     this.gameState = gameState;
     this.waveManager = waveManager;
     this.audioManager = audioManager;
+    this.analyticsManager = analyticsManager;
   }
 
   public update(deltaTimeMs: number) {
@@ -39,6 +45,11 @@ export class EnemyManager2D {
         this.gameState.addGold(enemy.data.goldReward);
         this.audioManager.playCoin();
 
+        if (this.analyticsManager) {
+          this.analyticsManager.recordKill(enemy.data.type);
+          this.analyticsManager.recordGoldEarned(enemy.data.goldReward);
+        }
+
         // Boss Death Reinforcements: Spawn 2 Runners!
         if (enemy.data.type === 'BOSS') {
           this.spawnReinforcements(enemy.data.waypointIndex, enemy.data.position);
@@ -48,7 +59,8 @@ export class EnemyManager2D {
         continue;
       }
 
-      const reachedBase = enemy.update(this.waypoints);
+      const waypoints = this.mapManager.getWaypoints(enemy.pathIndex);
+      const reachedBase = enemy.update(waypoints);
       if (reachedBase) {
         this.gameState.takeDamage(enemy.baseDamage);
         this.audioManager.playBaseDamage();
@@ -62,7 +74,8 @@ export class EnemyManager2D {
 
   private spawnReinforcements(waypointIndex: number, position: Vector2D) {
     for (let r = 0; r < 2; r++) {
-      const runner = new Enemy2D(this.waypoints, 'RUNNER', `runner-boss-${Date.now()}-${r}`);
+      const waypoints = this.mapManager.getWaypoints(0);
+      const runner = new Enemy2D(waypoints, 'RUNNER', `runner-boss-${Date.now()}-${r}`);
       runner.data.waypointIndex = waypointIndex;
       runner.data.position = { x: position.x + (r * 12 - 6), y: position.y + (r * 12 - 6) };
       this.enemies.push(runner);
@@ -79,7 +92,16 @@ export class EnemyManager2D {
     if (type === 'BOSS') {
       this.audioManager.playBossAlert();
     }
-    const enemy = new Enemy2D(this.waypoints, type, `enemy-${Date.now()}-${Math.random()}`, hpMultiplier);
+
+    // Determine path index (0 = Left, 1 = Right for Map 2 Dual Spawn)
+    let pathIndex = 0;
+    if (this.mapManager.currentMapId === 'MAP_2') {
+      this.spawnToggle = !this.spawnToggle;
+      pathIndex = this.spawnToggle ? 1 : 0;
+    }
+
+    const waypoints = this.mapManager.getWaypoints(pathIndex);
+    const enemy = new Enemy2D(waypoints, type, `enemy-${Date.now()}-${Math.random()}`, hpMultiplier, pathIndex);
     this.enemies.push(enemy);
   }
 

@@ -3,10 +3,12 @@ import type { EnemyType, IEnemy2D, Vector2D } from '../types';
 export class Enemy2D {
   public data: IEnemy2D;
   public baseDamage: number;
+  public pathIndex: number;
 
-  constructor(waypoints: Vector2D[], type: EnemyType, id: string, hpMultiplier = 1.0) {
+  constructor(waypoints: Vector2D[], type: EnemyType, id: string, hpMultiplier = 1.0, pathIndex = 0) {
     const config = this.getEnemyConfig(type);
     this.baseDamage = config.baseDamage;
+    this.pathIndex = pathIndex;
 
     const scaledHp = Math.round(config.hp * hpMultiplier);
     const scaledShield = Math.round(config.shield * hpMultiplier);
@@ -22,6 +24,7 @@ export class Enemy2D {
       speed: config.speed,
       goldReward: scaledReward,
       waypointIndex: 0,
+      pathIndex,
       position: { ...waypoints[0] },
       isDead: false,
       radius: config.radius,
@@ -185,7 +188,7 @@ export class Enemy2D {
     ctx.fillStyle = hpRatio > 0.5 ? '#4caf50' : hpRatio > 0.2 ? '#ff9800' : '#f44336';
     ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
 
-    // Shield Bar overlay (Blue line above HP bar if shield active)
+    // Shield Bar overlay
     if (this.data.maxShieldHp > 0 && this.data.shieldHp > 0) {
       const shieldRatio = Math.max(0, this.data.shieldHp / this.data.maxShieldHp);
       ctx.fillStyle = '#29b6f6';

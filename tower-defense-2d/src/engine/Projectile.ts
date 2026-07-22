@@ -1,4 +1,5 @@
-import type { IEnemy2D, Vector2D } from '../types';
+import type { IEnemy2D, TowerType, Vector2D } from '../types';
+import { AnalyticsManager } from './AnalyticsManager';
 import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
 
@@ -12,6 +13,7 @@ export class Projectile2D {
   public splashRadius?: number;
   public slowFactor?: number;
   public isCrit?: boolean;
+  public towerType?: TowerType;
 
   constructor(
     startPos: Vector2D,
@@ -22,7 +24,8 @@ export class Projectile2D {
     radius = 5,
     splashRadius?: number,
     slowFactor?: number,
-    isCrit?: boolean
+    isCrit?: boolean,
+    towerType?: TowerType
   ) {
     this.position = { ...startPos };
     this.target = target;
@@ -33,9 +36,10 @@ export class Projectile2D {
     this.splashRadius = splashRadius;
     this.slowFactor = slowFactor;
     this.isCrit = isCrit;
+    this.towerType = towerType;
   }
 
-  public update(allEnemies: Enemy2D[], fxManager: FXManager): boolean {
+  public update(allEnemies: Enemy2D[], fxManager: FXManager, analyticsManager?: AnalyticsManager): boolean {
     if (this.target.isDead) return true;
 
     const dx = this.target.position.x - this.position.x;
@@ -59,6 +63,9 @@ export class Projectile2D {
             const dmgDealt = enemy.takeDamage(this.damage, false);
             if (dmgDealt > 0) {
               fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${dmgDealt}`, '#ff5252');
+              if (analyticsManager && this.towerType) {
+                analyticsManager.recordDamage(this.towerType, dmgDealt);
+              }
             } else if (dmgDealt === -1) {
               fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, 'DODGED!', '#ff9800');
             }
@@ -74,6 +81,9 @@ export class Projectile2D {
           const txt = this.isCrit ? `💥 CRIT! -${dmgDealt}` : `-${dmgDealt}`;
           const col = this.isCrit ? '#ffea00' : '#ffffff';
           fxManager.addDamageText(this.target.position.x, this.target.position.y, txt, col);
+          if (analyticsManager && this.towerType) {
+            analyticsManager.recordDamage(this.towerType, dmgDealt);
+          }
         }
 
         // Apply Slow (Frost Tower)

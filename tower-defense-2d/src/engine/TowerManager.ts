@@ -1,10 +1,12 @@
 import type { TowerType } from '../types';
+import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { GameState } from './GameState';
 import { MapManager2D } from './MapManager';
 import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
+import { TalentManager } from './TalentManager';
 import { Tower2D } from './Tower';
 
 export class TowerManager2D {
@@ -14,6 +16,8 @@ export class TowerManager2D {
   private gameState: GameState;
   private audioManager: AudioManager;
   private particleManager?: ParticleManager;
+  private talentManager?: TalentManager;
+  private analyticsManager?: AnalyticsManager;
 
   public selectedBuildType: TowerType = 'BASIC';
   public selectedTower: Tower2D | null = null;
@@ -23,13 +27,17 @@ export class TowerManager2D {
     projectileManager: ProjectileManager2D,
     gameState: GameState,
     audioManager: AudioManager,
-    particleManager?: ParticleManager
+    particleManager?: ParticleManager,
+    talentManager?: TalentManager,
+    analyticsManager?: AnalyticsManager
   ) {
     this.mapManager = mapManager;
     this.projectileManager = projectileManager;
     this.gameState = gameState;
     this.audioManager = audioManager;
     this.particleManager = particleManager;
+    this.talentManager = talentManager;
+    this.analyticsManager = analyticsManager;
   }
 
   public setParticleManager(pm: ParticleManager) {
@@ -68,7 +76,17 @@ export class TowerManager2D {
       return false; // Not enough gold
     }
 
+    if (this.analyticsManager) {
+      this.analyticsManager.recordGoldSpent(cost);
+    }
+
     const tower = new Tower2D(gridX, gridY, this.mapManager.tileSize, this.selectedBuildType, `tower-${Date.now()}`);
+
+    // Apply Talent Damage Bonus if unlocked
+    if (this.talentManager) {
+      tower.data.damage = Math.round(tower.data.damage * this.talentManager.getDamageBonusMultiplier());
+    }
+
     this.towers.push(tower);
     this.selectedTower = tower;
     return true;
@@ -80,6 +98,9 @@ export class TowerManager2D {
     if (this.selectedTower.data.level >= 3) return false;
 
     if (this.gameState.spendGold(cost)) {
+      if (this.analyticsManager) {
+        this.analyticsManager.recordGoldSpent(cost);
+      }
       return this.selectedTower.upgrade();
     }
     return false;
@@ -119,11 +140,14 @@ export class TowerManager2D {
 
       if (inRangeEnemies.length === 0) continue;
 
-      // 1. Frost Tower: AoE Glacial Pulse (Pulse damage & slow to ALL enemies in range)
+      // 1. Frost Tower: AoE Glacial Pulse
       if (tower.data.type === 'FROST') {
         this.audioManager.playFrostShot();
         for (const enemy of inRangeEnemies) {
-          enemy.takeDamage(tower.data.damage, true);
+          const dmgDealt = enemy.takeDamage(tower.data.damage, true);
+          if (dmgDealt > 0 && this.analyticsManager) {
+            this.analyticsManager.recordDamage('FROST', dmgDealt);
+          }
           enemy.applySlow(tower.data.slowFactor || 0.5, 120);
         }
         tower.data.cooldownTimer = tower.data.fireRate;
@@ -197,7 +221,8 @@ export class TowerManager2D {
           radius,
           splashRadius,
           undefined,
-          isCrit
+          isCrit,
+          tower.data.type
         );
         tower.data.cooldownTimer = tower.data.fireRate;
       }

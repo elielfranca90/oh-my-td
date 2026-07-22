@@ -1,12 +1,14 @@
 import { UIManager } from '../ui/UIManager';
+import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
 import { EnemyManager2D } from './EnemyManager';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
-import { MapManager2D } from './MapManager';
+import { MapManager2D, type MapId } from './MapManager';
 import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
 import { SpellManager } from './SpellManager';
+import { TalentManager } from './TalentManager';
 import { TowerManager2D } from './TowerManager';
 import { WaveManager } from './WaveManager';
 
@@ -17,7 +19,9 @@ export class Game2D {
   public gameState!: GameState;
   public waveManager!: WaveManager;
   public audioManager!: AudioManager;
-  private mapManager!: MapManager2D;
+  public talentManager!: TalentManager;
+  public analyticsManager!: AnalyticsManager;
+  public mapManager!: MapManager2D;
   private enemyManager!: EnemyManager2D;
   private projectileManager!: ProjectileManager2D;
   private towerManager!: TowerManager2D;
@@ -31,6 +35,8 @@ export class Game2D {
   private mousePos: { x: number; y: number } | null = null;
   private hoveredGrid: { x: number; y: number } | null = null;
   private lastTime = 0;
+  private hasAwardedStars = false;
+  private currentSavedMapId: MapId = 'MAP_1';
 
   constructor() {
     const gameArea = document.getElementById('game-area');
@@ -54,16 +60,21 @@ export class Game2D {
       this.audioManager.stopBGM();
     }
 
-    this.gameState = new GameState();
+    this.analyticsManager = new AnalyticsManager();
+    this.talentManager = new TalentManager();
+    this.gameState = new GameState(this.talentManager);
     this.waveManager = new WaveManager();
-    this.mapManager = new MapManager2D();
+    this.mapManager = new MapManager2D(this.currentSavedMapId);
     this.fxManager = new FXManager();
     this.particleManager = new ParticleManager();
     this.audioManager = new AudioManager();
-    this.spellManager = new SpellManager(this.gameState, this.fxManager, this.audioManager, this.particleManager);
+
+    this.spellManager = new SpellManager(this.gameState, this.fxManager, this.audioManager, this.particleManager, this.talentManager);
     this.projectileManager = new ProjectileManager2D();
-    this.towerManager = new TowerManager2D(this.mapManager, this.projectileManager, this.gameState, this.audioManager, this.particleManager);
-    this.enemyManager = new EnemyManager2D(this.mapManager.getWaypoints(), this.gameState, this.waveManager, this.audioManager);
+    this.towerManager = new TowerManager2D(this.mapManager, this.projectileManager, this.gameState, this.audioManager, this.particleManager, this.talentManager, this.analyticsManager);
+    this.enemyManager = new EnemyManager2D(this.mapManager, this.gameState, this.waveManager, this.audioManager, this.analyticsManager);
+
+    this.hasAwardedStars = false;
 
     this.uiManager = new UIManager(
       this.gameState,
@@ -71,9 +82,16 @@ export class Game2D {
       this.towerManager,
       this.spellManager,
       this.audioManager,
+      this.talentManager,
+      this.analyticsManager,
       this,
       this.restartGame.bind(this)
     );
+  }
+
+  public changeMap(mapId: MapId) {
+    this.currentSavedMapId = mapId;
+    this.initGame();
   }
 
   private restartGame() {
@@ -226,7 +244,7 @@ export class Game2D {
         this.waveManager.updateAutoCountdown(deltaTimeMs);
         this.enemyManager.update(deltaTimeMs);
         this.towerManager.update(this.enemyManager.getEnemies());
-        this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager);
+        this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
         this.spellManager.update(deltaTimeMs);
         this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
         this.fxManager.update();
@@ -235,6 +253,15 @@ export class Game2D {
         if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
           this.gameState.status = 'VICTORY';
         }
+      }
+
+      // Award Stars & High Score Check on Match End
+      if ((this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') && !this.hasAwardedStars) {
+        this.hasAwardedStars = true;
+        const wavesCompleted = Math.max(1, this.waveManager.currentWaveIndex + 1);
+        const starsEarned = Math.floor(wavesCompleted / 2) + (this.gameState.status === 'VICTORY' ? 5 : 0);
+        this.talentManager.earnStars(starsEarned);
+        this.analyticsManager.checkHighScore(wavesCompleted);
       }
 
       // Update UI

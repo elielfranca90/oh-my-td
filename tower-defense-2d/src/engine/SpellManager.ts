@@ -3,6 +3,7 @@ import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
 import { ParticleManager } from './ParticleManager';
+import { TalentManager } from './TalentManager';
 
 export type ActiveSpell = 'METEOR' | 'FREEZE' | null;
 
@@ -11,6 +12,7 @@ export class SpellManager {
   private fxManager: FXManager;
   private audioManager: AudioManager;
   private particleManager: ParticleManager;
+  private talentManager?: TalentManager;
 
   public activeSpell: ActiveSpell = null;
 
@@ -18,8 +20,8 @@ export class SpellManager {
   public meteorCooldownMs = 0;
   public freezeCooldownMs = 0;
 
-  public readonly METEOR_MAX_COOLDOWN = 30000; // 30s
-  public readonly FREEZE_MAX_COOLDOWN = 40000; // 40s
+  public METEOR_MAX_COOLDOWN = 30000; // 30s base
+  public FREEZE_MAX_COOLDOWN = 40000; // 40s base
 
   // Dynamic Costs (Initial tripled)
   public meteorCost = 150; // Initial 150g
@@ -29,12 +31,20 @@ export class SpellManager {
     gameState: GameState,
     fxManager: FXManager,
     audioManager: AudioManager,
-    particleManager: ParticleManager
+    particleManager: ParticleManager,
+    talentManager?: TalentManager
   ) {
     this.gameState = gameState;
     this.fxManager = fxManager;
     this.audioManager = audioManager;
     this.particleManager = particleManager;
+    this.talentManager = talentManager;
+
+    if (this.talentManager) {
+      const cdReduction = this.talentManager.getSpellCdReduction();
+      this.METEOR_MAX_COOLDOWN = Math.round(30000 * (1 - cdReduction));
+      this.FREEZE_MAX_COOLDOWN = Math.round(40000 * (1 - cdReduction));
+    }
   }
 
   public selectSpell(spell: ActiveSpell) {

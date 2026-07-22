@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tower Defense 2D - Widescreen</title>
+    <title>Tower Defense 2D - Full Game</title>
     <style>
       * {
         box-sizing: border-box;
@@ -14,7 +14,7 @@
         width: 100vw;
         height: 100vh;
         margin: 0;
-        padding: 4px 8px;
+        padding: 4px 6px;
         background-color: #121212;
         color: #ffffff;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -31,7 +31,7 @@
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        max-width: 900px;
+        max-width: 860px;
         height: 100vh;
         max-height: 98vh;
         gap: 4px;
@@ -43,22 +43,60 @@
         max-width: 840px;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
         padding: 6px 12px;
       }
 
-      .stats-header {
+      /* Row 1: Stats & Map Selector */
+      .stats-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
         width: 100%;
+        gap: 8px;
+        white-space: nowrap;
       }
 
       .stat {
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         display: flex;
         align-items: center;
         gap: 4px;
+        white-space: nowrap;
+      }
+
+      .map-selector-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .map-select {
+        background-color: #2a2a2a;
+        color: #90caf9;
+        border: 1px solid #444444;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 0.78rem;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      /* Row 2: Actions & Controls */
+      .actions-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        border-top: 1px solid #2a2a2a;
+        padding-top: 5px;
+        gap: 8px;
+      }
+
+      .toggles-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
       }
 
       .speed-controls {
@@ -67,13 +105,22 @@
         align-items: center;
       }
 
-      .speed-btn, .pause-btn {
-        padding: 3px 7px;
+      .speed-btn, .pause-btn, .sound-btn, .reset-btn {
+        padding: 3px 6px;
         font-size: 0.75rem;
         background-color: #2a2a2a;
         color: #cccccc;
         border: 1px solid #444444;
         border-radius: 4px;
+        white-space: nowrap;
+      }
+
+      .reset-btn {
+        background-color: #37474f;
+        color: #cfd8dc;
+      }
+      .reset-btn:hover {
+        background-color: #455a64;
       }
 
       .speed-btn.active, .pause-btn.active {
@@ -82,22 +129,14 @@
         border-color: #2196f3;
       }
 
-      .toggles-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        border-top: 1px solid #2a2a2a;
-        padding-top: 4px;
-      }
-
       .auto-mode-row {
         display: flex;
         align-items: center;
         gap: 6px;
         font-weight: bold;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         color: #ffb74d;
+        white-space: nowrap;
       }
 
       .auto-mode-row.endless {
@@ -107,8 +146,8 @@
       .switch {
         position: relative;
         display: inline-block;
-        width: 34px;
-        height: 18px;
+        width: 32px;
+        height: 16px;
       }
       .switch input {
         opacity: 0;
@@ -124,13 +163,13 @@
         bottom: 0;
         background-color: #424242;
         transition: .3s;
-        border-radius: 18px;
+        border-radius: 16px;
       }
       .slider:before {
         position: absolute;
         content: "";
-        height: 12px;
-        width: 12px;
+        height: 10px;
+        width: 10px;
         left: 3px;
         bottom: 3px;
         background-color: white;
@@ -162,7 +201,7 @@
         background-color: #1e1e1e;
         width: 100%;
         max-width: 840px;
-        max-height: min(54vh, 520px);
+        max-height: min(52vh, 480px);
         aspect-ratio: 14 / 10;
         object-fit: contain;
         display: block;
@@ -185,7 +224,7 @@
       }
 
       .ui-panel .title {
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         font-weight: bold;
         margin-bottom: 4px;
         color: #90caf9;
@@ -194,13 +233,13 @@
       }
 
       .btn {
-        padding: 5px 10px;
+        padding: 4px 8px;
         border: none;
         border-radius: 4px;
         font-weight: bold;
         cursor: pointer;
         transition: background-color 0.2s, transform 0.1s;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
       }
 
       .btn:active {
@@ -208,7 +247,7 @@
       }
 
       .wave-start-btn {
-        min-width: 140px;
+        min-width: 130px;
       }
 
       .btn.primary { background-color: #1976d2; color: #ffffff; }
@@ -225,22 +264,22 @@
 
       .btn:disabled { background-color: #333333; color: #666666; cursor: not-allowed; }
 
-      /* Bottom 3-Column Grid */
+      /* Bottom 4-Column Grid */
       .controls-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr 1.2fr;
+        grid-template-columns: 1fr 0.9fr 1.1fr 1.1fr;
         gap: 6px;
         width: 100%;
       }
 
       .controls-grid .ui-panel {
-        padding: 6px 10px;
+        padding: 6px 8px;
       }
 
-      /* Store 4 Towers in 1 Row or 2x2 */
+      /* Store 4 Towers in 2x2 */
       .store-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-template-columns: 1fr 1fr;
         gap: 4px;
       }
 
@@ -279,17 +318,18 @@
       /* Spells Panel */
       .spell-buttons {
         display: flex;
-        gap: 6px;
+        flex-direction: column;
+        gap: 4px;
       }
 
       .spell-btn {
-        flex: 1;
+        width: 100%;
         position: relative;
         overflow: hidden;
         background-color: #2a2a2a;
         color: #ffffff;
         border: 1px solid #444444;
-        padding: 6px 4px;
+        padding: 5px 4px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -325,6 +365,30 @@
         font-size: 0.85rem;
       }
 
+      /* Talent Skill Tree List */
+      .talents-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .talent-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.72rem;
+      }
+
+      .talent-btn {
+        padding: 2px 6px;
+        font-size: 0.68rem;
+        background-color: #f57f17;
+        color: #ffffff;
+      }
+      .talent-btn:hover:not(:disabled) {
+        background-color: #fbc02d;
+      }
+
       /* Inspector Slot */
       .inspector-slot {
         height: 100%;
@@ -356,10 +420,10 @@
       .action-buttons .btn {
         flex: 1;
         padding: 4px 2px;
-        font-size: 0.72rem;
+        font-size: 0.70rem;
       }
 
-      /* Modal Overlay */
+      /* Modal Overlay & Analytics */
       .modal-overlay {
         position: fixed;
         top: 0;
@@ -379,13 +443,48 @@
         border-radius: 10px;
         border: 1px solid #444444;
         text-align: center;
-        max-width: 360px;
+        width: 100%;
+        max-width: 380px;
         box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8);
       }
 
       .modal-card h1 {
         margin-top: 0;
+        margin-bottom: 8px;
         font-size: 1.6rem;
+      }
+
+      .analytics-details {
+        margin: 14px 0;
+        background-color: #2a2a2a;
+        border-radius: 6px;
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        text-align: left;
+        font-size: 0.82rem;
+      }
+
+      .analytics-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .record-badge {
+        color: #ffeb3b;
+        font-weight: bold;
+        text-align: center;
+        font-size: 0.9rem;
+        background-color: #f57f17;
+        border-radius: 4px;
+        padding: 4px;
+      }
+
+      .modal-restart-btn {
+        width: 100%;
+        margin-top: 8px;
       }
 
       .hidden {
