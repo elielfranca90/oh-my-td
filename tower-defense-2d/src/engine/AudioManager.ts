@@ -46,17 +46,31 @@ export class AudioManager {
     }
 
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
 
-    return true;
+    return this.ctx.state === 'running';
   }
 
   // Explicit Audio Unlock method triggered by User Gesture (Click/Key)
   public unlockAudio() {
-    this.ensureContext();
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    if (this.isMuted) return;
+
+    if (!this.ctx) {
+      const win = window as Window & { webkitAudioContext?: typeof AudioContext };
+      const AudioCtx = window.AudioContext || win.webkitAudioContext;
+      if (!AudioCtx) return;
+      this.ctx = new AudioCtx();
+    }
+
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume().then(() => {
+        // Force restart BGM sequencer once AudioContext is running!
+        this.stopBGM();
+        this.startBGM(this.currentSpeed, this.currentTrack);
+      }).catch(() => {});
+    } else if (!this.isBGMPlaying) {
+      this.startBGM(this.currentSpeed, this.currentTrack);
     }
   }
 
@@ -86,13 +100,14 @@ export class AudioManager {
     }
 
     this.isBGMPlaying = true;
+    this.bgmStep = 0;
     this.scheduleBGMInterval();
   }
 
   public setTrack(track: 'CALM' | 'BOSS') {
     if (this.currentTrack === track) return;
     this.currentTrack = track;
-    this.bgmStep = 0; // Reset step on track change
+    this.bgmStep = 0;
     if (this.isBGMPlaying) {
       this.stopBGM();
       this.startBGM(this.currentSpeed, track);
@@ -106,10 +121,14 @@ export class AudioManager {
   }
 
   public updateBGMTempo(speedMultiplier = 1, track?: 'CALM' | 'BOSS') {
-    this.currentSpeed = speedMultiplier;
-    if (track) this.currentTrack = track;
+    const trackChanged = track !== undefined && track !== this.currentTrack;
+    const speedChanged = speedMultiplier !== this.currentSpeed;
 
-    if (this.isBGMPlaying) {
+    if (track) this.currentTrack = track;
+    this.currentSpeed = speedMultiplier;
+
+    // Only restart interval if speed or track actually changed!
+    if (this.isBGMPlaying && (trackChanged || speedChanged)) {
       clearInterval(this.bgmIntervalId ?? undefined);
       this.scheduleBGMInterval();
     }
@@ -126,7 +145,7 @@ export class AudioManager {
   }
 
   private playBGMStep() {
-    if (!this.ctx || this.isMuted) return;
+    if (!this.ctx || this.isMuted || this.ctx.state !== 'running') return;
 
     const isBoss = this.currentTrack === 'BOSS';
     const melodyArray = isBoss ? this.bossMelody : this.calmMelody;
@@ -137,14 +156,14 @@ export class AudioManager {
 
     const now = this.ctx.currentTime;
 
-    // 1. Melody Note
+    // 1. Melody Note (Increased volume to 0.12)
     const melOsc = this.ctx.createOscillator();
     const melGain = this.ctx.createGain();
     melOsc.type = isBoss ? 'sawtooth' : 'square';
     melOsc.frequency.setValueAtTime(melodyFreq, now);
 
-    const melVol = isBoss ? 0.05 : 0.035;
-    const melDur = isBoss ? 0.08 : 0.1;
+    const melVol = isBoss ? 0.14 : 0.11;
+    const melDur = isBoss ? 0.08 : 0.11;
     melGain.gain.setValueAtTime(melVol, now);
     melGain.gain.exponentialRampToValueAtTime(0.001, now + melDur);
 
@@ -153,14 +172,14 @@ export class AudioManager {
     melOsc.start(now);
     melOsc.stop(now + melDur);
 
-    // 2. Bassline Note
+    // 2. Bassline Note (Increased volume to 0.15)
     const bassOsc = this.ctx.createOscillator();
     const bassGain = this.ctx.createGain();
     bassOsc.type = isBoss ? 'sawtooth' : 'triangle';
     bassOsc.frequency.setValueAtTime(bassFreq, now);
 
-    const bassVol = isBoss ? 0.08 : 0.05;
-    const bassDur = isBoss ? 0.1 : 0.12;
+    const bassVol = isBoss ? 0.16 : 0.13;
+    const bassDur = isBoss ? 0.11 : 0.14;
     bassGain.gain.setValueAtTime(bassVol, now);
     bassGain.gain.exponentialRampToValueAtTime(0.001, now + bassDur);
 
@@ -183,7 +202,7 @@ export class AudioManager {
     osc.frequency.setValueAtTime(700, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(180, this.ctx.currentTime + 0.08);
 
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
 
     osc.connect(gain);
@@ -203,7 +222,7 @@ export class AudioManager {
     osc.frequency.setValueAtTime(1000, this.ctx.currentTime);
     osc.frequency.linearRampToValueAtTime(1600, this.ctx.currentTime + 0.1);
 
-    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
 
     osc.connect(gain);
@@ -223,7 +242,7 @@ export class AudioManager {
     osc.frequency.setValueAtTime(160, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(35, this.ctx.currentTime + 0.2);
 
-    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
 
     osc.connect(gain);
@@ -247,7 +266,7 @@ export class AudioManager {
     filter.type = 'lowpass';
     filter.frequency.setValueAtTime(400, this.ctx.currentTime);
 
-    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
 
     osc.connect(filter);
@@ -271,7 +290,7 @@ export class AudioManager {
     osc1.frequency.setValueAtTime(523.25, this.ctx.currentTime);
     osc2.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.06);
 
-    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.16);
 
     osc1.connect(gain);
@@ -295,7 +314,7 @@ export class AudioManager {
     osc.frequency.setValueAtTime(110, this.ctx.currentTime);
     osc.frequency.linearRampToValueAtTime(70, this.ctx.currentTime + 0.25);
 
-    gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
 
     osc.connect(gain);
@@ -320,7 +339,7 @@ export class AudioManager {
     filter.frequency.setValueAtTime(600, this.ctx.currentTime);
     filter.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.7);
 
-    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.55, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.7);
 
     osc.connect(filter);
@@ -341,7 +360,7 @@ export class AudioManager {
     osc.frequency.setValueAtTime(1800, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(350, this.ctx.currentTime + 0.5);
 
-    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
 
     osc.connect(gain);
@@ -361,7 +380,7 @@ export class AudioManager {
     osc.frequency.setValueAtTime(440, this.ctx.currentTime);
     osc.frequency.setValueAtTime(622, this.ctx.currentTime + 0.15);
 
-    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
 
     osc.connect(gain);
