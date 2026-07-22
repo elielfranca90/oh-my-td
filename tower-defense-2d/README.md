@@ -1,24 +1,32 @@
 # 🏰 Tower Defense 2D (Oh My TD)
 
-Protótipo completo de jogo *Tower Defense* 2D desenvolvido com **HTML5 Canvas**, **TypeScript** e **Vite**.
+Jogo de estratégia *Tower Defense 2D* completo desenvolvido com **HTML5 Canvas**, **TypeScript** e **Vite**.
 
 ---
 
 ## 🚀 Como Executar
 
 ```bash
+# Instalar dependências
 npm install
-npm run dev
-```
 
-Abra a URL exibida no navegador (`http://localhost:5173/`).
+# Rodar servidor local
+npm run dev
+
+# Rodar testes automatizados (Vitest)
+npm run test
+
+# Gerar build de produção
+npm run build
+```
 
 ---
 
-## 🎮 Mecânicas Principais
-* **4 Tipos de Torres:** Basic (50g), Frost (70g), Cannon (90g), Artillery (110g).
-* **Táticas de Disparo:** FIRST, STRONGEST, WEAKEST, LAST.
-* **4 Tipos de Inimigos:** Standard, Runner, Tank, BOSS (160 HP).
-* **Poderes Supremos:** Meteor Strike (50g) e Global Freeze (40g).
-* **Modos de Jogo:** Auto Waves (5s timer) e Endless Mode (`Wave: X/♾️`).
-* **Controles:** Velocidade 1x/2x/4x, Pause (`ESPAÇO` / `P`), Zero Scroll (`100vh`).
+## 🛠️ Recursos Implementados
+
+* **3 Biomas Visuais & Trilhas Sonoras Únicas:** Green Valley (Bucólico), Death Pass (Lava/Basalto) e Citadel (Arcano-Punk Neon).
+* **5 Torres Especializadas:** Basic (Crit 20%), Frost (AoE Pulse), Solar Prism (Laser Focus), Cannon (Executor 2x), Artillery (Napalm DoT).
+* **7 Inimigos Únicos:** Standard, Runner (Esquiva), Tank (Armadura), Shielded (Escudo de Energia), Spore Sprinter (Nuvem de Velocidade), Moss Giant (Regeneração) e BOSS (Reinforcements).
+* **Meta-Progressão & Badges:** Skill Tree permanente (🌟 Stars) e Modal de Conquistas (`🏆 Badges`).
+* **Relatório Pós-Partida & Recordes:** Painel de Analytics com Torre MVP e salvamento de High Score no `LocalStorage`.
+* **UX Mobile Responsivo:** Barra de abas mobile com auto-inspector e controle duplo de volume (BGM & SFX).

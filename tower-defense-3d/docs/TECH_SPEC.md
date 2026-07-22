@@ -31,7 +31,7 @@ Após a Onda 10, a quantidade de inimigos $C_{inimigos}$ e o multiplicador de HP
 
 $$C_{inimigos} = 12 + \lfloor (N_{onda} - 10) \times 2 \rfloor$$
 
-$$M_{hp} = 1.0 + (N_{onda} - 10) \times 0.18$$
+$$M_{hp} = 1.12^{(N_{onda} - 10)}$$
 
 $$\text{Qtd Bosses} = \lfloor \frac{N_{onda} - 10}{3} \rfloor + 1$$
 
@@ -45,26 +45,39 @@ export interface Vector2D {
   y: number;
 }
 
-export type EnemyType = 'STANDARD' | 'RUNNER' | 'TANK' | 'BOSS';
+export type EnemyType =
+  | 'STANDARD'
+  | 'RUNNER'
+  | 'TANK'
+  | 'SHIELDED'
+  | 'BOSS'
+  | 'SPORE_SPRINTER'
+  | 'MOSS_GIANT';
 
 export interface IEnemy2D {
   id: string;
   type: EnemyType;
   hp: number;
   maxHp: number;
+  shieldHp: number;
+  maxShieldHp: number;
   speed: number;
   goldReward: number;
   waypointIndex: number;
+  pathIndex: number;
   position: Vector2D;
   isDead: boolean;
   radius: number;
   color: string;
+  armorFactor: number;
+  dodgeChance: number;
   slowTimer: number;
   slowFactor: number;
   freezeTimer: number;
+  sporeBoostTimer?: number;
 }
 
-export type TowerType = 'BASIC' | 'CANNON' | 'FROST' | 'ARTILLERY';
+export type TowerType = 'BASIC' | 'CANNON' | 'FROST' | 'ARTILLERY' | 'SOLAR_PRISM';
 export type TargetingStrategy = 'FIRST' | 'STRONGEST' | 'WEAKEST' | 'LAST';
 
 export interface ITower2D {
@@ -82,11 +95,15 @@ export interface ITower2D {
   targeting: TargetingStrategy;
   splashRadius?: number;
   slowFactor?: number;
+  laserTargetId?: string;
+  beamDuration?: number;
+  onSproutTile?: boolean;
 }
 
 export interface IProjectile2D {
   id: string;
   targetEnemy?: IEnemy2D;
+  targetPosition?: Vector2D;
   damage: number;
   speed: number;
   position: Vector2D;
@@ -94,6 +111,25 @@ export interface IProjectile2D {
   radius: number;
   splashRadius?: number;
   slowFactor?: number;
+  isCrit?: boolean;
   hasHit: boolean;
+}
+
+export interface TalentData {
+  damageLvl: number;
+  goldLvl: number;
+  hpLvl: number;
+  cdLvl: number;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  desc: string;
+  rewardStars: number;
+  unlocked: boolean;
+  progress: number;
+  maxProgress: number;
+  icon: string;
 }
 ```

@@ -1,12 +1,12 @@
 # 🏰 Tower Defense 2D - Oh My TD
 
-Protótipo evoluído e completo de jogo estilo **Tower Defense 2D** desenvolvido com **HTML5 Canvas 2D**, **TypeScript 5.x** e **Vite**.
+Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower Defense 2D** desenvolvido com **HTML5 Canvas 2D**, **TypeScript 5.x** e **Vite**.
 
 ---
 
 ## 🌟 Visão Geral
 
-O projeto iniciou com um MVP em Three.js 3D e evoluiu para uma engine nativa **Canvas 2D top-down**. A abordagem 2D proporcionou alta performance (60 FPS constantes), renderização ultra-leve (bundle de apenas ~30 kB), precisão matemática perfeita em cliques no grid e zero distorção de câmera.
+O projeto evoluiu de um MVP em Three.js para uma engine nativa **HTML5 Canvas 2D top-down**. A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 3 mapas com mecânicas e trilhas sonoras únicas, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida, controles por toque mobile e layout **zero-scroll** em `100vh`.
 
 ---
 
@@ -16,9 +16,9 @@ O projeto iniciou com um MVP em Three.js 3D e evoluiu para uma engine nativa **C
 * **Node.js:** Versão 18 ou superior
 * **npm:** Gerenciador de pacotes
 
-### Passos de Inicialização
+### Execução Local
 ```bash
-# 1. Entre no diretório do jogo 2D
+# 1. Entre no diretório do projeto 2D
 cd tower-defense-2d
 
 # 2. Instale as dependências
@@ -27,50 +27,67 @@ npm install
 # 3. Inicie o servidor de desenvolvimento
 npm run dev
 
-# 4. Para gerar a build otimizada de produção
+# 4. Execute a bateria de testes automatizados (Vitest)
+npm run test
+
+# 5. Gere a build otimizada de produção
 npm run build
 ```
 
 ---
 
-## 🎮 Mecânicas & Recursos
+## 🗺️ 3 Mapas & Biomas Únicos
 
-### 🏰 4 Tipos de Torres
-| Torre | Custo | Alcance | Dano | Efeito Especial |
-| :--- | :--- | :--- | :--- | :--- |
-| **Basic** | 🪙 50g | 150px | 5 | Cadência rápida de disparo |
-| **Frost** | 🪙 70g | 130px | 2 | Desacelera inimigos em 50% por 2s |
-| **Cannon** | 🪙 90g | 120px | 18 | Dano elevado contra alvos individuais |
-| **Artillery** | 🪙 110g | 170px | 25 | Dano em Área (AoE) num raio de 50px |
-
-### 🎯 Táticas de Disparo (*Targeting Tactics*)
-Cada torre pode ter sua prioridade de alvo ajustada dinamicamente:
-* **FIRST:** Foca no inimigo mais adiantado na rota.
-* **STRONGEST:** Foca no inimigo com maior vida atual.
-* **WEAKEST:** Foca no inimigo com menor vida atual.
-* **LAST:** Foca no inimigo mais recente a entrar no mapa.
-
-### 👾 4 Tipos de Inimigos
-* **Standard:** Equilibrado (10 HP, 10g recompensa).
-* **Runner:** Muito rápido (6 HP, 8g recompensa).
-* **Tank:** Lento e resistente (35 HP, 25g recompensa, 2 dano à base).
-* **BOSS:** Gigante e devastador (160 HP, 100g recompensa, 5 dano à base).
-
-### ⚡ Poderes Supremos (*Ultimate Spells*)
-* ☄️ **Meteor Strike (50g • 15s CD):** Invoca um meteoro que causa 90 de dano em área em qualquer ponto do mapa.
-* ❄️ **Global Freeze (40g • 20s CD):** Congela todos os inimigos da tela por 3,5 segundos.
-
-### ⚙️ Modos de Jogo & Opções
-* **⚡ Auto Waves:** Inicia ondas automaticamente com cronômetro regressivo de 5 segundos.
-* **♾️ Endless Mode:** Permite continuar o jogo indefinidamente após a Onda 10 com geração procedural de ondas e dificuldade escalar (`Wave: X/♾️`).
-* **⏩ Controle de Velocidade:** Alterne a velocidade do jogo em `1x`, `2x` ou `4x`.
-* **⏸️ Sistema de Pause:** Pause a partida pelo botão `⏸️` ou pelas teclas `ESPAÇO` / `P`.
-* **📱 Interface Responsiva Zero-Scroll:** Layout 100% ajustado à altura da tela (`100vh`) sem barra de rolagem.
+| Mapa | Bioma Visual | Trilha Sonora (BGM) | Mecânica Única / Twist |
+| :--- | :--- | :--- | :--- |
+| **Map 1: Green Valley** | Grama Esmeralda, Pinheiros e Serras Nevadas | C Maior / A Menor Bucólica (150ms) | Broto de Supercrescimento (+25% Alcance) |
+| **Map 2: Death Pass** | Basalto Vulcânico e Rios de Lava Incandescente | E Menor / B Menor Vulcânica (110ms) | Rota Dupla / 2 Portais Simultâneos |
+| **Map 3: Citadel Breach** | Mármore Negro Gótico e Circuitos Neon | A Menor / F# Menor Arcano-Punk (125ms) | Rota Curta de Alta Velocidade |
 
 ---
 
-## 📚 Índice de Documentação
+## 🏰 5 Tipos de Torres Especializadas
 
-* [`/docs/PRD.md`](./docs/PRD.md): Documento de Requisitos do Produto (PRD).
-* [`/docs/TECH_SPEC.md`](./docs/TECH_SPEC.md): Especificações Técnicas e Algoritmos.
-* [`/docs/ARCHITECTURE_CANVAS.md`](./docs/ARCHITECTURE_CANVAS.md): Diagrama de Arquitetura.
+| Torre | Custo | Alcance | Dano | Especialização & Efeito |
+| :--- | :--- | :--- | :--- | :--- |
+| **Basic** | 🪙 50g | 150px | 5 | ⚡ **Critical Hit (20% chance):** Causa 2x de dano crítico |
+| **Frost** | 🪙 70g | 130px | 2 | ❄️ **Aura Glacial Pulse AoE:** Causa dano e desacelera em 50% todos os alvos no raio |
+| **Solar Prism** | 🪙 80g | 140px | 6 | ☀️ **Lente Prismática:** Ganha +10% de dano por segundo focado no mesmo alvo |
+| **Cannon** | 🪙 90g | 120px | 18 | 💥 **Executor:** Causa 2x de dano (+100%) em Tanks e Bosses acima de 50% HP |
+| **Artillery** | 🪙 110g | 170px | 25 | 🔥 **Zona de Napalm:** Explosão em área deixa poça de fogo DoT no chão por 2.5s |
+
+---
+
+## 👾 7 Tipos de Inimigos
+
+* **Standard:** Tropa equilibrada (10 HP, 10g recompensa).
+* **Runner:** **Esquiva Ágil (25% chance)** de desviar de mísseis e tiros pesados (`DODGED!`).
+* **Tank:** **Placa de Armadura (absorve 40% de dano)** de tiros leves.
+* **Shielded Speeder:** **Escudo de Energia Azul (22 Shield HP)** que absorve impacto antes da vida.
+* **Spore Sprinter:** Libera uma nuvem de esporos dando **+30% de velocidade** aos aliados quando fica com menos de 50% HP.
+* **Moss Giant:** Regenera **+3 HP/seg** enquanto pisar em blocos de grama.
+* **BOSS:** **160 HP** (escalar no modo infinito), causa 5 de dano à base e **invoca 2 Corredores de reforço** ao morrer.
+
+---
+
+## ⚡ Poderes Supremos (*Ultimate Spells*)
+
+* ☄️ **Meteor Strike (150g • 30s CD):** Animação de queda do meteoro, onda de choque, partículas de brasa e cratera no solo.
+* ❄️ **Global Freeze (120g • 40s CD):** Vinheta de gelo ciano e congelamento geral de todos os inimigos por 3,5s.
+* **Escalonamento Progressivo:** O custo em ouro dobra a cada uso durante a partida.
+
+---
+
+## 🌟 Meta-Progressão, Conquistas & Analytics
+
+* 🌟 **Skill Tree Permanete (`TalentManager.ts`):** Ganhe Estrelas ao jogar e evolua talentos salvos no `LocalStorage` (*Archery, Economy, Fortress, Channeling*).
+* 🏆 **Badges & Achievements (`AchievementManager.ts`):** 7 conquistas desbloqueáveis com notificações flutuantes e modal de inspeção.
+* 📊 **Análises Pós-Partida (`AnalyticsManager.ts`):** Relatório com Torre MVP, total de abates, estatísticas financeiras e recorde pessoal de maior onda (`🏆 Best: Wave X`).
+
+---
+
+## 📱 UX Mobile & Áudio Independente
+
+* **Mobile Tab Bar & Auto-Inspector:** Abas em celulares (`Build`, `Spells`, `Skills`, `Inspector`) com troca automática ao tocar em torres.
+* **Controles Independentes de Áudio:** Sliders individuais para volume da Música (`🎵 BGM`) e dos Efeitos Sonoros (`🔊 SFX`) com salvamento automático.
+* **Bateria de Testes Vitest:** 15 testes unitários e de integração cobrindo motores matemáticos, wave scaling e física do grid.
