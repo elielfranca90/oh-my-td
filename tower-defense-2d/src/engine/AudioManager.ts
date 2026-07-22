@@ -7,24 +7,35 @@ export class AudioManager {
   private bgmStep = 0;
   public isBGMPlaying = false;
   private currentSpeed = 1;
+  public currentTrack: 'CALM' | 'BOSS' = 'CALM';
 
-  // 32-step Melody (frequencies in Hz)
-  private readonly melodyNotes: number[] = [
-    261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 392.00, // C Major
-    220.00, 261.63, 329.63, 440.00, 329.63, 261.63, 220.00, 329.63, // A Minor
-    174.61, 220.00, 261.63, 349.23, 261.63, 220.00, 174.61, 261.63, // F Major
-    196.00, 246.94, 293.66, 392.00, 293.66, 246.94, 196.00, 293.66, // G Major
+  // --- CALM TRACK (C Major / A Minor) ---
+  private readonly calmMelody: number[] = [
+    261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 392.00,
+    220.00, 261.63, 329.63, 440.00, 329.63, 261.63, 220.00, 329.63,
+    174.61, 220.00, 261.63, 349.23, 261.63, 220.00, 174.61, 261.63,
+    196.00, 246.94, 293.66, 392.00, 293.66, 246.94, 196.00, 293.66,
   ];
 
-  // 32-step Bassline (frequencies in Hz)
-  private readonly bassNotes: number[] = [
-    65.41, 65.41, 130.81, 65.41, 98.00, 65.41, 130.81, 65.41,
-    55.00, 55.00, 110.00, 55.00, 82.41, 55.00, 110.00, 55.00,
-    43.65, 43.65, 87.31,  43.65, 65.41, 43.65, 87.31,  43.65,
-    49.00, 49.00, 98.00,  49.00, 73.42, 49.00, 98.00,  49.00,
+  private readonly calmBass: number[] = [
+    65.41, 65.41, 130.81, 65.41, 55.00, 55.00, 110.00, 55.00,
+    43.65, 43.65, 87.31,  43.65, 49.00, 49.00, 98.00,  49.00,
   ];
 
-  private ensureContext(): boolean {
+  // --- HEAVY SINISTER BOSS TRACK (D Minor / Tritone Dissonance) ---
+  private readonly bossMelody: number[] = [
+    293.66, 311.13, 293.66, 415.30, 293.66, 311.13, 587.33, 415.30,
+    220.00, 233.08, 220.00, 311.13, 440.00, 311.13, 233.08, 220.00,
+    293.66, 311.13, 415.30, 587.33, 415.30, 311.13, 293.66, 415.30,
+    220.00, 233.08, 311.13, 440.00, 311.13, 233.08, 220.00, 155.56,
+  ];
+
+  private readonly bossBass: number[] = [
+    73.42, 73.42, 146.83, 73.42, 77.78, 77.78, 155.56, 77.78,
+    55.00, 55.00, 110.00, 55.00, 103.83, 103.83, 207.65, 103.83,
+  ];
+
+  public ensureContext(): boolean {
     if (this.isMuted) return false;
 
     if (!this.ctx) {
@@ -41,49 +52,73 @@ export class AudioManager {
     return true;
   }
 
+  // Explicit Audio Unlock method triggered by User Gesture (Click/Key)
+  public unlockAudio() {
+    this.ensureContext();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
   public toggleMute(): boolean {
     this.isMuted = !this.isMuted;
     if (this.isMuted) {
       this.stopBGM();
       if (this.ctx) this.ctx.suspend();
     } else {
-      this.startBGM(this.currentSpeed);
+      this.unlockAudio();
+      this.startBGM(this.currentSpeed, this.currentTrack);
     }
     return this.isMuted;
   }
 
   // BGM Control Methods
-  public startBGM(speedMultiplier = 1) {
+  public startBGM(speedMultiplier = 1, track: 'CALM' | 'BOSS' = 'CALM') {
     this.currentSpeed = speedMultiplier;
-    if (this.isMuted || this.isBGMPlaying) return;
+    this.currentTrack = track;
+    if (this.isMuted) return;
 
     if (!this.ensureContext()) return;
-    this.isBGMPlaying = true;
 
+    if (this.isBGMPlaying) {
+      this.updateBGMTempo(speedMultiplier, track);
+      return;
+    }
+
+    this.isBGMPlaying = true;
     this.scheduleBGMInterval();
   }
 
-  public stopBGM() {
-    if (this.bgmIntervalId !== null) {
-      clearInterval(this.bgmIntervalId);
-      this.bgmIntervalId = null;
+  public setTrack(track: 'CALM' | 'BOSS') {
+    if (this.currentTrack === track) return;
+    this.currentTrack = track;
+    this.bgmStep = 0; // Reset step on track change
+    if (this.isBGMPlaying) {
+      this.stopBGM();
+      this.startBGM(this.currentSpeed, track);
     }
+  }
+
+  public stopBGM() {
+    clearInterval(this.bgmIntervalId ?? undefined);
+    this.bgmIntervalId = null;
     this.isBGMPlaying = false;
   }
 
-  public updateBGMTempo(speedMultiplier = 1) {
+  public updateBGMTempo(speedMultiplier = 1, track?: 'CALM' | 'BOSS') {
     this.currentSpeed = speedMultiplier;
+    if (track) this.currentTrack = track;
+
     if (this.isBGMPlaying) {
-      if (this.bgmIntervalId !== null) {
-        clearInterval(this.bgmIntervalId);
-      }
+      clearInterval(this.bgmIntervalId ?? undefined);
       this.scheduleBGMInterval();
     }
   }
 
   private scheduleBGMInterval() {
-    const baseIntervalMs = 140;
-    const intervalMs = Math.max(30, baseIntervalMs / this.currentSpeed);
+    const isBoss = this.currentTrack === 'BOSS';
+    const baseIntervalMs = isBoss ? 95 : 150;
+    const intervalMs = Math.max(25, baseIntervalMs / this.currentSpeed);
 
     this.bgmIntervalId = window.setInterval(() => {
       this.playBGMStep();
@@ -93,42 +128,52 @@ export class AudioManager {
   private playBGMStep() {
     if (!this.ctx || this.isMuted) return;
 
-    const melodyFreq = this.melodyNotes[this.bgmStep];
-    const bassFreq = this.bassNotes[this.bgmStep];
+    const isBoss = this.currentTrack === 'BOSS';
+    const melodyArray = isBoss ? this.bossMelody : this.calmMelody;
+    const bassArray = isBoss ? this.bossBass : this.calmBass;
+
+    const melodyFreq = melodyArray[this.bgmStep % melodyArray.length];
+    const bassFreq = bassArray[this.bgmStep % bassArray.length];
 
     const now = this.ctx.currentTime;
 
-    // 1. Melody Note (Square Wave Chiptune)
+    // 1. Melody Note
     const melOsc = this.ctx.createOscillator();
     const melGain = this.ctx.createGain();
-    melOsc.type = 'square';
+    melOsc.type = isBoss ? 'sawtooth' : 'square';
     melOsc.frequency.setValueAtTime(melodyFreq, now);
-    melGain.gain.setValueAtTime(0.04, now); // Soft volume
-    melGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    const melVol = isBoss ? 0.05 : 0.035;
+    const melDur = isBoss ? 0.08 : 0.1;
+    melGain.gain.setValueAtTime(melVol, now);
+    melGain.gain.exponentialRampToValueAtTime(0.001, now + melDur);
 
     melOsc.connect(melGain);
     melGain.connect(this.ctx.destination);
     melOsc.start(now);
-    melOsc.stop(now + 0.1);
+    melOsc.stop(now + melDur);
 
-    // 2. Bassline Note (Triangle Wave)
+    // 2. Bassline Note
     const bassOsc = this.ctx.createOscillator();
     const bassGain = this.ctx.createGain();
-    bassOsc.type = 'triangle';
+    bassOsc.type = isBoss ? 'sawtooth' : 'triangle';
     bassOsc.frequency.setValueAtTime(bassFreq, now);
-    bassGain.gain.setValueAtTime(0.06, now);
-    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    const bassVol = isBoss ? 0.08 : 0.05;
+    const bassDur = isBoss ? 0.1 : 0.12;
+    bassGain.gain.setValueAtTime(bassVol, now);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, now + bassDur);
 
     bassOsc.connect(bassGain);
     bassGain.connect(this.ctx.destination);
     bassOsc.start(now);
-    bassOsc.stop(now + 0.12);
+    bassOsc.stop(now + bassDur);
 
-    // Advance step (32 steps loop)
-    this.bgmStep = (this.bgmStep + 1) % this.melodyNotes.length;
+    // Advance step
+    this.bgmStep = (this.bgmStep + 1) % melodyArray.length;
   }
 
-  // 1. Basic Tower Shot (Light Laser/Pew)
+  // 1. Basic Tower Shot
   public playBasicShot() {
     if (!this.ensureContext() || !this.ctx) return;
     const osc = this.ctx.createOscillator();
@@ -148,7 +193,7 @@ export class AudioManager {
     osc.stop(this.ctx.currentTime + 0.08);
   }
 
-  // 2. Frost Tower Shot (Crystalline Chirp)
+  // 2. Frost Tower Shot
   public playFrostShot() {
     if (!this.ensureContext() || !this.ctx) return;
     const osc = this.ctx.createOscillator();
@@ -168,7 +213,7 @@ export class AudioManager {
     osc.stop(this.ctx.currentTime + 0.1);
   }
 
-  // 3. Cannon Tower Shot (Heavy Thump)
+  // 3. Cannon Tower Shot
   public playCannonShot() {
     if (!this.ensureContext() || !this.ctx) return;
     const osc = this.ctx.createOscillator();
@@ -188,7 +233,7 @@ export class AudioManager {
     osc.stop(this.ctx.currentTime + 0.2);
   }
 
-  // 4. Artillery Tower Shot (Heavy Boom)
+  // 4. Artillery Tower Shot
   public playArtilleryShot() {
     if (!this.ensureContext() || !this.ctx) return;
     const osc = this.ctx.createOscillator();
@@ -213,7 +258,7 @@ export class AudioManager {
     osc.stop(this.ctx.currentTime + 0.35);
   }
 
-  // 5. Coin Chime (Enemy Kill Reward)
+  // 5. Coin Chime
   public playCoin() {
     if (!this.ensureContext() || !this.ctx) return;
     const osc1 = this.ctx.createOscillator();
@@ -223,7 +268,6 @@ export class AudioManager {
     osc1.type = 'sine';
     osc2.type = 'sine';
 
-    // C5 (523.25Hz) -> E5 (659.25Hz)
     osc1.frequency.setValueAtTime(523.25, this.ctx.currentTime);
     osc2.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.06);
 
@@ -241,7 +285,7 @@ export class AudioManager {
     osc2.stop(this.ctx.currentTime + 0.16);
   }
 
-  // 6. Base Damage (Warning Alert)
+  // 6. Base Damage
   public playBaseDamage() {
     if (!this.ensureContext() || !this.ctx) return;
     const osc = this.ctx.createOscillator();
@@ -261,7 +305,7 @@ export class AudioManager {
     osc.stop(this.ctx.currentTime + 0.25);
   }
 
-  // 7. Meteor Ultimate Spell (Explosive Impact)
+  // 7. Meteor Ultimate Spell
   public playMeteor() {
     if (!this.ensureContext() || !this.ctx) return;
     const osc = this.ctx.createOscillator();
@@ -287,7 +331,7 @@ export class AudioManager {
     osc.stop(this.ctx.currentTime + 0.7);
   }
 
-  // 8. Global Freeze Spell (Sweeping Ice Effect)
+  // 8. Global Freeze Spell
   public playFreeze() {
     if (!this.ensureContext() || !this.ctx) return;
     const osc = this.ctx.createOscillator();
@@ -307,7 +351,7 @@ export class AudioManager {
     osc.stop(this.ctx.currentTime + 0.5);
   }
 
-  // 9. Boss Alert (Tense Alarm)
+  // 9. Boss Alert
   public playBossAlert() {
     if (!this.ensureContext() || !this.ctx) return;
     const osc = this.ctx.createOscillator();

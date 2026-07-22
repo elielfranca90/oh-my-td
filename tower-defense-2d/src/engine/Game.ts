@@ -101,6 +101,18 @@ export class Game2D {
   }
 
   private setupListeners() {
+    // Global User Interaction Listener to Unlock Web Audio API in Browsers
+    const unlockAudio = () => {
+      this.audioManager.unlockAudio();
+      if (!this.audioManager.isBGMPlaying && !this.audioManager.isMuted && this.gameState.status === 'PLAYING') {
+        this.audioManager.startBGM(this.gameSpeedMultiplier, this.audioManager.currentTrack);
+      }
+    };
+
+    window.addEventListener('click', unlockAudio, { passive: true });
+    window.addEventListener('keydown', unlockAudio, { passive: true });
+    window.addEventListener('pointerdown', unlockAudio, { passive: true });
+
     // Keyboard Hotkeys
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.code === 'KeyP') {
@@ -124,11 +136,6 @@ export class Game2D {
     });
 
     this.canvas.addEventListener('click', (e) => {
-      // Start BGM on first user interaction
-      if (!this.audioManager.isBGMPlaying && !this.audioManager.isMuted) {
-        this.audioManager.startBGM(this.gameSpeedMultiplier);
-      }
-
       if (this.gameState.status !== 'PLAYING' || this.gameState.isPaused) return;
 
       const { x, y } = this.getCanvasMousePosition(e);
@@ -194,12 +201,21 @@ export class Game2D {
 
       const deltaTimeMs = rawDelta * this.gameSpeedMultiplier;
 
+      // Determine BGM track (CALM vs BOSS)
+      const enemies = this.enemyManager.getEnemies();
+      const hasBossOnScreen = enemies.some(e => !e.data.isDead && e.data.type === 'BOSS');
+      const activeWaveNum = this.waveManager.currentWaveIndex + 1;
+      const isBossWave = activeWaveNum === 5 || activeWaveNum === 8 || activeWaveNum === 10 || (activeWaveNum > 10 && activeWaveNum % 3 === 0);
+
+      const targetTrack = (hasBossOnScreen || (isBossWave && this.waveManager.isWaveActive)) ? 'BOSS' : 'CALM';
+      this.audioManager.setTrack(targetTrack);
+
       // Manage BGM state & tempo
       if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
         if (!this.audioManager.isBGMPlaying && !this.audioManager.isMuted) {
-          this.audioManager.startBGM(this.gameSpeedMultiplier);
+          this.audioManager.startBGM(this.gameSpeedMultiplier, targetTrack);
         } else {
-          this.audioManager.updateBGMTempo(this.gameSpeedMultiplier);
+          this.audioManager.updateBGMTempo(this.gameSpeedMultiplier, targetTrack);
         }
       } else {
         this.audioManager.stopBGM();
@@ -232,7 +248,7 @@ export class Game2D {
       this.ctx.translate(shake.x, shake.y);
 
       this.mapManager.render(this.ctx);
-      this.particleManager.render(this.ctx); // Scorch marks, napalm fire & shockwaves
+      this.particleManager.render(this.ctx);
       this.renderGhostPlacement();
       this.towerManager.render(this.ctx, this.mousePos);
       this.enemyManager.render(this.ctx);
