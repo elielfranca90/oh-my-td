@@ -1,7 +1,7 @@
 import { UIManager } from '../ui/UIManager';
 import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
-import { AudioManager } from './AudioManager';
+import { AudioManager, type BGMTrack } from './AudioManager';
 import { EnemyManager2D } from './EnemyManager';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
@@ -163,7 +163,8 @@ export class Game2D {
     const unlockAudio = () => {
       this.audioManager.unlockAudio();
       if (!this.audioManager.isBGMPlaying && !this.audioManager.isBgmMuted && this.gameState.status === 'PLAYING') {
-        this.audioManager.startBGM(this.gameSpeedMultiplier, this.audioManager.currentTrack);
+        const initialTrack: BGMTrack = (this.mapManager.currentMapId as BGMTrack) || 'MAP_1';
+        this.audioManager.startBGM(this.gameSpeedMultiplier, initialTrack);
       }
     };
 
@@ -191,7 +192,7 @@ export class Game2D {
 
     this.canvas.addEventListener('mousemove', handleMove);
     this.canvas.addEventListener('touchmove', (e) => {
-      e.preventDefault(); // Prevent scrolling on mobile canvas
+      e.preventDefault();
       handleMove(e);
     }, { passive: false });
 
@@ -301,13 +302,15 @@ export class Game2D {
 
       const deltaTimeMs = rawDelta * this.gameSpeedMultiplier;
 
-      // Determine BGM track (CALM vs BOSS)
+      // Determine BGM track: BOSS vs MAP-SPECIFIC TRACK
       const enemies = this.enemyManager.getEnemies();
       const hasBossOnScreen = enemies.some(e => !e.data.isDead && e.data.type === 'BOSS');
       const activeWaveNum = this.waveManager.currentWaveIndex + 1;
       const isBossWave = activeWaveNum === 5 || activeWaveNum === 8 || activeWaveNum === 10 || (activeWaveNum > 10 && activeWaveNum % 3 === 0);
 
-      const targetTrack = (hasBossOnScreen || (isBossWave && this.waveManager.isWaveActive)) ? 'BOSS' : 'CALM';
+      const mapTrack: BGMTrack = (this.mapManager.currentMapId as BGMTrack) || 'MAP_1';
+      const targetTrack: BGMTrack = (hasBossOnScreen || (isBossWave && this.waveManager.isWaveActive)) ? 'BOSS' : mapTrack;
+
       this.audioManager.setTrack(targetTrack);
 
       // Manage BGM state & tempo

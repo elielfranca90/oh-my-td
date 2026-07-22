@@ -1,3 +1,6 @@
+
+export type BGMTrack = 'MAP_1' | 'MAP_2' | 'MAP_3' | 'BOSS';
+
 export class AudioManager {
   private ctx: AudioContext | null = null;
 
@@ -16,31 +19,53 @@ export class AudioManager {
   private bgmStep = 0;
   public isBGMPlaying = false;
   private currentSpeed = 1;
-  public currentTrack: 'CALM' | 'BOSS' = 'CALM';
+  public currentTrack: BGMTrack = 'MAP_1';
 
   private readonly PREFS_KEY = 'td2d_audio_prefs_v1';
 
-  // --- CALM TRACK (C Major / A Minor) ---
-  private readonly calmMelody: number[] = [
+  // --- MAP 1 TRACK: GREEN VALLEY (C Major / A Minor Bucolic) ---
+  private readonly map1Melody: number[] = [
     261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 392.00,
     220.00, 261.63, 329.63, 440.00, 329.63, 261.63, 220.00, 329.63,
     174.61, 220.00, 261.63, 349.23, 261.63, 220.00, 174.61, 261.63,
     196.00, 246.94, 293.66, 392.00, 293.66, 246.94, 196.00, 293.66,
   ];
-
-  private readonly calmBass: number[] = [
+  private readonly map1Bass: number[] = [
     65.41, 65.41, 130.81, 65.41, 55.00, 55.00, 110.00, 55.00,
     43.65, 43.65, 87.31,  43.65, 49.00, 49.00, 98.00,  49.00,
   ];
 
-  // --- HEAVY SINISTER BOSS TRACK (D Minor / Tritone Dissonance) ---
+  // --- MAP 2 TRACK: DEATH PASS (E Minor / B Minor Volcanic) ---
+  private readonly map2Melody: number[] = [
+    164.81, 196.00, 246.94, 329.63, 246.94, 196.00, 164.81, 246.94,
+    146.83, 174.61, 220.00, 293.66, 220.00, 174.61, 146.83, 220.00,
+    130.81, 164.81, 196.00, 261.63, 196.00, 164.81, 130.81, 196.00,
+    123.47, 146.83, 185.00, 246.94, 185.00, 146.83, 123.47, 185.00,
+  ];
+  private readonly map2Bass: number[] = [
+    82.41, 82.41, 164.81, 82.41, 73.42, 73.42, 146.83, 73.42,
+    65.41, 65.41, 130.81, 65.41, 61.74, 61.74, 123.47, 61.74,
+  ];
+
+  // --- MAP 3 TRACK: CITADEL BREACH (Dark Synthwave A Minor) ---
+  private readonly map3Melody: number[] = [
+    220.00, 277.18, 329.63, 440.00, 554.37, 440.00, 329.63, 277.18,
+    174.61, 220.00, 261.63, 349.23, 440.00, 349.23, 261.63, 220.00,
+    207.65, 261.63, 311.13, 415.30, 523.25, 415.30, 311.13, 261.63,
+    196.00, 246.94, 293.66, 392.00, 493.88, 392.00, 293.66, 246.94,
+  ];
+  private readonly map3Bass: number[] = [
+    110.00, 110.00, 220.00, 110.00, 87.31, 87.31, 174.61, 87.31,
+    103.83, 103.83, 207.65, 103.83, 98.00, 98.00, 196.00, 98.00,
+  ];
+
+  // --- BOSS TRACK (D Minor / Tritone Dissonance) ---
   private readonly bossMelody: number[] = [
     293.66, 311.13, 293.66, 415.30, 293.66, 311.13, 587.33, 415.30,
     220.00, 233.08, 220.00, 311.13, 440.00, 311.13, 233.08, 220.00,
     293.66, 311.13, 415.30, 587.33, 415.30, 311.13, 293.66, 415.30,
     220.00, 233.08, 311.13, 440.00, 311.13, 233.08, 220.00, 155.56,
   ];
-
   private readonly bossBass: number[] = [
     73.42, 73.42, 146.83, 73.42, 77.78, 77.78, 155.56, 77.78,
     55.00, 55.00, 110.00, 55.00, 103.83, 103.83, 207.65, 103.83,
@@ -85,10 +110,8 @@ export class AudioManager {
       if (!AudioCtx) return false;
       this.ctx = new AudioCtx();
 
-      // Create dedicated sub-gain nodes for SFX and BGM
       this.sfxGainNode = this.ctx.createGain();
       this.bgmGainNode = this.ctx.createGain();
-
       this.sfxGainNode.connect(this.ctx.destination);
       this.bgmGainNode.connect(this.ctx.destination);
 
@@ -140,7 +163,6 @@ export class AudioManager {
     }
   }
 
-  // SFX Volume & Mute Controls
   public setSfxVolume(vol: number) {
     this.sfxVolume = Math.max(0, Math.min(1, vol));
     this.updateNodeVolumes();
@@ -154,7 +176,6 @@ export class AudioManager {
     return this.isSfxMuted;
   }
 
-  // BGM Volume & Mute Controls
   public setBgmVolume(vol: number) {
     this.bgmVolume = Math.max(0, Math.min(1, vol));
     this.updateNodeVolumes();
@@ -175,7 +196,7 @@ export class AudioManager {
   }
 
   // BGM Control Methods
-  public startBGM(speedMultiplier = 1, track: 'CALM' | 'BOSS' = 'CALM') {
+  public startBGM(speedMultiplier = 1, track: BGMTrack = 'MAP_1') {
     this.currentSpeed = speedMultiplier;
     this.currentTrack = track;
     if (this.isBgmMuted) return;
@@ -192,7 +213,7 @@ export class AudioManager {
     this.scheduleBGMInterval();
   }
 
-  public setTrack(track: 'CALM' | 'BOSS') {
+  public setTrack(track: BGMTrack) {
     if (this.currentTrack === track) return;
     this.currentTrack = track;
     this.bgmStep = 0;
@@ -208,7 +229,7 @@ export class AudioManager {
     this.isBGMPlaying = false;
   }
 
-  public updateBGMTempo(speedMultiplier = 1, track?: 'CALM' | 'BOSS') {
+  public updateBGMTempo(speedMultiplier = 1, track?: BGMTrack) {
     const trackChanged = track !== undefined && track !== this.currentTrack;
     const speedChanged = speedMultiplier !== this.currentSpeed;
 
@@ -222,8 +243,11 @@ export class AudioManager {
   }
 
   private scheduleBGMInterval() {
-    const isBoss = this.currentTrack === 'BOSS';
-    const baseIntervalMs = isBoss ? 95 : 150;
+    let baseIntervalMs = 150;
+    if (this.currentTrack === 'MAP_2') baseIntervalMs = 110;
+    if (this.currentTrack === 'MAP_3') baseIntervalMs = 125;
+    if (this.currentTrack === 'BOSS') baseIntervalMs = 95;
+
     const intervalMs = Math.max(25, baseIntervalMs / this.currentSpeed);
 
     this.bgmIntervalId = window.setInterval(() => {
@@ -234,9 +258,35 @@ export class AudioManager {
   private playBGMStep() {
     if (!this.ctx || this.isBgmMuted || this.ctx.state !== 'running' || !this.bgmGainNode) return;
 
-    const isBoss = this.currentTrack === 'BOSS';
-    const melodyArray = isBoss ? this.bossMelody : this.calmMelody;
-    const bassArray = isBoss ? this.bossBass : this.calmBass;
+    let melodyArray = this.map1Melody;
+    let bassArray = this.map1Bass;
+    let melType: OscillatorType = 'square';
+    let bassType: OscillatorType = 'triangle';
+    let melVol = 0.09;
+    let bassVol = 0.10;
+
+    if (this.currentTrack === 'MAP_2') {
+      melodyArray = this.map2Melody;
+      bassArray = this.map2Bass;
+      melType = 'sawtooth';
+      bassType = 'sawtooth';
+      melVol = 0.10;
+      bassVol = 0.12;
+    } else if (this.currentTrack === 'MAP_3') {
+      melodyArray = this.map3Melody;
+      bassArray = this.map3Bass;
+      melType = 'square';
+      bassType = 'square';
+      melVol = 0.11;
+      bassVol = 0.13;
+    } else if (this.currentTrack === 'BOSS') {
+      melodyArray = this.bossMelody;
+      bassArray = this.bossBass;
+      melType = 'sawtooth';
+      bassType = 'sawtooth';
+      melVol = 0.14;
+      bassVol = 0.16;
+    }
 
     const melodyFreq = melodyArray[this.bgmStep % melodyArray.length];
     const bassFreq = bassArray[this.bgmStep % bassArray.length];
@@ -246,39 +296,37 @@ export class AudioManager {
     // 1. Melody Note
     const melOsc = this.ctx.createOscillator();
     const melGain = this.ctx.createGain();
-    melOsc.type = isBoss ? 'sawtooth' : 'square';
+    melOsc.type = melType;
     melOsc.frequency.setValueAtTime(melodyFreq, now);
 
-    const melVol = isBoss ? 0.12 : 0.09;
-    const melDur = isBoss ? 0.08 : 0.11;
+    const melDur = 0.09;
     melGain.gain.setValueAtTime(melVol, now);
     melGain.gain.exponentialRampToValueAtTime(0.001, now + melDur);
 
     melOsc.connect(melGain);
-    melGain.connect(this.bgmGainNode); // Connects to BGM Master Node!
+    melGain.connect(this.bgmGainNode);
     melOsc.start(now);
     melOsc.stop(now + melDur);
 
     // 2. Bassline Note
     const bassOsc = this.ctx.createOscillator();
     const bassGain = this.ctx.createGain();
-    bassOsc.type = isBoss ? 'sawtooth' : 'triangle';
+    bassOsc.type = bassType;
     bassOsc.frequency.setValueAtTime(bassFreq, now);
 
-    const bassVol = isBoss ? 0.14 : 0.10;
-    const bassDur = isBoss ? 0.11 : 0.14;
+    const bassDur = 0.12;
     bassGain.gain.setValueAtTime(bassVol, now);
     bassGain.gain.exponentialRampToValueAtTime(0.001, now + bassDur);
 
     bassOsc.connect(bassGain);
-    bassGain.connect(this.bgmGainNode); // Connects to BGM Master Node!
+    bassGain.connect(this.bgmGainNode);
     bassOsc.start(now);
     bassOsc.stop(now + bassDur);
 
     this.bgmStep = (this.bgmStep + 1) % melodyArray.length;
   }
 
-  // --- SOUND EFFECTS (Connected to SFX Master Node) ---
+  // --- SOUND EFFECTS ---
   public playBasicShot() {
     if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc = this.ctx.createOscillator();
