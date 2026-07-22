@@ -3,13 +3,15 @@ export interface Vector2D {
   y: number;
 }
 
-export type EnemyType = 'STANDARD' | 'RUNNER' | 'TANK' | 'BOSS';
+export type EnemyType = 'STANDARD' | 'RUNNER' | 'TANK' | 'SHIELDED' | 'BOSS';
 
 export interface IEnemy2D {
   id: string;
   type: EnemyType;
   hp: number;
   maxHp: number;
+  shieldHp: number;
+  maxShieldHp: number;
   speed: number;
   goldReward: number;
   waypointIndex: number;
@@ -17,6 +19,8 @@ export interface IEnemy2D {
   isDead: boolean;
   radius: number;
   color: string;
+  armorFactor: number; // 0.6 = absorbs 40% damage
+  dodgeChance: number; // 0.25 = 25% chance to dodge
   // Status Effects
   slowTimer: number;
   slowFactor: number;
@@ -54,6 +58,7 @@ export interface IProjectile2D {
   radius: number;
   splashRadius?: number;
   slowFactor?: number;
+  isCrit?: boolean;
   hasHit: boolean;
 }
 
@@ -65,4 +70,13 @@ export interface FloatingText {
   color: string;
   alpha: number;
   life: number;
+}
+
+export interface FirePatch {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  duration: number;
+  damage: number;
 }

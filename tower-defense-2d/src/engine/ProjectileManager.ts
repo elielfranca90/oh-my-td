@@ -14,10 +14,11 @@ export class ProjectileManager2D {
     speed?: number,
     radius?: number,
     splashRadius?: number,
-    slowFactor?: number
+    slowFactor?: number,
+    isCrit?: boolean
   ) {
     this.projectiles.push(
-      new Projectile2D(startPos, target, damage, color, speed, radius, splashRadius, slowFactor)
+      new Projectile2D(startPos, target, damage, color, speed, radius, splashRadius, slowFactor, isCrit)
     );
   }
 

@@ -9,6 +9,7 @@ export class Enemy2D {
     this.baseDamage = config.baseDamage;
 
     const scaledHp = Math.round(config.hp * hpMultiplier);
+    const scaledShield = Math.round(config.shield * hpMultiplier);
     const scaledReward = Math.round(config.reward * Math.pow(hpMultiplier, 0.4));
 
     this.data = {
@@ -16,6 +17,8 @@ export class Enemy2D {
       type,
       hp: scaledHp,
       maxHp: scaledHp,
+      shieldHp: scaledShield,
+      maxShieldHp: scaledShield,
       speed: config.speed,
       goldReward: scaledReward,
       waypointIndex: 0,
@@ -23,6 +26,8 @@ export class Enemy2D {
       isDead: false,
       radius: config.radius,
       color: config.color,
+      armorFactor: config.armorFactor,
+      dodgeChance: config.dodgeChance,
       slowTimer: 0,
       slowFactor: 1,
       freezeTimer: 0,
@@ -32,15 +37,49 @@ export class Enemy2D {
   private getEnemyConfig(type: EnemyType) {
     switch (type) {
       case 'RUNNER':
-        return { hp: 6, speed: 3.5, radius: 11, reward: 8, color: '#ff9800', baseDamage: 1 };
+        return { hp: 6, shield: 0, speed: 3.6, radius: 11, reward: 8, color: '#ff9800', baseDamage: 1, armorFactor: 1.0, dodgeChance: 0.25 };
       case 'TANK':
-        return { hp: 35, speed: 1.1, radius: 20, reward: 25, color: '#8e24aa', baseDamage: 2 };
+        return { hp: 35, shield: 0, speed: 1.1, radius: 20, reward: 25, color: '#8e24aa', baseDamage: 2, armorFactor: 0.6, dodgeChance: 0.0 };
+      case 'SHIELDED':
+        return { hp: 14, shield: 22, speed: 2.2, radius: 14, reward: 18, color: '#0288d1', baseDamage: 1, armorFactor: 0.9, dodgeChance: 0.0 };
       case 'BOSS':
-        return { hp: 160, speed: 0.8, radius: 26, reward: 100, color: '#d50000', baseDamage: 5 };
+        return { hp: 160, shield: 0, speed: 0.8, radius: 26, reward: 100, color: '#d50000', baseDamage: 5, armorFactor: 0.8, dodgeChance: 0.0 };
       case 'STANDARD':
       default:
-        return { hp: 10, speed: 2.0, radius: 15, reward: 10, color: '#e53935', baseDamage: 1 };
+        return { hp: 10, shield: 0, speed: 2.0, radius: 15, reward: 10, color: '#e53935', baseDamage: 1, armorFactor: 1.0, dodgeChance: 0.0 };
     }
+  }
+
+  public takeDamage(amount: number, isLightShot = false): number {
+    // 1. Check Dodge (Runner)
+    if (this.data.dodgeChance > 0 && Math.random() < this.data.dodgeChance) {
+      return -1; // Dodged!
+    }
+
+    // 2. Apply Armor Factor for light shots (Tank)
+    let actualDamage = amount;
+    if (isLightShot && this.data.armorFactor < 1.0) {
+      actualDamage = Math.max(1, Math.round(amount * this.data.armorFactor));
+    }
+
+    // 3. Shield absorption (Shielded Speeder)
+    if (this.data.shieldHp > 0) {
+      if (this.data.shieldHp >= actualDamage) {
+        this.data.shieldHp -= actualDamage;
+        return actualDamage;
+      } else {
+        const remainingDamage = actualDamage - this.data.shieldHp;
+        this.data.shieldHp = 0;
+        this.data.hp = Math.max(0, this.data.hp - remainingDamage);
+        if (this.data.hp <= 0) this.data.isDead = true;
+        return actualDamage;
+      }
+    }
+
+    // 4. HP Damage
+    this.data.hp = Math.max(0, this.data.hp - actualDamage);
+    if (this.data.hp <= 0) this.data.isDead = true;
+    return actualDamage;
   }
 
   public applySlow(factor: number, durationFrames = 120) {
@@ -48,7 +87,7 @@ export class Enemy2D {
     this.data.slowTimer = Math.max(this.data.slowTimer, durationFrames);
   }
 
-  public applyFreeze(durationFrames = 210) { // 3.5 sec at 60fps
+  public applyFreeze(durationFrames = 210) {
     this.data.freezeTimer = Math.max(this.data.freezeTimer, durationFrames);
   }
 
@@ -81,13 +120,11 @@ export class Enemy2D {
       const distToNext = Math.hypot(dx, dy);
 
       if (distToNext <= distanceToMove) {
-        // Snap to waypoint corner and continue remaining movement distance to next waypoint
         this.data.position.x = target.x;
         this.data.position.y = target.y;
         this.data.waypointIndex++;
         distanceToMove -= distToNext;
       } else {
-        // Move towards target
         this.data.position.x += (dx / distToNext) * distanceToMove;
         this.data.position.y += (dy / distToNext) * distanceToMove;
         distanceToMove = 0;
@@ -100,15 +137,26 @@ export class Enemy2D {
   public render(ctx: CanvasRenderingContext2D) {
     if (this.data.isDead) return;
 
+    // Energy Shield Barrier (Blue Sphere)
+    if (this.data.shieldHp > 0) {
+      ctx.beginPath();
+      ctx.arc(this.data.position.x, this.data.position.y, this.data.radius + 5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(2, 136, 209, 0.35)';
+      ctx.fill();
+      ctx.strokeStyle = '#29b6f6';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
     // Slow/Freeze Aura
     if (this.data.freezeTimer > 0) {
       ctx.beginPath();
-      ctx.arc(this.data.position.x, this.data.position.y, this.data.radius + 4, 0, Math.PI * 2);
+      ctx.arc(this.data.position.x, this.data.position.y, this.data.radius + 3, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(0, 229, 255, 0.4)';
       ctx.fill();
     } else if (this.data.slowTimer > 0) {
       ctx.beginPath();
-      ctx.arc(this.data.position.x, this.data.position.y, this.data.radius + 3, 0, Math.PI * 2);
+      ctx.arc(this.data.position.x, this.data.position.y, this.data.radius + 2, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(41, 121, 255, 0.3)';
       ctx.fill();
     }
@@ -119,12 +167,12 @@ export class Enemy2D {
     ctx.fillStyle = this.data.freezeTimer > 0 ? '#80deea' : this.data.color;
     ctx.fill();
 
-    // Outline
-    ctx.strokeStyle = this.data.type === 'BOSS' ? '#ffd700' : '#ffffff';
-    ctx.lineWidth = this.data.type === 'BOSS' ? 3 : 1.5;
+    // Outline / Details per type
+    ctx.strokeStyle = this.data.type === 'BOSS' ? '#ffd700' : this.data.type === 'TANK' ? '#e1bee7' : '#ffffff';
+    ctx.lineWidth = this.data.type === 'BOSS' ? 3.5 : 1.5;
     ctx.stroke();
 
-    // HP Bar
+    // HP Bar & Shield Bar
     const barWidth = this.data.radius * 2.2;
     const barHeight = this.data.type === 'BOSS' ? 6 : 4;
     const barX = this.data.position.x - barWidth / 2;
@@ -136,5 +184,12 @@ export class Enemy2D {
     const hpRatio = Math.max(0, this.data.hp / this.data.maxHp);
     ctx.fillStyle = hpRatio > 0.5 ? '#4caf50' : hpRatio > 0.2 ? '#ff9800' : '#f44336';
     ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
+
+    // Shield Bar overlay (Blue line above HP bar if shield active)
+    if (this.data.maxShieldHp > 0 && this.data.shieldHp > 0) {
+      const shieldRatio = Math.max(0, this.data.shieldHp / this.data.maxShieldHp);
+      ctx.fillStyle = '#29b6f6';
+      ctx.fillRect(barX, barY - 3, barWidth * shieldRatio, 2);
+    }
   }
 }

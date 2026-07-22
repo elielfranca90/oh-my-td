@@ -95,7 +95,7 @@ export class SpellManager {
         if (enemy.data.isDead) continue;
         const dist = Math.hypot(enemy.data.position.x - x, enemy.data.position.y - y);
         if (dist <= radius) {
-          enemy.data.hp -= damage;
+          enemy.takeDamage(damage, false);
           this.fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${damage}`, '#ff3d00');
           if (enemy.data.hp <= 0) {
             enemy.data.isDead = true;

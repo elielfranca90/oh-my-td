@@ -38,6 +38,12 @@ export class EnemyManager2D {
       if (enemy.data.isDead) {
         this.gameState.addGold(enemy.data.goldReward);
         this.audioManager.playCoin();
+
+        // Boss Death Reinforcements: Spawn 2 Runners!
+        if (enemy.data.type === 'BOSS') {
+          this.spawnReinforcements(enemy.data.waypointIndex, enemy.data.position);
+        }
+
         this.enemies.splice(i, 1);
         continue;
       }
@@ -52,6 +58,15 @@ export class EnemyManager2D {
 
     // 3. Check wave completion
     this.waveManager.onEnemyCleared(this.enemies.length);
+  }
+
+  private spawnReinforcements(waypointIndex: number, position: Vector2D) {
+    for (let r = 0; r < 2; r++) {
+      const runner = new Enemy2D(this.waypoints, 'RUNNER', `runner-boss-${Date.now()}-${r}`);
+      runner.data.waypointIndex = waypointIndex;
+      runner.data.position = { x: position.x + (r * 12 - 6), y: position.y + (r * 12 - 6) };
+      this.enemies.push(runner);
+    }
   }
 
   public render(ctx: CanvasRenderingContext2D) {

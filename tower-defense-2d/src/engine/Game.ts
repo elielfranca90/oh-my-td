@@ -62,7 +62,7 @@ export class Game2D {
     this.audioManager = new AudioManager();
     this.spellManager = new SpellManager(this.gameState, this.fxManager, this.audioManager, this.particleManager);
     this.projectileManager = new ProjectileManager2D();
-    this.towerManager = new TowerManager2D(this.mapManager, this.projectileManager, this.gameState, this.audioManager);
+    this.towerManager = new TowerManager2D(this.mapManager, this.projectileManager, this.gameState, this.audioManager, this.particleManager);
     this.enemyManager = new EnemyManager2D(this.mapManager.getWaypoints(), this.gameState, this.waveManager, this.audioManager);
 
     this.uiManager = new UIManager(
@@ -212,7 +212,7 @@ export class Game2D {
         this.towerManager.update(this.enemyManager.getEnemies());
         this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager);
         this.spellManager.update(deltaTimeMs);
-        this.particleManager.update();
+        this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
         this.fxManager.update();
 
         // Check Victory
@@ -232,7 +232,7 @@ export class Game2D {
       this.ctx.translate(shake.x, shake.y);
 
       this.mapManager.render(this.ctx);
-      this.particleManager.render(this.ctx); // Scorch marks & shockwaves
+      this.particleManager.render(this.ctx); // Scorch marks, napalm fire & shockwaves
       this.renderGhostPlacement();
       this.towerManager.render(this.ctx, this.mousePos);
       this.enemyManager.render(this.ctx);

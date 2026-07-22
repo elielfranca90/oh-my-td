@@ -1,3 +1,5 @@
+import type { FirePatch } from '../types';
+import { Enemy2D } from './Enemy';
 
 export interface MeteorAnim {
   id: string;
@@ -45,6 +47,7 @@ export class ParticleManager {
   private shockwaves: Shockwave[] = [];
   private embers: EmberParticle[] = [];
   private scorchMarks: ScorchMark[] = [];
+  private firePatches: FirePatch[] = [];
 
   public freezeOverlayAlpha = 0;
 
@@ -66,21 +69,22 @@ export class ParticleManager {
     });
   }
 
-  public triggerImpactExplosion(x: number, y: number) {
+  public triggerImpactExplosion(x: number, y: number, isArtillery = false) {
     // 1. Shockwave ring
     this.shockwaves.push({
       x,
       y,
       radius: 5,
-      maxRadius: 90,
+      maxRadius: isArtillery ? 50 : 90,
       alpha: 1.0,
-      color: '#ff6d00',
+      color: isArtillery ? '#e65100' : '#ff6d00',
     });
 
     // 2. Ember explosion particles
-    for (let i = 0; i < 25; i++) {
+    const emberCount = isArtillery ? 12 : 25;
+    for (let i = 0; i < emberCount; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 6 + 2;
+      const speed = Math.random() * 5 + 2;
       const colors = ['#ff3d00', '#ff9100', '#ffea00', '#ffffff'];
       this.embers.push({
         x,
@@ -90,25 +94,36 @@ export class ParticleManager {
         size: Math.random() * 4 + 2,
         alpha: 1.0,
         color: colors[Math.floor(Math.random() * colors.length)],
-        life: Math.floor(Math.random() * 20 + 20),
+        life: Math.floor(Math.random() * 15 + 15),
       });
     }
 
-    // 3. Scorch mark on ground
-    this.scorchMarks.push({
-      x,
-      y,
-      radius: 40,
-      alpha: 0.8,
-      life: 180, // 3 seconds at 60fps
-    });
+    // 3. Scorch mark / Napalm Fire Patch
+    if (isArtillery) {
+      this.firePatches.push({
+        id: `fire-${Date.now()}-${Math.random()}`,
+        x,
+        y,
+        radius: 40,
+        duration: 150, // 2.5s at 60fps
+        damage: 3, // DoT damage per tick
+      });
+    } else {
+      this.scorchMarks.push({
+        x,
+        y,
+        radius: 40,
+        alpha: 0.8,
+        life: 180, // 3 seconds at 60fps
+      });
+    }
   }
 
   public triggerFreezeEffect() {
     this.freezeOverlayAlpha = 0.45;
   }
 
-  public update() {
+  public update(allEnemies: Enemy2D[] = [], fxManager?: unknown) {
     // 1. Update Meteors
     for (let i = this.meteors.length - 1; i >= 0; i--) {
       const m = this.meteors[i];
@@ -168,14 +183,38 @@ export class ParticleManager {
       }
     }
 
-    // 5. Update Freeze Overlay
+    // 5. Update Napalm Fire Patches (DoT on passing enemies)
+    for (let i = this.firePatches.length - 1; i >= 0; i--) {
+      const fp = this.firePatches[i];
+      fp.duration--;
+
+      // Apply DoT every 15 frames (~0.25s)
+      if (fp.duration % 15 === 0) {
+        for (const enemy of allEnemies) {
+          if (enemy.data.isDead) continue;
+          const dist = Math.hypot(enemy.data.position.x - fp.x, enemy.data.position.y - fp.y);
+          if (dist <= fp.radius) {
+            enemy.takeDamage(fp.damage, true);
+            if (fxManager && typeof fxManager === 'object' && 'addDamageText' in fxManager && typeof fxManager.addDamageText === 'function') {
+              fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${fp.damage}`, '#ff9100');
+            }
+          }
+        }
+      }
+
+      if (fp.duration <= 0) {
+        this.firePatches.splice(i, 1);
+      }
+    }
+
+    // 6. Update Freeze Overlay
     if (this.freezeOverlayAlpha > 0) {
       this.freezeOverlayAlpha = Math.max(0, this.freezeOverlayAlpha - 0.008);
     }
   }
 
   public render(ctx: CanvasRenderingContext2D) {
-    // Render Scorch Marks first (under towers/enemies)
+    // Render Scorch Marks
     for (const sm of this.scorchMarks) {
       ctx.save();
       ctx.beginPath();
@@ -183,6 +222,20 @@ export class ParticleManager {
       ctx.fillStyle = `rgba(38, 20, 15, ${sm.alpha})`;
       ctx.fill();
       ctx.strokeStyle = `rgba(255, 61, 0, ${sm.alpha * 0.5})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Render Napalm Fire Patches
+    for (const fp of this.firePatches) {
+      ctx.save();
+      const alpha = Math.min(0.6, fp.duration / 150 * 0.6);
+      ctx.beginPath();
+      ctx.arc(fp.x, fp.y, fp.radius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(216, 67, 21, ${alpha})`;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255, 145, 0, ${alpha * 1.5})`;
       ctx.lineWidth = 2;
       ctx.stroke();
       ctx.restore();
@@ -202,7 +255,6 @@ export class ParticleManager {
     // Render Falling Meteors
     for (const m of this.meteors) {
       ctx.save();
-      // Glowing Core
       ctx.beginPath();
       ctx.arc(m.currentX, m.currentY, 14, 0, Math.PI * 2);
       ctx.fillStyle = '#ffea00';
@@ -230,7 +282,6 @@ export class ParticleManager {
       ctx.fillStyle = `rgba(0, 229, 255, ${this.freezeOverlayAlpha})`;
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-      // Ice Vignette Border
       ctx.strokeStyle = `rgba(128, 222, 234, ${this.freezeOverlayAlpha * 1.5})`;
       ctx.lineWidth = 12;
       ctx.strokeRect(0, 0, ctx.canvas.width, ctx.canvas.height);

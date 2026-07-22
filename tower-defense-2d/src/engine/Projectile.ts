@@ -11,6 +11,7 @@ export class Projectile2D {
   public radius: number;
   public splashRadius?: number;
   public slowFactor?: number;
+  public isCrit?: boolean;
 
   constructor(
     startPos: Vector2D,
@@ -20,7 +21,8 @@ export class Projectile2D {
     speed = 8,
     radius = 5,
     splashRadius?: number,
-    slowFactor?: number
+    slowFactor?: number,
+    isCrit?: boolean
   ) {
     this.position = { ...startPos };
     this.target = target;
@@ -30,6 +32,7 @@ export class Projectile2D {
     this.radius = radius;
     this.splashRadius = splashRadius;
     this.slowFactor = slowFactor;
+    this.isCrit = isCrit;
   }
 
   public update(allEnemies: Enemy2D[], fxManager: FXManager): boolean {
@@ -40,6 +43,9 @@ export class Projectile2D {
     const distance = Math.hypot(dx, dy);
 
     if (distance < this.speed) {
+      const targetEnemy = allEnemies.find(e => e.data === this.target);
+      const isLightShot = this.color === '#ffeb3b' || this.color === '#ffea00';
+
       // 1. AoE Splash Damage (Artillery)
       if (this.splashRadius && this.splashRadius > 0) {
         fxManager.triggerScreenShake(3);
@@ -50,26 +56,29 @@ export class Projectile2D {
             enemy.data.position.y - this.position.y
           );
           if (distToImpact <= this.splashRadius) {
-            enemy.data.hp -= this.damage;
-            fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${this.damage}`, '#ff5252');
-            if (enemy.data.hp <= 0) enemy.data.isDead = true;
+            const dmgDealt = enemy.takeDamage(this.damage, false);
+            if (dmgDealt > 0) {
+              fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${dmgDealt}`, '#ff5252');
+            } else if (dmgDealt === -1) {
+              fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, 'DODGED!', '#ff9800');
+            }
           }
         }
-      } else {
-        // Single Target Hit
-        this.target.hp -= this.damage;
-        fxManager.addDamageText(this.target.position.x, this.target.position.y, `-${this.damage}`, '#ffeb3b');
+      } else if (targetEnemy) {
+        // Single Target Hit with Armor & Dodge calculation
+        const dmgDealt = targetEnemy.takeDamage(this.damage, isLightShot);
+
+        if (dmgDealt === -1) {
+          fxManager.addDamageText(this.target.position.x, this.target.position.y, 'DODGED!', '#ff9800');
+        } else if (dmgDealt > 0) {
+          const txt = this.isCrit ? `💥 CRIT! -${dmgDealt}` : `-${dmgDealt}`;
+          const col = this.isCrit ? '#ffea00' : '#ffffff';
+          fxManager.addDamageText(this.target.position.x, this.target.position.y, txt, col);
+        }
 
         // Apply Slow (Frost Tower)
         if (this.slowFactor) {
-          const targetEnemy = allEnemies.find(e => e.data === this.target);
-          if (targetEnemy) {
-            targetEnemy.applySlow(this.slowFactor, 120); // 2 sec slow
-          }
-        }
-
-        if (this.target.hp <= 0) {
-          this.target.isDead = true;
+          targetEnemy.applySlow(this.slowFactor, 120);
         }
       }
       return true; // Hit target

@@ -3,6 +3,7 @@ import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { GameState } from './GameState';
 import { MapManager2D } from './MapManager';
+import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
 import { Tower2D } from './Tower';
 
@@ -12,6 +13,7 @@ export class TowerManager2D {
   private projectileManager: ProjectileManager2D;
   private gameState: GameState;
   private audioManager: AudioManager;
+  private particleManager?: ParticleManager;
 
   public selectedBuildType: TowerType = 'BASIC';
   public selectedTower: Tower2D | null = null;
@@ -20,12 +22,18 @@ export class TowerManager2D {
     mapManager: MapManager2D,
     projectileManager: ProjectileManager2D,
     gameState: GameState,
-    audioManager: AudioManager
+    audioManager: AudioManager,
+    particleManager?: ParticleManager
   ) {
     this.mapManager = mapManager;
     this.projectileManager = projectileManager;
     this.gameState = gameState;
     this.audioManager = audioManager;
+    this.particleManager = particleManager;
+  }
+
+  public setParticleManager(pm: ParticleManager) {
+    this.particleManager = pm;
   }
 
   public getTowerAt(gridX: number, gridY: number): Tower2D | undefined {
@@ -111,6 +119,17 @@ export class TowerManager2D {
 
       if (inRangeEnemies.length === 0) continue;
 
+      // 1. Frost Tower: AoE Glacial Pulse (Pulse damage & slow to ALL enemies in range)
+      if (tower.data.type === 'FROST') {
+        this.audioManager.playFrostShot();
+        for (const enemy of inRangeEnemies) {
+          enemy.takeDamage(tower.data.damage, true);
+          enemy.applySlow(tower.data.slowFactor || 0.5, 120);
+        }
+        tower.data.cooldownTimer = tower.data.fireRate;
+        continue;
+      }
+
       // Select target according to tower's targeting strategy
       let target: Enemy2D = inRangeEnemies[0];
       switch (tower.data.targeting) {
@@ -130,42 +149,55 @@ export class TowerManager2D {
       }
 
       if (target) {
+        let damage = tower.data.damage;
         let color = '#ffeb3b';
         let speed = 9;
         let radius = 4;
         let splashRadius: number | undefined;
-        let slowFactor: number | undefined;
+        let isCrit = false;
 
-        if (tower.data.type === 'CANNON') {
+        if (tower.data.type === 'BASIC') {
+          // 20% Critical Hit chance (2x damage)
+          if (Math.random() < 0.20) {
+            damage *= 2;
+            isCrit = true;
+            color = '#ffea00';
+          }
+          this.audioManager.playBasicShot();
+        } else if (tower.data.type === 'CANNON') {
+          // Executioner (+100% damage against Tanks & Bosses > 50% HP)
+          const targetHpRatio = target.data.hp / target.data.maxHp;
+          if ((target.data.type === 'TANK' || target.data.type === 'BOSS') && targetHpRatio >= 0.5) {
+            damage *= 2;
+            isCrit = true;
+          }
           color = '#ff5722';
           speed = 6;
           radius = 7;
           this.audioManager.playCannonShot();
-        } else if (tower.data.type === 'FROST') {
-          color = '#00e5ff';
-          speed = 10;
-          radius = 5;
-          slowFactor = tower.data.slowFactor;
-          this.audioManager.playFrostShot();
         } else if (tower.data.type === 'ARTILLERY') {
           color = '#ea80fc';
           speed = 5;
           radius = 9;
           splashRadius = tower.data.splashRadius;
           this.audioManager.playArtilleryShot();
-        } else {
-          this.audioManager.playBasicShot();
+
+          // Spawn Napalm Fire Patch on impact location
+          if (this.particleManager) {
+            this.particleManager.triggerImpactExplosion(target.data.position.x, target.data.position.y, true);
+          }
         }
 
         this.projectileManager.fire(
           tower.data.position,
           target.data,
-          tower.data.damage,
+          damage,
           color,
           speed,
           radius,
           splashRadius,
-          slowFactor
+          undefined,
+          isCrit
         );
         tower.data.cooldownTimer = tower.data.fireRate;
       }
