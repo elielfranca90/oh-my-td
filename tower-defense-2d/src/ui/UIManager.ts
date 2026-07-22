@@ -123,12 +123,12 @@ export class UIManager {
           <div class="spell-buttons">
             <button id="spell-meteor-btn" class="btn spell-btn">
               <div class="spell-title">☄️ Meteor</div>
-              <div class="spell-info">50g • 15s CD</div>
+              <div id="meteor-info" class="spell-info">150g • 30s CD</div>
               <div id="meteor-cd-overlay" class="cd-overlay"></div>
             </button>
             <button id="spell-freeze-btn" class="btn spell-btn">
               <div class="spell-title">❄️ Freeze</div>
-              <div class="spell-info">40g • 20s CD</div>
+              <div id="freeze-info" class="spell-info">120g • 40s CD</div>
               <div id="freeze-cd-overlay" class="cd-overlay"></div>
             </button>
           </div>
@@ -305,14 +305,19 @@ export class UIManager {
       }
     }
 
-    // Spells UI
+    // Spells UI - Dynamic Costs and Cooldowns
     const meteorBtn = document.getElementById('spell-meteor-btn') as HTMLButtonElement;
     if (meteorBtn) {
       const isMeteorActive = this.spellManager.activeSpell === 'METEOR';
       meteorBtn.classList.toggle('active', isMeteorActive);
       const isCd = this.spellManager.meteorCooldownMs > 0;
-      const canAfford = this.gameState.gold >= this.spellManager.METEOR_COST;
+      const canAfford = this.gameState.gold >= this.spellManager.meteorCost;
       meteorBtn.disabled = isCd || !canAfford;
+
+      const meteorInfo = document.getElementById('meteor-info');
+      if (meteorInfo) {
+        meteorInfo.innerText = `${this.spellManager.meteorCost}g • 30s CD`;
+      }
 
       const cdOverlay = document.getElementById('meteor-cd-overlay');
       if (cdOverlay) {
@@ -329,8 +334,13 @@ export class UIManager {
     const freezeBtn = document.getElementById('spell-freeze-btn') as HTMLButtonElement;
     if (freezeBtn) {
       const isCd = this.spellManager.freezeCooldownMs > 0;
-      const canAfford = this.gameState.gold >= this.spellManager.FREEZE_COST;
+      const canAfford = this.gameState.gold >= this.spellManager.freezeCost;
       freezeBtn.disabled = isCd || !canAfford;
+
+      const freezeInfo = document.getElementById('freeze-info');
+      if (freezeInfo) {
+        freezeInfo.innerText = `${this.spellManager.freezeCost}g • 40s CD`;
+      }
 
       const cdOverlay = document.getElementById('freeze-cd-overlay');
       if (cdOverlay) {

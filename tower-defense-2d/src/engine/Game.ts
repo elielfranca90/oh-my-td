@@ -4,6 +4,7 @@ import { EnemyManager2D } from './EnemyManager';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
 import { MapManager2D } from './MapManager';
+import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
 import { SpellManager } from './SpellManager';
 import { TowerManager2D } from './TowerManager';
@@ -21,6 +22,7 @@ export class Game2D {
   private projectileManager!: ProjectileManager2D;
   private towerManager!: TowerManager2D;
   private fxManager!: FXManager;
+  private particleManager!: ParticleManager;
   public spellManager!: SpellManager;
   private uiManager!: UIManager;
 
@@ -48,12 +50,17 @@ export class Game2D {
   }
 
   private initGame() {
+    if (this.audioManager) {
+      this.audioManager.stopBGM();
+    }
+
     this.gameState = new GameState();
     this.waveManager = new WaveManager();
     this.mapManager = new MapManager2D();
     this.fxManager = new FXManager();
+    this.particleManager = new ParticleManager();
     this.audioManager = new AudioManager();
-    this.spellManager = new SpellManager(this.gameState, this.fxManager, this.audioManager);
+    this.spellManager = new SpellManager(this.gameState, this.fxManager, this.audioManager, this.particleManager);
     this.projectileManager = new ProjectileManager2D();
     this.towerManager = new TowerManager2D(this.mapManager, this.projectileManager, this.gameState, this.audioManager);
     this.enemyManager = new EnemyManager2D(this.mapManager.getWaypoints(), this.gameState, this.waveManager, this.audioManager);
@@ -117,6 +124,11 @@ export class Game2D {
     });
 
     this.canvas.addEventListener('click', (e) => {
+      // Start BGM on first user interaction
+      if (!this.audioManager.isBGMPlaying && !this.audioManager.isMuted) {
+        this.audioManager.startBGM(this.gameSpeedMultiplier);
+      }
+
       if (this.gameState.status !== 'PLAYING' || this.gameState.isPaused) return;
 
       const { x, y } = this.getCanvasMousePosition(e);
@@ -182,6 +194,17 @@ export class Game2D {
 
       const deltaTimeMs = rawDelta * this.gameSpeedMultiplier;
 
+      // Manage BGM state & tempo
+      if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
+        if (!this.audioManager.isBGMPlaying && !this.audioManager.isMuted) {
+          this.audioManager.startBGM(this.gameSpeedMultiplier);
+        } else {
+          this.audioManager.updateBGMTempo(this.gameSpeedMultiplier);
+        }
+      } else {
+        this.audioManager.stopBGM();
+      }
+
       // 1. Update logic (only if active and NOT paused)
       if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
         this.waveManager.updateAutoCountdown(deltaTimeMs);
@@ -189,6 +212,7 @@ export class Game2D {
         this.towerManager.update(this.enemyManager.getEnemies());
         this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager);
         this.spellManager.update(deltaTimeMs);
+        this.particleManager.update();
         this.fxManager.update();
 
         // Check Victory
@@ -208,6 +232,7 @@ export class Game2D {
       this.ctx.translate(shake.x, shake.y);
 
       this.mapManager.render(this.ctx);
+      this.particleManager.render(this.ctx); // Scorch marks & shockwaves
       this.renderGhostPlacement();
       this.towerManager.render(this.ctx, this.mousePos);
       this.enemyManager.render(this.ctx);
