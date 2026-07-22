@@ -1,5 +1,6 @@
 import { Game2D } from '../engine/Game';
 import { GameState } from '../engine/GameState';
+import { AudioManager } from '../engine/AudioManager';
 import { SpellManager } from '../engine/SpellManager';
 import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager } from '../engine/WaveManager';
@@ -10,6 +11,7 @@ export class UIManager {
   private waveManager: WaveManager;
   private towerManager: TowerManager2D;
   private spellManager: SpellManager;
+  private audioManager: AudioManager;
   private game: Game2D;
   private onRestartCallback: () => void;
 
@@ -20,6 +22,7 @@ export class UIManager {
     waveManager: WaveManager,
     towerManager: TowerManager2D,
     spellManager: SpellManager,
+    audioManager: AudioManager,
     game: Game2D,
     onRestart: () => void
   ) {
@@ -27,6 +30,7 @@ export class UIManager {
     this.waveManager = waveManager;
     this.towerManager = towerManager;
     this.spellManager = spellManager;
+    this.audioManager = audioManager;
     this.game = game;
     this.onRestartCallback = onRestart;
 
@@ -46,7 +50,8 @@ export class UIManager {
           <div class="stat"><span class="icon">🌊</span> Wave: <strong id="wave-val">0/10</strong></div>
           
           <div class="speed-controls">
-            <button id="pause-btn" class="btn pause-btn">⏸️</button>
+            <button id="sound-btn" class="btn sound-btn" title="Toggle Sound">🔊</button>
+            <button id="pause-btn" class="btn pause-btn" title="Pause/Resume">⏸️</button>
             <button id="speed-1x" class="btn speed-btn active">1x</button>
             <button id="speed-2x" class="btn speed-btn">2x</button>
             <button id="speed-4x" class="btn speed-btn">4x</button>
@@ -165,6 +170,10 @@ export class UIManager {
       this.waveManager.startNextWave();
     });
 
+    document.getElementById('sound-btn')?.addEventListener('click', () => {
+      this.audioManager.toggleMute();
+    });
+
     document.getElementById('pause-btn')?.addEventListener('click', () => {
       this.gameState.togglePause();
     });
@@ -242,6 +251,11 @@ export class UIManager {
     const hpVal = document.getElementById('hp-val');
     if (hpVal) hpVal.innerText = `${this.gameState.baseHp}/${this.gameState.maxBaseHp}`;
 
+    const soundBtn = document.getElementById('sound-btn');
+    if (soundBtn) {
+      soundBtn.innerText = this.audioManager.isMuted ? '🔇' : '🔊';
+    }
+
     const pauseBtn = document.getElementById('pause-btn');
     if (pauseBtn) {
       pauseBtn.innerText = this.gameState.isPaused ? '▶️' : '⏸️';
@@ -275,11 +289,11 @@ export class UIManager {
         waveBtn.disabled = true;
         const countdownSec = this.waveManager.getAutoCountdownSeconds();
         waveBtn.innerText = isNextBoss ? `⚠️ BOSS IN ${countdownSec}s! ⚠️` : `Auto Wave in ${countdownSec}s...`;
-        waveBtn.className = isNextBoss ? 'btn danger wave-start-btn' : 'btn primary wave-start-btn';
+        waveBtn.className = isNextBoss ? `btn danger wave-start-btn` : `btn primary wave-start-btn`;
       } else {
         waveBtn.disabled = false;
         waveBtn.innerText = isNextBoss ? `⚠️ Start BOSS Wave ${nextWaveNum} ⚠️` : `Start Wave ${nextWaveNum}`;
-        waveBtn.className = isNextBoss ? 'btn danger wave-start-btn' : 'btn primary wave-start-btn';
+        waveBtn.className = isNextBoss ? `btn danger wave-start-btn` : `btn primary wave-start-btn`;
       }
     }
 

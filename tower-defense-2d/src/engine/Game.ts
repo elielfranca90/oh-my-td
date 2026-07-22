@@ -1,4 +1,5 @@
 import { UIManager } from '../ui/UIManager';
+import { AudioManager } from './AudioManager';
 import { EnemyManager2D } from './EnemyManager';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
@@ -14,6 +15,7 @@ export class Game2D {
 
   public gameState!: GameState;
   public waveManager!: WaveManager;
+  public audioManager!: AudioManager;
   private mapManager!: MapManager2D;
   private enemyManager!: EnemyManager2D;
   private projectileManager!: ProjectileManager2D;
@@ -50,16 +52,18 @@ export class Game2D {
     this.waveManager = new WaveManager();
     this.mapManager = new MapManager2D();
     this.fxManager = new FXManager();
-    this.spellManager = new SpellManager(this.gameState, this.fxManager);
+    this.audioManager = new AudioManager();
+    this.spellManager = new SpellManager(this.gameState, this.fxManager, this.audioManager);
     this.projectileManager = new ProjectileManager2D();
-    this.towerManager = new TowerManager2D(this.mapManager, this.projectileManager, this.gameState);
-    this.enemyManager = new EnemyManager2D(this.mapManager.getWaypoints(), this.gameState, this.waveManager);
+    this.towerManager = new TowerManager2D(this.mapManager, this.projectileManager, this.gameState, this.audioManager);
+    this.enemyManager = new EnemyManager2D(this.mapManager.getWaypoints(), this.gameState, this.waveManager, this.audioManager);
 
     this.uiManager = new UIManager(
       this.gameState,
       this.waveManager,
       this.towerManager,
       this.spellManager,
+      this.audioManager,
       this,
       this.restartGame.bind(this)
     );

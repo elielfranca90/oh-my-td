@@ -1,3 +1,4 @@
+import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
@@ -7,6 +8,7 @@ export type ActiveSpell = 'METEOR' | 'FREEZE' | null;
 export class SpellManager {
   private gameState: GameState;
   private fxManager: FXManager;
+  private audioManager: AudioManager;
 
   public activeSpell: ActiveSpell = null;
 
@@ -20,9 +22,10 @@ export class SpellManager {
   public readonly METEOR_COST = 50;
   public readonly FREEZE_COST = 40;
 
-  constructor(gameState: GameState, fxManager: FXManager) {
+  constructor(gameState: GameState, fxManager: FXManager, audioManager: AudioManager) {
     this.gameState = gameState;
     this.fxManager = fxManager;
+    this.audioManager = audioManager;
   }
 
   public selectSpell(spell: ActiveSpell) {
@@ -48,6 +51,7 @@ export class SpellManager {
 
     this.freezeCooldownMs = this.FREEZE_MAX_COOLDOWN;
     this.fxManager.triggerScreenShake(10);
+    this.audioManager.playFreeze();
 
     for (const enemy of allEnemies) {
       if (!enemy.data.isDead) {
@@ -66,6 +70,7 @@ export class SpellManager {
     this.activeSpell = null; // Reset spell cursor
 
     this.fxManager.triggerScreenShake(14);
+    this.audioManager.playMeteor();
     this.fxManager.addDamageText(x, y - 20, '💥 METEOR IMPACT!', '#ff3d00');
 
     const radius = 90;

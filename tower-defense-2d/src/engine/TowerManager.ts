@@ -1,4 +1,5 @@
 import type { TowerType } from '../types';
+import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { GameState } from './GameState';
 import { MapManager2D } from './MapManager';
@@ -10,14 +11,21 @@ export class TowerManager2D {
   private mapManager: MapManager2D;
   private projectileManager: ProjectileManager2D;
   private gameState: GameState;
+  private audioManager: AudioManager;
 
   public selectedBuildType: TowerType = 'BASIC';
   public selectedTower: Tower2D | null = null;
 
-  constructor(mapManager: MapManager2D, projectileManager: ProjectileManager2D, gameState: GameState) {
+  constructor(
+    mapManager: MapManager2D,
+    projectileManager: ProjectileManager2D,
+    gameState: GameState,
+    audioManager: AudioManager
+  ) {
     this.mapManager = mapManager;
     this.projectileManager = projectileManager;
     this.gameState = gameState;
+    this.audioManager = audioManager;
   }
 
   public getTowerAt(gridX: number, gridY: number): Tower2D | undefined {
@@ -132,16 +140,21 @@ export class TowerManager2D {
           color = '#ff5722';
           speed = 6;
           radius = 7;
+          this.audioManager.playCannonShot();
         } else if (tower.data.type === 'FROST') {
           color = '#00e5ff';
           speed = 10;
           radius = 5;
           slowFactor = tower.data.slowFactor;
+          this.audioManager.playFrostShot();
         } else if (tower.data.type === 'ARTILLERY') {
           color = '#ea80fc';
           speed = 5;
           radius = 9;
           splashRadius = tower.data.splashRadius;
+          this.audioManager.playArtilleryShot();
+        } else {
+          this.audioManager.playBasicShot();
         }
 
         this.projectileManager.fire(
