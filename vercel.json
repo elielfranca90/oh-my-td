@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd tower-defense-2d && npm run build",
+  "outputDirectory": "tower-defense-2d/dist",
+  "installCommand": "cd tower-defense-2d && npm install",
+  "framework": "vite"
+}
