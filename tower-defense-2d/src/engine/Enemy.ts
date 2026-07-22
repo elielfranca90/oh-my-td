@@ -4,17 +4,20 @@ export class Enemy2D {
   public data: IEnemy2D;
   public baseDamage: number;
 
-  constructor(waypoints: Vector2D[], type: EnemyType, id: string) {
+  constructor(waypoints: Vector2D[], type: EnemyType, id: string, hpMultiplier = 1.0) {
     const config = this.getEnemyConfig(type);
     this.baseDamage = config.baseDamage;
+
+    const scaledHp = Math.round(config.hp * hpMultiplier);
+    const scaledReward = Math.round(config.reward * Math.pow(hpMultiplier, 0.4));
 
     this.data = {
       id,
       type,
-      hp: config.hp,
-      maxHp: config.hp,
+      hp: scaledHp,
+      maxHp: scaledHp,
       speed: config.speed,
-      goldReward: config.reward,
+      goldReward: scaledReward,
       waypointIndex: 0,
       position: { ...waypoints[0] },
       isDead: false,

@@ -73,6 +73,26 @@ export class Game2D {
     this.initGame();
   }
 
+  private getCanvasMousePosition(e: MouseEvent): { x: number; y: number } {
+    const rect = this.canvas.getBoundingClientRect();
+    const borderLeft = this.canvas.clientLeft || 0;
+    const borderTop = this.canvas.clientTop || 0;
+
+    const contentWidth = rect.width - borderLeft * 2;
+    const contentHeight = rect.height - borderTop * 2;
+
+    const scaleX = this.canvas.width / (contentWidth || 1);
+    const scaleY = this.canvas.height / (contentHeight || 1);
+
+    const rawX = (e.clientX - rect.left - borderLeft) * scaleX;
+    const rawY = (e.clientY - rect.top - borderTop) * scaleY;
+
+    const x = Math.max(0, Math.min(this.canvas.width - 1, rawX));
+    const y = Math.max(0, Math.min(this.canvas.height - 1, rawY));
+
+    return { x, y };
+  }
+
   private setupListeners() {
     // Keyboard Hotkeys
     window.addEventListener('keydown', (e) => {
@@ -83,12 +103,7 @@ export class Game2D {
     });
 
     this.canvas.addEventListener('mousemove', (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const scaleX = this.canvas.width / rect.width;
-      const scaleY = this.canvas.height / rect.height;
-
-      const x = (e.clientX - rect.left) * scaleX;
-      const y = (e.clientY - rect.top) * scaleY;
+      const { x, y } = this.getCanvasMousePosition(e);
       this.mousePos = { x, y };
 
       const gridX = Math.floor(x / this.mapManager.tileSize);
@@ -104,12 +119,7 @@ export class Game2D {
     this.canvas.addEventListener('click', (e) => {
       if (this.gameState.status !== 'PLAYING' || this.gameState.isPaused) return;
 
-      const rect = this.canvas.getBoundingClientRect();
-      const scaleX = this.canvas.width / rect.width;
-      const scaleY = this.canvas.height / rect.height;
-
-      const x = (e.clientX - rect.left) * scaleX;
-      const y = (e.clientY - rect.top) * scaleY;
+      const { x, y } = this.getCanvasMousePosition(e);
 
       // Handle Meteor Spell Casting
       if (this.spellManager.activeSpell === 'METEOR') {

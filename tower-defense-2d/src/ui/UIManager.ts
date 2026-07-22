@@ -55,6 +55,7 @@ export class UIManager {
             <button id="speed-1x" class="btn speed-btn active">1x</button>
             <button id="speed-2x" class="btn speed-btn">2x</button>
             <button id="speed-4x" class="btn speed-btn">4x</button>
+            <button id="reset-btn" class="btn secondary reset-btn" title="Start a New Game">🔄 New Game</button>
           </div>
         </div>
         
@@ -168,6 +169,13 @@ export class UIManager {
   private setupEvents() {
     document.getElementById('next-wave-btn')?.addEventListener('click', () => {
       this.waveManager.startNextWave();
+    });
+
+    document.getElementById('reset-btn')?.addEventListener('click', () => {
+      const confirmed = window.confirm('Tem certeza que deseja reiniciar o jogo? Todo o progresso atual será perdido.');
+      if (confirmed) {
+        this.onRestartCallback();
+      }
     });
 
     document.getElementById('sound-btn')?.addEventListener('click', () => {

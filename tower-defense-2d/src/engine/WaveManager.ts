@@ -213,14 +213,22 @@ export class WaveManager {
     }
   }
 
-  public getNextEnemyToSpawn(deltaTimeMs: number): EnemyType | null {
+  public getNextEnemyToSpawn(deltaTimeMs: number): { type: EnemyType; hpMultiplier: number } | null {
     if (!this.isWaveActive || this.spawnQueue.length === 0) return null;
 
     this.timer += deltaTimeMs;
     if (this.timer >= this.spawnQueue[0].delay) {
       this.timer = 0;
       const enemy = this.spawnQueue.shift();
-      return enemy ? enemy.type : null;
+      if (!enemy) return null;
+
+      const currentWaveNum = this.currentWaveIndex + 1;
+      let hpMultiplier = 1.0;
+      if (currentWaveNum > 10) {
+        hpMultiplier = Math.pow(1.12, currentWaveNum - 10);
+      }
+
+      return { type: enemy.type, hpMultiplier };
     }
 
     return null;

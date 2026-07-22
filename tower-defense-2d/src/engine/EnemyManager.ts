@@ -26,9 +26,9 @@ export class EnemyManager2D {
 
   public update(deltaTimeMs: number) {
     // 1. Spawn from wave manager
-    const typeToSpawn = this.waveManager.getNextEnemyToSpawn(deltaTimeMs);
-    if (typeToSpawn) {
-      this.spawnEnemy(typeToSpawn);
+    const spawnInfo = this.waveManager.getNextEnemyToSpawn(deltaTimeMs);
+    if (spawnInfo) {
+      this.spawnEnemy(spawnInfo.type, spawnInfo.hpMultiplier);
     }
 
     // 2. Update existing enemies
@@ -60,11 +60,11 @@ export class EnemyManager2D {
     }
   }
 
-  private spawnEnemy(type: EnemyType) {
+  private spawnEnemy(type: EnemyType, hpMultiplier = 1.0) {
     if (type === 'BOSS') {
       this.audioManager.playBossAlert();
     }
-    const enemy = new Enemy2D(this.waypoints, type, `enemy-${Date.now()}-${Math.random()}`);
+    const enemy = new Enemy2D(this.waypoints, type, `enemy-${Date.now()}-${Math.random()}`, hpMultiplier);
     this.enemies.push(enemy);
   }
 
