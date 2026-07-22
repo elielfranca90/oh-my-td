@@ -2,6 +2,7 @@ import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
+import { ParticleManager } from './ParticleManager';
 
 export type ActiveSpell = 'METEOR' | 'FREEZE' | null;
 
@@ -9,23 +10,31 @@ export class SpellManager {
   private gameState: GameState;
   private fxManager: FXManager;
   private audioManager: AudioManager;
+  private particleManager: ParticleManager;
 
   public activeSpell: ActiveSpell = null;
 
-  // Cooldown timers in ms
+  // Cooldown timers in ms (Doubled)
   public meteorCooldownMs = 0;
   public freezeCooldownMs = 0;
 
-  public readonly METEOR_MAX_COOLDOWN = 15000; // 15s
-  public readonly FREEZE_MAX_COOLDOWN = 20000; // 20s
+  public readonly METEOR_MAX_COOLDOWN = 30000; // 30s
+  public readonly FREEZE_MAX_COOLDOWN = 40000; // 40s
 
-  public readonly METEOR_COST = 50;
-  public readonly FREEZE_COST = 40;
+  // Dynamic Costs (Initial tripled)
+  public meteorCost = 150; // Initial 150g
+  public freezeCost = 120; // Initial 120g
 
-  constructor(gameState: GameState, fxManager: FXManager, audioManager: AudioManager) {
+  constructor(
+    gameState: GameState,
+    fxManager: FXManager,
+    audioManager: AudioManager,
+    particleManager: ParticleManager
+  ) {
     this.gameState = gameState;
     this.fxManager = fxManager;
     this.audioManager = audioManager;
+    this.particleManager = particleManager;
   }
 
   public selectSpell(spell: ActiveSpell) {
@@ -47,11 +56,12 @@ export class SpellManager {
 
   public triggerGlobalFreeze(allEnemies: Enemy2D[]): boolean {
     if (this.freezeCooldownMs > 0) return false;
-    if (!this.gameState.spendGold(this.FREEZE_COST)) return false;
+    if (!this.gameState.spendGold(this.freezeCost)) return false;
 
     this.freezeCooldownMs = this.FREEZE_MAX_COOLDOWN;
     this.fxManager.triggerScreenShake(10);
     this.audioManager.playFreeze();
+    this.particleManager.triggerFreezeEffect();
 
     for (const enemy of allEnemies) {
       if (!enemy.data.isDead) {
@@ -59,34 +69,43 @@ export class SpellManager {
         this.fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, 'FROZEN!', '#00e5ff');
       }
     }
+
+    // Double the cost after usage
+    this.freezeCost *= 2;
     return true;
   }
 
   public castMeteorAt(x: number, y: number, allEnemies: Enemy2D[]): boolean {
     if (this.meteorCooldownMs > 0) return false;
-    if (!this.gameState.spendGold(this.METEOR_COST)) return false;
+    if (!this.gameState.spendGold(this.meteorCost)) return false;
 
     this.meteorCooldownMs = this.METEOR_MAX_COOLDOWN;
     this.activeSpell = null; // Reset spell cursor
 
-    this.fxManager.triggerScreenShake(14);
-    this.audioManager.playMeteor();
-    this.fxManager.addDamageText(x, y - 20, '💥 METEOR IMPACT!', '#ff3d00');
+    // Animated Meteor Descent
+    this.particleManager.spawnMeteor(x, y, () => {
+      this.fxManager.triggerScreenShake(16);
+      this.audioManager.playMeteor();
+      this.fxManager.addDamageText(x, y - 20, '💥 METEOR IMPACT!', '#ff3d00');
 
-    const radius = 90;
-    const damage = 90;
+      const radius = 90;
+      const damage = 90;
 
-    for (const enemy of allEnemies) {
-      if (enemy.data.isDead) continue;
-      const dist = Math.hypot(enemy.data.position.x - x, enemy.data.position.y - y);
-      if (dist <= radius) {
-        enemy.data.hp -= damage;
-        this.fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${damage}`, '#ff3d00');
-        if (enemy.data.hp <= 0) {
-          enemy.data.isDead = true;
+      for (const enemy of allEnemies) {
+        if (enemy.data.isDead) continue;
+        const dist = Math.hypot(enemy.data.position.x - x, enemy.data.position.y - y);
+        if (dist <= radius) {
+          enemy.data.hp -= damage;
+          this.fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${damage}`, '#ff3d00');
+          if (enemy.data.hp <= 0) {
+            enemy.data.isDead = true;
+          }
         }
       }
-    }
+    });
+
+    // Double the cost after usage
+    this.meteorCost *= 2;
     return true;
   }
 

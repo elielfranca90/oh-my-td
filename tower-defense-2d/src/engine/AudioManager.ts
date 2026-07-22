@@ -2,6 +2,28 @@ export class AudioManager {
   private ctx: AudioContext | null = null;
   public isMuted = false;
 
+  // BGM Sequencer State
+  private bgmIntervalId: number | null = null;
+  private bgmStep = 0;
+  public isBGMPlaying = false;
+  private currentSpeed = 1;
+
+  // 32-step Melody (frequencies in Hz)
+  private readonly melodyNotes: number[] = [
+    261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 392.00, // C Major
+    220.00, 261.63, 329.63, 440.00, 329.63, 261.63, 220.00, 329.63, // A Minor
+    174.61, 220.00, 261.63, 349.23, 261.63, 220.00, 174.61, 261.63, // F Major
+    196.00, 246.94, 293.66, 392.00, 293.66, 246.94, 196.00, 293.66, // G Major
+  ];
+
+  // 32-step Bassline (frequencies in Hz)
+  private readonly bassNotes: number[] = [
+    65.41, 65.41, 130.81, 65.41, 98.00, 65.41, 130.81, 65.41,
+    55.00, 55.00, 110.00, 55.00, 82.41, 55.00, 110.00, 55.00,
+    43.65, 43.65, 87.31,  43.65, 65.41, 43.65, 87.31,  43.65,
+    49.00, 49.00, 98.00,  49.00, 73.42, 49.00, 98.00,  49.00,
+  ];
+
   private ensureContext(): boolean {
     if (this.isMuted) return false;
 
@@ -21,10 +43,89 @@ export class AudioManager {
 
   public toggleMute(): boolean {
     this.isMuted = !this.isMuted;
-    if (this.isMuted && this.ctx) {
-      this.ctx.suspend();
+    if (this.isMuted) {
+      this.stopBGM();
+      if (this.ctx) this.ctx.suspend();
+    } else {
+      this.startBGM(this.currentSpeed);
     }
     return this.isMuted;
+  }
+
+  // BGM Control Methods
+  public startBGM(speedMultiplier = 1) {
+    this.currentSpeed = speedMultiplier;
+    if (this.isMuted || this.isBGMPlaying) return;
+
+    if (!this.ensureContext()) return;
+    this.isBGMPlaying = true;
+
+    this.scheduleBGMInterval();
+  }
+
+  public stopBGM() {
+    if (this.bgmIntervalId !== null) {
+      clearInterval(this.bgmIntervalId);
+      this.bgmIntervalId = null;
+    }
+    this.isBGMPlaying = false;
+  }
+
+  public updateBGMTempo(speedMultiplier = 1) {
+    this.currentSpeed = speedMultiplier;
+    if (this.isBGMPlaying) {
+      if (this.bgmIntervalId !== null) {
+        clearInterval(this.bgmIntervalId);
+      }
+      this.scheduleBGMInterval();
+    }
+  }
+
+  private scheduleBGMInterval() {
+    const baseIntervalMs = 140;
+    const intervalMs = Math.max(30, baseIntervalMs / this.currentSpeed);
+
+    this.bgmIntervalId = window.setInterval(() => {
+      this.playBGMStep();
+    }, intervalMs);
+  }
+
+  private playBGMStep() {
+    if (!this.ctx || this.isMuted) return;
+
+    const melodyFreq = this.melodyNotes[this.bgmStep];
+    const bassFreq = this.bassNotes[this.bgmStep];
+
+    const now = this.ctx.currentTime;
+
+    // 1. Melody Note (Square Wave Chiptune)
+    const melOsc = this.ctx.createOscillator();
+    const melGain = this.ctx.createGain();
+    melOsc.type = 'square';
+    melOsc.frequency.setValueAtTime(melodyFreq, now);
+    melGain.gain.setValueAtTime(0.04, now); // Soft volume
+    melGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    melOsc.connect(melGain);
+    melGain.connect(this.ctx.destination);
+    melOsc.start(now);
+    melOsc.stop(now + 0.1);
+
+    // 2. Bassline Note (Triangle Wave)
+    const bassOsc = this.ctx.createOscillator();
+    const bassGain = this.ctx.createGain();
+    bassOsc.type = 'triangle';
+    bassOsc.frequency.setValueAtTime(bassFreq, now);
+    bassGain.gain.setValueAtTime(0.06, now);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    bassOsc.connect(bassGain);
+    bassGain.connect(this.ctx.destination);
+    bassOsc.start(now);
+    bassOsc.stop(now + 0.12);
+
+    // Advance step (32 steps loop)
+    this.bgmStep = (this.bgmStep + 1) % this.melodyNotes.length;
   }
 
   // 1. Basic Tower Shot (Light Laser/Pew)
