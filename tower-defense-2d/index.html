@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tower Defense 2D - Widescreen</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        user-select: none;
+      }
+
+      html, body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        padding: 4px 8px;
+        background-color: #121212;
+        color: #ffffff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden; /* ABSOLUTE ZERO SCROLL */
+      }
+
+      /* Main Widescreen Vertical Container */
+      #game-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 900px;
+        height: 100vh;
+        max-height: 98vh;
+        gap: 4px;
+      }
+
+      /* Top Status Bar */
+      #top-bar {
+        width: 100%;
+        max-width: 840px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px 12px;
+      }
+
+      .stats-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+
+      .stat {
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .speed-controls {
+        display: flex;
+        gap: 3px;
+        align-items: center;
+      }
+
+      .speed-btn, .pause-btn {
+        padding: 3px 7px;
+        font-size: 0.75rem;
+        background-color: #2a2a2a;
+        color: #cccccc;
+        border: 1px solid #444444;
+        border-radius: 4px;
+      }
+
+      .speed-btn.active, .pause-btn.active {
+        background-color: #1976d2;
+        color: #ffffff;
+        border-color: #2196f3;
+      }
+
+      .toggles-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        border-top: 1px solid #2a2a2a;
+        padding-top: 4px;
+      }
+
+      .auto-mode-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: bold;
+        font-size: 0.8rem;
+        color: #ffb74d;
+      }
+
+      .auto-mode-row.endless {
+        color: #ea80fc;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 34px;
+        height: 18px;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #424242;
+        transition: .3s;
+        border-radius: 18px;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 12px;
+        width: 12px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: #ff9800;
+      }
+      input:checked + .slider:before {
+        transform: translateX(16px);
+      }
+
+      /* Game Canvas Area (Middle) */
+      #game-area {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: 1;
+        min-height: 0;
+      }
+
+      canvas {
+        border: 2px solid #333333;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        cursor: pointer;
+        background-color: #1e1e1e;
+        width: 100%;
+        max-width: 840px;
+        max-height: min(54vh, 520px);
+        aspect-ratio: 14 / 10;
+        object-fit: contain;
+        display: block;
+      }
+
+      /* UI Panels Grid (Bottom) */
+      #ui-container {
+        width: 100%;
+        max-width: 840px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .ui-panel {
+        background-color: #1e1e1e;
+        border: 1px solid #333333;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      }
+
+      .ui-panel .title {
+        font-size: 0.82rem;
+        font-weight: bold;
+        margin-bottom: 4px;
+        color: #90caf9;
+        border-bottom: 1px solid #333333;
+        padding-bottom: 2px;
+      }
+
+      .btn {
+        padding: 5px 10px;
+        border: none;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        font-size: 0.8rem;
+      }
+
+      .btn:active {
+        transform: scale(0.98);
+      }
+
+      .wave-start-btn {
+        min-width: 140px;
+      }
+
+      .btn.primary { background-color: #1976d2; color: #ffffff; }
+      .btn.primary:hover:not(:disabled) { background-color: #1565c0; }
+
+      .btn.secondary { background-color: #424242; color: #ffffff; }
+      .btn.secondary:hover:not(:disabled) { background-color: #616161; }
+
+      .btn.success { background-color: #388e3c; color: #ffffff; }
+      .btn.success:hover:not(:disabled) { background-color: #2e7d32; }
+
+      .btn.danger { background-color: #d32f2f; color: #ffffff; }
+      .btn.danger:hover:not(:disabled) { background-color: #c62828; }
+
+      .btn:disabled { background-color: #333333; color: #666666; cursor: not-allowed; }
+
+      /* Bottom 3-Column Grid */
+      .controls-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.2fr;
+        gap: 6px;
+        width: 100%;
+      }
+
+      .controls-grid .ui-panel {
+        padding: 6px 10px;
+      }
+
+      /* Store 4 Towers in 1 Row or 2x2 */
+      .store-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 4px;
+      }
+
+      .store-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 4px 2px;
+        background-color: #2a2a2a;
+        color: #ffffff;
+        border: 1.5px solid transparent;
+        font-size: 0.72rem;
+      }
+
+      .store-btn.active {
+        border-color: #2196f3;
+        background-color: #1a237e;
+      }
+
+      .tower-icon {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+      }
+      .tower-icon.basic { background-color: #1565c0; }
+      .tower-icon.frost { background-color: #00838f; }
+      .tower-icon.cannon { background-color: #d84315; }
+      .tower-icon.artillery { background-color: #4a148c; }
+
+      .cost {
+        font-size: 0.68rem;
+        color: #ffeb3b;
+      }
+
+      /* Spells Panel */
+      .spell-buttons {
+        display: flex;
+        gap: 6px;
+      }
+
+      .spell-btn {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        background-color: #2a2a2a;
+        color: #ffffff;
+        border: 1px solid #444444;
+        padding: 6px 4px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .spell-btn.active {
+        border-color: #ff3d00;
+        background-color: #3e2723;
+      }
+
+      .spell-title {
+        font-size: 0.75rem;
+        font-weight: bold;
+      }
+
+      .spell-info {
+        font-size: 0.68rem;
+        color: #aaa;
+      }
+
+      .cd-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.75);
+        color: #ff3d00;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        font-size: 0.85rem;
+      }
+
+      /* Inspector Slot */
+      .inspector-slot {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .inspector-placeholder-text {
+        color: #757575;
+        font-size: 0.72rem;
+        text-align: center;
+        font-style: italic;
+        margin: auto 0;
+      }
+
+      .inspector-details {
+        font-size: 0.72rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px 8px;
+        margin-bottom: 4px;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 4px;
+      }
+
+      .action-buttons .btn {
+        flex: 1;
+        padding: 4px 2px;
+        font-size: 0.72rem;
+      }
+
+      /* Modal Overlay */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+      }
+
+      .modal-card {
+        background-color: #1e1e1e;
+        padding: 24px;
+        border-radius: 10px;
+        border: 1px solid #444444;
+        text-align: center;
+        max-width: 360px;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8);
+      }
+
+      .modal-card h1 {
+        margin-top: 0;
+        font-size: 1.6rem;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-wrapper">
+      <div id="game-area"></div>
+      <div id="ui-container"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
