@@ -10,6 +10,8 @@ import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager } from '../engine/WaveManager';
 import type { TowerType } from '../types';
 
+export type MobileTab = 'STORE' | 'SPELLS' | 'TALENTS' | 'INSPECTOR';
+
 export class UIManager {
   private gameState: GameState;
   private waveManager: WaveManager;
@@ -21,6 +23,9 @@ export class UIManager {
   private analyticsManager: AnalyticsManager;
   private game: Game2D;
   private onRestartCallback: () => void;
+
+  public activeMobileTab: MobileTab = 'STORE';
+  private lastSelectedTowerId: string | null = null;
 
   private overlayEl!: HTMLElement;
   private achievementsOverlayEl!: HTMLElement;
@@ -110,10 +115,18 @@ export class UIManager {
         </div>
       </div>
 
+      <!-- MOBILE TAB NAVIGATION BAR -->
+      <div id="mobile-tabs-bar" class="mobile-tabs-bar">
+        <button id="tab-store-btn" class="mobile-tab-btn active">🏗️ Build</button>
+        <button id="tab-spells-btn" class="mobile-tab-btn">☄️ Spells</button>
+        <button id="tab-talents-btn" class="mobile-tab-btn">🌟 Skills</button>
+        <button id="tab-inspector-btn" class="mobile-tab-btn">🔍 Inspector</button>
+      </div>
+
       <!-- BOTTOM CONTROL PANELS GRID -->
       <div class="controls-grid">
         <!-- STORE PANEL -->
-        <div id="store-panel" class="ui-panel">
+        <div id="store-panel" class="ui-panel tab-panel">
           <div class="title">Build Towers</div>
           <div class="store-grid">
             <button id="build-basic-btn" class="btn store-btn active">
@@ -148,7 +161,7 @@ export class UIManager {
         </div>
 
         <!-- SPELLS PANEL -->
-        <div id="spells-panel" class="ui-panel">
+        <div id="spells-panel" class="ui-panel tab-panel">
           <div class="title">Ultimate Spells</div>
           <div class="spell-buttons">
             <button id="spell-meteor-btn" class="btn spell-btn">
@@ -165,7 +178,7 @@ export class UIManager {
         </div>
 
         <!-- SKILL TREE TALENTS PANEL -->
-        <div id="talents-panel" class="ui-panel">
+        <div id="talents-panel" class="ui-panel tab-panel">
           <div class="title">🌟 Skill Tree</div>
           <div class="talents-list">
             <div class="talent-item">
@@ -188,7 +201,7 @@ export class UIManager {
         </div>
 
         <!-- TOWER INSPECTOR PANEL -->
-        <div id="inspector-panel" class="ui-panel inspector-slot">
+        <div id="inspector-panel" class="ui-panel inspector-slot tab-panel">
           <div id="inspector-content" class="hidden">
             <div class="title" id="inspector-title">Tower Level 1</div>
             <div id="inspector-stats" class="inspector-details"></div>
@@ -262,6 +275,12 @@ export class UIManager {
         this.game.changeMap(val);
       });
     }
+
+    // Mobile Tab Bar Buttons
+    document.getElementById('tab-store-btn')?.addEventListener('click', () => this.switchMobileTab('STORE'));
+    document.getElementById('tab-spells-btn')?.addEventListener('click', () => this.switchMobileTab('SPELLS'));
+    document.getElementById('tab-talents-btn')?.addEventListener('click', () => this.switchMobileTab('TALENTS'));
+    document.getElementById('tab-inspector-btn')?.addEventListener('click', () => this.switchMobileTab('INSPECTOR'));
 
     document.getElementById('badges-btn')?.addEventListener('click', () => {
       this.openAchievementsModal();
@@ -357,6 +376,19 @@ export class UIManager {
     });
   }
 
+  public switchMobileTab(tab: MobileTab) {
+    this.activeMobileTab = tab;
+    document.getElementById('tab-store-btn')?.classList.toggle('active', tab === 'STORE');
+    document.getElementById('tab-spells-btn')?.classList.toggle('active', tab === 'SPELLS');
+    document.getElementById('tab-talents-btn')?.classList.toggle('active', tab === 'TALENTS');
+    document.getElementById('tab-inspector-btn')?.classList.toggle('active', tab === 'INSPECTOR');
+
+    document.getElementById('store-panel')?.classList.toggle('mobile-active', tab === 'STORE');
+    document.getElementById('spells-panel')?.classList.toggle('mobile-active', tab === 'SPELLS');
+    document.getElementById('talents-panel')?.classList.toggle('mobile-active', tab === 'TALENTS');
+    document.getElementById('inspector-panel')?.classList.toggle('mobile-active', tab === 'INSPECTOR');
+  }
+
   private openAchievementsModal() {
     this.achievementsOverlayEl.classList.remove('hidden');
 
@@ -397,6 +429,19 @@ export class UIManager {
   }
 
   public update() {
+    // Check Auto-Tab Switch to INSPECTOR on Mobile when tower is selected
+    const currentTower = this.towerManager.selectedTower;
+    const currentTowerId = currentTower ? currentTower.data.id : null;
+
+    if (currentTowerId !== this.lastSelectedTowerId) {
+      this.lastSelectedTowerId = currentTowerId;
+      if (currentTowerId !== null) {
+        this.switchMobileTab('INSPECTOR'); // Auto switch to Inspector!
+      } else if (this.activeMobileTab === 'INSPECTOR') {
+        this.switchMobileTab('STORE'); // Auto return to Store!
+      }
+    }
+
     // Top Bar
     const goldVal = document.getElementById('gold-val');
     if (goldVal) goldVal.innerText = `${this.gameState.gold}`;

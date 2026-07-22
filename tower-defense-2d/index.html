@@ -2,12 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Tower Defense 2D - Full Game</title>
     <style>
       * {
         box-sizing: border-box;
         user-select: none;
+        -webkit-tap-highlight-color: transparent;
       }
 
       html, body {
@@ -22,6 +23,7 @@
         justify-content: center;
         align-items: center;
         overflow: hidden; /* ABSOLUTE ZERO SCROLL */
+        touch-action: manipulation;
       }
 
       /* Main Widescreen Vertical Container */
@@ -205,6 +207,32 @@
         aspect-ratio: 14 / 10;
         object-fit: contain;
         display: block;
+        touch-action: none;
+      }
+
+      /* Mobile Tab Bar (Hidden on Desktop) */
+      .mobile-tabs-bar {
+        display: none;
+        width: 100%;
+        gap: 4px;
+        margin-bottom: 2px;
+      }
+
+      .mobile-tab-btn {
+        flex: 1;
+        padding: 6px 4px;
+        font-size: 0.78rem;
+        font-weight: bold;
+        background-color: #2a2a2a;
+        color: #aaaaaa;
+        border: 1px solid #444444;
+        border-radius: 4px;
+      }
+
+      .mobile-tab-btn.active {
+        background-color: #1976d2;
+        color: #ffffff;
+        border-color: #2196f3;
       }
 
       /* UI Panels Grid (Bottom) */
@@ -264,7 +292,7 @@
 
       .btn:disabled { background-color: #333333; color: #666666; cursor: not-allowed; }
 
-      /* Bottom 4-Column Grid */
+      /* Bottom 4-Column Grid (Desktop) */
       .controls-grid {
         display: grid;
         grid-template-columns: 1fr 0.9fr 1.1fr 1.1fr;
@@ -551,6 +579,62 @@
       .modal-restart-btn {
         width: 100%;
         margin-top: 8px;
+      }
+
+      /* --- MOBILE RESPONSIVE MEDIA QUERIES --- */
+      @media (max-width: 640px) {
+        body {
+          padding: 2px 4px;
+        }
+
+        #top-bar {
+          padding: 4px 6px;
+        }
+
+        .stats-row {
+          font-size: 0.75rem;
+          gap: 4px;
+        }
+
+        .actions-row {
+          flex-wrap: wrap;
+          gap: 4px;
+        }
+
+        .mobile-tabs-bar {
+          display: flex; /* Show Tab Bar on Mobile */
+        }
+
+        .controls-grid {
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* Hide non-active tab panels on mobile */
+        .controls-grid .tab-panel {
+          display: none;
+          width: 100%;
+        }
+
+        .controls-grid .tab-panel.mobile-active {
+          display: flex !important;
+        }
+
+        .store-btn {
+          padding: 8px 4px;
+          font-size: 0.8rem;
+        }
+
+        .action-buttons .btn {
+          padding: 8px 4px;
+          font-size: 0.82rem;
+        }
+      }
+
+      @media (orientation: landscape) and (max-height: 500px) {
+        canvas {
+          max-height: min(75vh, 380px);
+        }
       }
 
       .hidden {
