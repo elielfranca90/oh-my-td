@@ -1,4 +1,5 @@
 import { UIManager } from '../ui/UIManager';
+import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
 import { EnemyManager2D } from './EnemyManager';
@@ -20,6 +21,7 @@ export class Game2D {
   public waveManager!: WaveManager;
   public audioManager!: AudioManager;
   public talentManager!: TalentManager;
+  public achievementManager!: AchievementManager;
   public analyticsManager!: AnalyticsManager;
   public mapManager!: MapManager2D;
   private enemyManager!: EnemyManager2D;
@@ -62,6 +64,7 @@ export class Game2D {
 
     this.analyticsManager = new AnalyticsManager();
     this.talentManager = new TalentManager();
+    this.achievementManager = new AchievementManager(this.talentManager);
     this.gameState = new GameState(this.talentManager);
     this.waveManager = new WaveManager();
     this.mapManager = new MapManager2D(this.currentSavedMapId);
@@ -69,10 +72,32 @@ export class Game2D {
     this.particleManager = new ParticleManager();
     this.audioManager = new AudioManager();
 
-    this.spellManager = new SpellManager(this.gameState, this.fxManager, this.audioManager, this.particleManager, this.talentManager);
+    this.spellManager = new SpellManager(
+      this.gameState,
+      this.fxManager,
+      this.audioManager,
+      this.particleManager,
+      this.talentManager,
+      this.achievementManager
+    );
     this.projectileManager = new ProjectileManager2D();
-    this.towerManager = new TowerManager2D(this.mapManager, this.projectileManager, this.gameState, this.audioManager, this.particleManager, this.talentManager, this.analyticsManager);
-    this.enemyManager = new EnemyManager2D(this.mapManager, this.gameState, this.waveManager, this.audioManager, this.analyticsManager);
+    this.towerManager = new TowerManager2D(
+      this.mapManager,
+      this.projectileManager,
+      this.gameState,
+      this.audioManager,
+      this.particleManager,
+      this.talentManager,
+      this.analyticsManager
+    );
+    this.enemyManager = new EnemyManager2D(
+      this.mapManager,
+      this.gameState,
+      this.waveManager,
+      this.audioManager,
+      this.analyticsManager,
+      this.achievementManager
+    );
 
     this.hasAwardedStars = false;
 
@@ -83,6 +108,7 @@ export class Game2D {
       this.spellManager,
       this.audioManager,
       this.talentManager,
+      this.achievementManager,
       this.analyticsManager,
       this,
       this.restartGame.bind(this)
@@ -98,7 +124,7 @@ export class Game2D {
     this.initGame();
   }
 
-  private getCanvasMousePosition(e: MouseEvent): { x: number; y: number } {
+  private getCanvasMousePosition(e: MouseEvent | TouchEvent): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
     const borderLeft = this.canvas.clientLeft || 0;
     const borderTop = this.canvas.clientTop || 0;
@@ -109,8 +135,22 @@ export class Game2D {
     const scaleX = this.canvas.width / (contentWidth || 1);
     const scaleY = this.canvas.height / (contentHeight || 1);
 
-    const rawX = (e.clientX - rect.left - borderLeft) * scaleX;
-    const rawY = (e.clientY - rect.top - borderTop) * scaleY;
+    let clientX = 0;
+    let clientY = 0;
+
+    if ('touches' in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if ('changedTouches' in e && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    } else if ('clientX' in e) {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+
+    const rawX = (clientX - rect.left - borderLeft) * scaleX;
+    const rawY = (clientY - rect.top - borderTop) * scaleY;
 
     const x = Math.max(0, Math.min(this.canvas.width - 1, rawX));
     const y = Math.max(0, Math.min(this.canvas.height - 1, rawY));
@@ -129,7 +169,7 @@ export class Game2D {
 
     window.addEventListener('click', unlockAudio, { passive: true });
     window.addEventListener('keydown', unlockAudio, { passive: true });
-    window.addEventListener('pointerdown', unlockAudio, { passive: true });
+    window.addEventListener('touchstart', unlockAudio, { passive: true });
 
     // Keyboard Hotkeys
     window.addEventListener('keydown', (e) => {
@@ -139,21 +179,29 @@ export class Game2D {
       }
     });
 
-    this.canvas.addEventListener('mousemove', (e) => {
+    // Mouse & Touch Move
+    const handleMove = (e: MouseEvent | TouchEvent) => {
       const { x, y } = this.getCanvasMousePosition(e);
       this.mousePos = { x, y };
 
       const gridX = Math.floor(x / this.mapManager.tileSize);
       const gridY = Math.floor(y / this.mapManager.tileSize);
       this.hoveredGrid = { x: gridX, y: gridY };
-    });
+    };
+
+    this.canvas.addEventListener('mousemove', handleMove);
+    this.canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault(); // Prevent scrolling on mobile canvas
+      handleMove(e);
+    }, { passive: false });
 
     this.canvas.addEventListener('mouseleave', () => {
       this.mousePos = null;
       this.hoveredGrid = null;
     });
 
-    this.canvas.addEventListener('click', (e) => {
+    // Mouse & Mobile Tap Click Handler
+    const handleTap = (e: MouseEvent | TouchEvent) => {
       if (this.gameState.status !== 'PLAYING' || this.gameState.isPaused) return;
 
       const { x, y } = this.getCanvasMousePosition(e);
@@ -168,7 +216,13 @@ export class Game2D {
       const gridX = Math.floor(x / this.mapManager.tileSize);
       const gridY = Math.floor(y / this.mapManager.tileSize);
       this.towerManager.placeTower(gridX, gridY);
-    });
+    };
+
+    this.canvas.addEventListener('click', handleTap);
+    this.canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      handleTap(e);
+    }, { passive: false });
   }
 
   private renderGhostPlacement() {
@@ -190,6 +244,34 @@ export class Game2D {
     this.ctx.strokeStyle = isValid ? '#4caf50' : '#f44336';
     this.ctx.lineWidth = 2;
     this.ctx.strokeRect(x * size, y * size, size, size);
+  }
+
+  private renderAchievementToasts() {
+    for (let i = 0; i < this.achievementManager.activeToasts.length; i++) {
+      const toast = this.achievementManager.activeToasts[i];
+      const width = 280;
+      const height = 48;
+      const x = this.canvas.width - width - 16;
+      const y = 16 + i * 56;
+
+      this.ctx.save();
+      this.ctx.fillStyle = 'rgba(30, 30, 30, 0.92)';
+      this.ctx.fillRect(x, y, width, height);
+
+      this.ctx.strokeStyle = '#f57f17';
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeRect(x, y, width, height);
+
+      this.ctx.fillStyle = '#ffeb3b';
+      this.ctx.font = 'bold 14px Arial';
+      this.ctx.textAlign = 'left';
+      this.ctx.fillText(`${toast.icon} Achievement Unlocked!`, x + 10, y + 20);
+
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.font = '12px Arial';
+      this.ctx.fillText(`${toast.title} (+${toast.reward} ★)`, x + 10, y + 38);
+      this.ctx.restore();
+    }
   }
 
   private renderPauseOverlay() {
@@ -247,7 +329,13 @@ export class Game2D {
         this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
         this.spellManager.update(deltaTimeMs);
         this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
+        this.achievementManager.update();
         this.fxManager.update();
+
+        // Check Endless Survivor Achievement
+        if (this.waveManager.isEndlessMode) {
+          this.achievementManager.setProgress('ENDLESS_SURVIVOR', activeWaveNum);
+        }
 
         // Check Victory
         if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
@@ -283,6 +371,7 @@ export class Game2D {
       this.spellManager.renderSpellTargeting(this.ctx, this.mousePos);
       this.fxManager.render(this.ctx);
 
+      this.renderAchievementToasts();
       this.renderPauseOverlay();
 
       this.ctx.restore();

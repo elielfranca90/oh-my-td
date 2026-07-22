@@ -1,5 +1,6 @@
 import type { EnemyType, Vector2D } from '../types';
 
+import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
@@ -14,6 +15,7 @@ export class EnemyManager2D {
   private waveManager: WaveManager;
   private audioManager: AudioManager;
   private analyticsManager?: AnalyticsManager;
+  private achievementManager?: AchievementManager;
   private spawnToggle = false;
 
   constructor(
@@ -21,13 +23,15 @@ export class EnemyManager2D {
     gameState: GameState,
     waveManager: WaveManager,
     audioManager: AudioManager,
-    analyticsManager?: AnalyticsManager
+    analyticsManager?: AnalyticsManager,
+    achievementManager?: AchievementManager
   ) {
     this.mapManager = mapManager;
     this.gameState = gameState;
     this.waveManager = waveManager;
     this.audioManager = audioManager;
     this.analyticsManager = analyticsManager;
+    this.achievementManager = achievementManager;
   }
 
   public update(deltaTimeMs: number) {
@@ -48,6 +52,13 @@ export class EnemyManager2D {
         if (this.analyticsManager) {
           this.analyticsManager.recordKill(enemy.data.type);
           this.analyticsManager.recordGoldEarned(enemy.data.goldReward);
+        }
+
+        if (this.achievementManager) {
+          this.achievementManager.addProgress('FIRST_BLOOD', 1);
+          if (enemy.data.type === 'RUNNER') this.achievementManager.addProgress('RUNNER_HUNTER', 1);
+          if (enemy.data.type === 'SHIELDED' || enemy.data.maxShieldHp > 0) this.achievementManager.addProgress('SHIELD_BREAKER', 1);
+          if (enemy.data.type === 'BOSS') this.achievementManager.addProgress('BOSS_SLAYER', 1);
         }
 
         // Boss Death Reinforcements: Spawn 2 Runners!

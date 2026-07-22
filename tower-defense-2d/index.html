@@ -43,8 +43,8 @@
         max-width: 840px;
         display: flex;
         flex-direction: column;
-        gap: 6px;
-        padding: 6px 12px;
+        gap: 4px;
+        padding: 6px 10px;
       }
 
       /* Row 1: Stats & Map Selector */
@@ -444,18 +444,18 @@
         border: 1px solid #444444;
         text-align: center;
         width: 100%;
-        max-width: 380px;
+        max-width: 440px;
         box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8);
       }
 
       .modal-card h1 {
         margin-top: 0;
-        margin-bottom: 8px;
-        font-size: 1.6rem;
+        margin-bottom: 6px;
+        font-size: 1.5rem;
       }
 
       .analytics-details {
-        margin: 14px 0;
+        margin: 12px 0;
         background-color: #2a2a2a;
         border-radius: 6px;
         padding: 10px 12px;
@@ -480,6 +480,72 @@
         background-color: #f57f17;
         border-radius: 4px;
         padding: 4px;
+      }
+
+      /* Achievements Modal */
+      .achievements-modal-card {
+        max-width: 480px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .achievements-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 320px;
+        overflow-y: auto;
+        margin: 12px 0;
+        padding-right: 4px;
+      }
+
+      .achievement-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background-color: #2a2a2a;
+        border: 1.5px solid #444444;
+        border-radius: 6px;
+        padding: 8px 12px;
+        text-align: left;
+      }
+
+      .achievement-card.unlocked {
+        border-color: #f57f17;
+        background-color: #2e261d;
+      }
+
+      .achievement-card.locked {
+        opacity: 0.6;
+      }
+
+      .ach-icon {
+        font-size: 1.6rem;
+      }
+
+      .ach-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .ach-title {
+        font-weight: bold;
+        font-size: 0.88rem;
+        color: #ffeb3b;
+      }
+
+      .ach-desc {
+        font-size: 0.78rem;
+        color: #cccccc;
+      }
+
+      .ach-progress {
+        font-size: 0.72rem;
+        color: #90caf9;
+        font-weight: bold;
+        margin-top: 2px;
       }
 
       .modal-restart-btn {

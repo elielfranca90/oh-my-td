@@ -1,3 +1,4 @@
+import { AchievementManager } from '../engine/AchievementManager';
 import { AnalyticsManager } from '../engine/AnalyticsManager';
 import { Game2D } from '../engine/Game';
 import { GameState } from '../engine/GameState';
@@ -16,11 +17,13 @@ export class UIManager {
   private spellManager: SpellManager;
   private audioManager: AudioManager;
   private talentManager: TalentManager;
+  public achievementManager: AchievementManager;
   private analyticsManager: AnalyticsManager;
   private game: Game2D;
   private onRestartCallback: () => void;
 
   private overlayEl!: HTMLElement;
+  private achievementsOverlayEl!: HTMLElement;
 
   constructor(
     gameState: GameState,
@@ -29,6 +32,7 @@ export class UIManager {
     spellManager: SpellManager,
     audioManager: AudioManager,
     talentManager: TalentManager,
+    achievementManager: AchievementManager,
     analyticsManager: AnalyticsManager,
     game: Game2D,
     onRestart: () => void
@@ -39,6 +43,7 @@ export class UIManager {
     this.spellManager = spellManager;
     this.audioManager = audioManager;
     this.talentManager = talentManager;
+    this.achievementManager = achievementManager;
     this.analyticsManager = analyticsManager;
     this.game = game;
     this.onRestartCallback = onRestart;
@@ -92,6 +97,7 @@ export class UIManager {
           </div>
 
           <div class="speed-controls">
+            <button id="badges-btn" class="btn secondary" title="View Achievements">🏆 Badges</button>
             <button id="sound-btn" class="btn sound-btn" title="Toggle Sound">🔊</button>
             <button id="pause-btn" class="btn pause-btn" title="Pause/Resume">⏸️</button>
             <button id="speed-1x" class="btn speed-btn active">1x</button>
@@ -204,7 +210,6 @@ export class UIManager {
           <h1 id="modal-title">Game Over</h1>
           <p id="modal-desc">Your base was destroyed!</p>
 
-          <!-- Post-Game Analytics Details -->
           <div id="analytics-details" class="analytics-details">
             <div id="record-badge" class="record-badge hidden">✨ NEW RECORD! ✨</div>
             <div class="analytics-row">
@@ -228,9 +233,22 @@ export class UIManager {
           <button id="restart-btn" class="btn primary modal-restart-btn">Play Again</button>
         </div>
       </div>
+
+      <!-- ACHIEVEMENTS & BADGES MODAL -->
+      <div id="achievements-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-card achievements-modal-card">
+          <h1>🏆 Badges & Achievements</h1>
+          <p id="achievements-summary">Unlocked 0/7 Badges</p>
+
+          <div id="achievements-grid" class="achievements-grid"></div>
+
+          <button id="close-achievements-btn" class="btn primary modal-restart-btn">Close</button>
+        </div>
+      </div>
     `;
 
     this.overlayEl = document.getElementById('modal-overlay')!;
+    this.achievementsOverlayEl = document.getElementById('achievements-modal-overlay')!;
 
     this.setupEvents();
   }
@@ -244,6 +262,14 @@ export class UIManager {
         this.game.changeMap(val);
       });
     }
+
+    document.getElementById('badges-btn')?.addEventListener('click', () => {
+      this.openAchievementsModal();
+    });
+
+    document.getElementById('close-achievements-btn')?.addEventListener('click', () => {
+      this.achievementsOverlayEl.classList.add('hidden');
+    });
 
     document.getElementById('next-wave-btn')?.addEventListener('click', () => {
       this.waveManager.startNextWave();
@@ -329,6 +355,30 @@ export class UIManager {
     document.getElementById('restart-btn')?.addEventListener('click', () => {
       this.onRestartCallback();
     });
+  }
+
+  private openAchievementsModal() {
+    this.achievementsOverlayEl.classList.remove('hidden');
+
+    const grid = document.getElementById('achievements-grid');
+    const summary = document.getElementById('achievements-summary');
+    if (!grid) return;
+
+    const allAchs = Object.values(this.achievementManager.achievements);
+    const unlockedCount = allAchs.filter(a => a.unlocked).length;
+
+    if (summary) summary.innerText = `Unlocked ${unlockedCount}/${allAchs.length} Badges`;
+
+    grid.innerHTML = allAchs.map(ach => `
+      <div class="achievement-card ${ach.unlocked ? 'unlocked' : 'locked'}">
+        <div class="ach-icon">${ach.icon}</div>
+        <div class="ach-info">
+          <div class="ach-title">${ach.title}</div>
+          <div class="ach-desc">${ach.desc}</div>
+          <div class="ach-progress">${ach.unlocked ? `COMPLETED (+${ach.rewardStars}★)` : `${ach.progress}/${ach.maxProgress} (${ach.rewardStars}★)`}</div>
+        </div>
+      </div>
+    `).join('');
   }
 
   private setGameSpeed(speed: number) {

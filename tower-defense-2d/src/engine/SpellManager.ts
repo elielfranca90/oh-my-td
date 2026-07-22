@@ -1,3 +1,4 @@
+import { AchievementManager } from './AchievementManager';
 import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
@@ -13,6 +14,7 @@ export class SpellManager {
   private audioManager: AudioManager;
   private particleManager: ParticleManager;
   private talentManager?: TalentManager;
+  private achievementManager?: AchievementManager;
 
   public activeSpell: ActiveSpell = null;
 
@@ -32,13 +34,15 @@ export class SpellManager {
     fxManager: FXManager,
     audioManager: AudioManager,
     particleManager: ParticleManager,
-    talentManager?: TalentManager
+    talentManager?: TalentManager,
+    achievementManager?: AchievementManager
   ) {
     this.gameState = gameState;
     this.fxManager = fxManager;
     this.audioManager = audioManager;
     this.particleManager = particleManager;
     this.talentManager = talentManager;
+    this.achievementManager = achievementManager;
 
     if (this.talentManager) {
       const cdReduction = this.talentManager.getSpellCdReduction();
@@ -73,6 +77,10 @@ export class SpellManager {
     this.audioManager.playFreeze();
     this.particleManager.triggerFreezeEffect();
 
+    if (this.achievementManager) {
+      this.achievementManager.addProgress('GLOBAL_FREEZE', 1);
+    }
+
     for (const enemy of allEnemies) {
       if (!enemy.data.isDead) {
         enemy.applyFreeze(210); // 3.5s
@@ -91,6 +99,10 @@ export class SpellManager {
 
     this.meteorCooldownMs = this.METEOR_MAX_COOLDOWN;
     this.activeSpell = null; // Reset spell cursor
+
+    if (this.achievementManager) {
+      this.achievementManager.addProgress('METEOR_STRIKE', 1);
+    }
 
     // Animated Meteor Descent
     this.particleManager.spawnMeteor(x, y, () => {
