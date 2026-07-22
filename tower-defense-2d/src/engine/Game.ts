@@ -162,7 +162,7 @@ export class Game2D {
     // Global User Interaction Listener to Unlock Web Audio API in Browsers
     const unlockAudio = () => {
       this.audioManager.unlockAudio();
-      if (!this.audioManager.isBGMPlaying && !this.audioManager.isMuted && this.gameState.status === 'PLAYING') {
+      if (!this.audioManager.isBGMPlaying && !this.audioManager.isBgmMuted && this.gameState.status === 'PLAYING') {
         this.audioManager.startBGM(this.gameSpeedMultiplier, this.audioManager.currentTrack);
       }
     };
@@ -312,7 +312,7 @@ export class Game2D {
 
       // Manage BGM state & tempo
       if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
-        if (!this.audioManager.isBGMPlaying && !this.audioManager.isMuted) {
+        if (!this.audioManager.isBGMPlaying && !this.audioManager.isBgmMuted) {
           this.audioManager.startBGM(this.gameSpeedMultiplier, targetTrack);
         } else {
           this.audioManager.updateBGMTempo(this.gameSpeedMultiplier, targetTrack);

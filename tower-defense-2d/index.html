@@ -55,7 +55,7 @@
         justify-content: space-between;
         align-items: center;
         width: 100%;
-        gap: 8px;
+        gap: 6px;
         white-space: nowrap;
       }
 
@@ -84,14 +84,14 @@
         cursor: pointer;
       }
 
-      /* Row 2: Actions & Controls */
-      .actions-row {
+      /* Row 2: Toggles & Audio Controls */
+      .audio-toggles-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
         width: 100%;
         border-top: 1px solid #2a2a2a;
-        padding-top: 5px;
+        padding-top: 4px;
         gap: 8px;
       }
 
@@ -101,9 +101,49 @@
         gap: 12px;
       }
 
+      /* Independent Audio Controls */
+      .audio-controls-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background-color: #262626;
+        padding: 2px 8px;
+        border-radius: 4px;
+        border: 1px solid #333333;
+      }
+
+      .audio-control-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .audio-control-item .btn {
+        padding: 2px 4px;
+        font-size: 0.75rem;
+      }
+
+      .vol-slider {
+        width: 48px;
+        height: 4px;
+        accent-color: #2196f3;
+        cursor: pointer;
+      }
+
+      /* Row 3: Controls & Start Wave */
+      .actions-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        border-top: 1px solid #2a2a2a;
+        padding-top: 4px;
+        gap: 8px;
+      }
+
       .speed-controls {
         display: flex;
-        gap: 3px;
+        gap: 4px;
         align-items: center;
       }
 
@@ -203,7 +243,7 @@
         background-color: #1e1e1e;
         width: 100%;
         max-width: 840px;
-        max-height: min(52vh, 480px);
+        max-height: min(50vh, 460px);
         aspect-ratio: 14 / 10;
         object-fit: contain;
         display: block;
@@ -596,13 +636,13 @@
           gap: 4px;
         }
 
-        .actions-row {
+        .audio-toggles-row, .actions-row {
           flex-wrap: wrap;
           gap: 4px;
         }
 
         .mobile-tabs-bar {
-          display: flex; /* Show Tab Bar on Mobile */
+          display: flex;
         }
 
         .controls-grid {
@@ -610,7 +650,6 @@
           flex-direction: column;
         }
 
-        /* Hide non-active tab panels on mobile */
         .controls-grid .tab-panel {
           display: none;
           width: 100%;

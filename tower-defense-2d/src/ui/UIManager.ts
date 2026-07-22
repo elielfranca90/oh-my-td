@@ -81,8 +81,8 @@ export class UIManager {
           </div>
         </div>
         
-        <!-- ROW 2: ACTIONS & SPEED CONTROLS -->
-        <div class="actions-row">
+        <!-- ROW 2: TOGGLES & AUDIO SLIDERS -->
+        <div class="audio-toggles-row">
           <div class="toggles-group">
             <div class="auto-mode-row">
               <span>⚡ Auto</span>
@@ -101,9 +101,23 @@ export class UIManager {
             </div>
           </div>
 
+          <!-- INDEPENDENT AUDIO CONTROLS -->
+          <div class="audio-controls-group">
+            <div class="audio-control-item" title="Music Volume (BGM)">
+              <button id="bgm-mute-btn" class="btn sound-btn">🎵</button>
+              <input type="range" id="bgm-vol-slider" class="vol-slider" min="0" max="100" value="60" />
+            </div>
+            <div class="audio-control-item" title="Sound Effects Volume (SFX)">
+              <button id="sfx-mute-btn" class="btn sound-btn">🔊</button>
+              <input type="range" id="sfx-vol-slider" class="vol-slider" min="0" max="100" value="80" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW 3: CONTROLS & START WAVE -->
+        <div class="actions-row">
           <div class="speed-controls">
             <button id="badges-btn" class="btn secondary" title="View Achievements">🏆 Badges</button>
-            <button id="sound-btn" class="btn sound-btn" title="Toggle Sound">🔊</button>
             <button id="pause-btn" class="btn pause-btn" title="Pause/Resume">⏸️</button>
             <button id="speed-1x" class="btn speed-btn active">1x</button>
             <button id="speed-2x" class="btn speed-btn">2x</button>
@@ -301,9 +315,32 @@ export class UIManager {
       }
     });
 
-    document.getElementById('sound-btn')?.addEventListener('click', () => {
-      this.audioManager.toggleMute();
+    // Independent Audio Controls Events
+    document.getElementById('bgm-mute-btn')?.addEventListener('click', () => {
+      this.audioManager.toggleBgmMute();
     });
+
+    document.getElementById('sfx-mute-btn')?.addEventListener('click', () => {
+      this.audioManager.toggleSfxMute();
+    });
+
+    const bgmSlider = document.getElementById('bgm-vol-slider') as HTMLInputElement;
+    if (bgmSlider) {
+      bgmSlider.value = Math.round(this.audioManager.bgmVolume * 100).toString();
+      bgmSlider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10) / 100;
+        this.audioManager.setBgmVolume(val);
+      });
+    }
+
+    const sfxSlider = document.getElementById('sfx-vol-slider') as HTMLInputElement;
+    if (sfxSlider) {
+      sfxSlider.value = Math.round(this.audioManager.sfxVolume * 100).toString();
+      sfxSlider.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value, 10) / 100;
+        this.audioManager.setSfxVolume(val);
+      });
+    }
 
     document.getElementById('pause-btn')?.addEventListener('click', () => {
       this.gameState.togglePause();
@@ -436,9 +473,9 @@ export class UIManager {
     if (currentTowerId !== this.lastSelectedTowerId) {
       this.lastSelectedTowerId = currentTowerId;
       if (currentTowerId !== null) {
-        this.switchMobileTab('INSPECTOR'); // Auto switch to Inspector!
+        this.switchMobileTab('INSPECTOR');
       } else if (this.activeMobileTab === 'INSPECTOR') {
-        this.switchMobileTab('STORE'); // Auto return to Store!
+        this.switchMobileTab('STORE');
       }
     }
 
@@ -460,9 +497,15 @@ export class UIManager {
       mapSelect.value = this.game['mapManager'].currentMapId;
     }
 
-    const soundBtn = document.getElementById('sound-btn');
-    if (soundBtn) {
-      soundBtn.innerText = this.audioManager.isMuted ? '🔇' : '🔊';
+    // Audio Buttons Update
+    const bgmMuteBtn = document.getElementById('bgm-mute-btn');
+    if (bgmMuteBtn) {
+      bgmMuteBtn.innerText = this.audioManager.isBgmMuted ? '🔇' : '🎵';
+    }
+
+    const sfxMuteBtn = document.getElementById('sfx-mute-btn');
+    if (sfxMuteBtn) {
+      sfxMuteBtn.innerText = this.audioManager.isSfxMuted ? '🔇' : '🔊';
     }
 
     const pauseBtn = document.getElementById('pause-btn');

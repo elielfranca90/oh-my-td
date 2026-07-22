@@ -1,6 +1,15 @@
 export class AudioManager {
   private ctx: AudioContext | null = null;
-  public isMuted = false;
+
+  // Master Gain Nodes
+  private sfxGainNode: GainNode | null = null;
+  private bgmGainNode: GainNode | null = null;
+
+  // Volumes & Mute States (0.0 to 1.0)
+  public sfxVolume = 0.8;
+  public bgmVolume = 0.6;
+  public isSfxMuted = false;
+  public isBgmMuted = false;
 
   // BGM Sequencer State
   private bgmIntervalId: number | null = null;
@@ -8,6 +17,8 @@ export class AudioManager {
   public isBGMPlaying = false;
   private currentSpeed = 1;
   public currentTrack: 'CALM' | 'BOSS' = 'CALM';
+
+  private readonly PREFS_KEY = 'td2d_audio_prefs_v1';
 
   // --- CALM TRACK (C Major / A Minor) ---
   private readonly calmMelody: number[] = [
@@ -35,14 +46,53 @@ export class AudioManager {
     55.00, 55.00, 110.00, 55.00, 103.83, 103.83, 207.65, 103.83,
   ];
 
-  public ensureContext(): boolean {
-    if (this.isMuted) return false;
+  constructor() {
+    this.loadPrefs();
+  }
 
+  private loadPrefs() {
+    try {
+      const saved = localStorage.getItem(this.PREFS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        this.sfxVolume = typeof parsed.sfxVolume === 'number' ? parsed.sfxVolume : 0.8;
+        this.bgmVolume = typeof parsed.bgmVolume === 'number' ? parsed.bgmVolume : 0.6;
+        this.isSfxMuted = Boolean(parsed.isSfxMuted);
+        this.isBgmMuted = Boolean(parsed.isBgmMuted);
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
+  public savePrefs() {
+    try {
+      localStorage.setItem(this.PREFS_KEY, JSON.stringify({
+        sfxVolume: this.sfxVolume,
+        bgmVolume: this.bgmVolume,
+        isSfxMuted: this.isSfxMuted,
+        isBgmMuted: this.isBgmMuted,
+      }));
+    } catch {
+      // Ignore
+    }
+  }
+
+  public ensureContext(): boolean {
     if (!this.ctx) {
       const win = window as Window & { webkitAudioContext?: typeof AudioContext };
       const AudioCtx = window.AudioContext || win.webkitAudioContext;
       if (!AudioCtx) return false;
       this.ctx = new AudioCtx();
+
+      // Create dedicated sub-gain nodes for SFX and BGM
+      this.sfxGainNode = this.ctx.createGain();
+      this.bgmGainNode = this.ctx.createGain();
+
+      this.sfxGainNode.connect(this.ctx.destination);
+      this.bgmGainNode.connect(this.ctx.destination);
+
+      this.updateNodeVolumes();
     }
 
     if (this.ctx.state === 'suspended') {
@@ -52,45 +102,83 @@ export class AudioManager {
     return this.ctx.state === 'running';
   }
 
-  // Explicit Audio Unlock method triggered by User Gesture (Click/Key)
-  public unlockAudio() {
-    if (this.isMuted) return;
+  private updateNodeVolumes() {
+    if (this.sfxGainNode && this.ctx) {
+      const vol = this.isSfxMuted ? 0 : this.sfxVolume;
+      this.sfxGainNode.gain.setValueAtTime(vol, this.ctx.currentTime);
+    }
+    if (this.bgmGainNode && this.ctx) {
+      const vol = this.isBgmMuted ? 0 : this.bgmVolume;
+      this.bgmGainNode.gain.setValueAtTime(vol, this.ctx.currentTime);
+    }
+  }
 
+  public unlockAudio() {
     if (!this.ctx) {
       const win = window as Window & { webkitAudioContext?: typeof AudioContext };
       const AudioCtx = window.AudioContext || win.webkitAudioContext;
       if (!AudioCtx) return;
       this.ctx = new AudioCtx();
+
+      this.sfxGainNode = this.ctx.createGain();
+      this.bgmGainNode = this.ctx.createGain();
+      this.sfxGainNode.connect(this.ctx.destination);
+      this.bgmGainNode.connect(this.ctx.destination);
+
+      this.updateNodeVolumes();
     }
 
     if (this.ctx.state === 'suspended') {
       this.ctx.resume().then(() => {
-        // Force restart BGM sequencer once AudioContext is running!
         this.stopBGM();
-        this.startBGM(this.currentSpeed, this.currentTrack);
+        if (!this.isBgmMuted) {
+          this.startBGM(this.currentSpeed, this.currentTrack);
+        }
       }).catch(() => {});
-    } else if (!this.isBGMPlaying) {
+    } else if (!this.isBGMPlaying && !this.isBgmMuted) {
       this.startBGM(this.currentSpeed, this.currentTrack);
     }
   }
 
-  public toggleMute(): boolean {
-    this.isMuted = !this.isMuted;
-    if (this.isMuted) {
+  // SFX Volume & Mute Controls
+  public setSfxVolume(vol: number) {
+    this.sfxVolume = Math.max(0, Math.min(1, vol));
+    this.updateNodeVolumes();
+    this.savePrefs();
+  }
+
+  public toggleSfxMute(): boolean {
+    this.isSfxMuted = !this.isSfxMuted;
+    this.updateNodeVolumes();
+    this.savePrefs();
+    return this.isSfxMuted;
+  }
+
+  // BGM Volume & Mute Controls
+  public setBgmVolume(vol: number) {
+    this.bgmVolume = Math.max(0, Math.min(1, vol));
+    this.updateNodeVolumes();
+    this.savePrefs();
+  }
+
+  public toggleBgmMute(): boolean {
+    this.isBgmMuted = !this.isBgmMuted;
+    this.updateNodeVolumes();
+    if (this.isBgmMuted) {
       this.stopBGM();
-      if (this.ctx) this.ctx.suspend();
     } else {
       this.unlockAudio();
       this.startBGM(this.currentSpeed, this.currentTrack);
     }
-    return this.isMuted;
+    this.savePrefs();
+    return this.isBgmMuted;
   }
 
   // BGM Control Methods
   public startBGM(speedMultiplier = 1, track: 'CALM' | 'BOSS' = 'CALM') {
     this.currentSpeed = speedMultiplier;
     this.currentTrack = track;
-    if (this.isMuted) return;
+    if (this.isBgmMuted) return;
 
     if (!this.ensureContext()) return;
 
@@ -108,7 +196,7 @@ export class AudioManager {
     if (this.currentTrack === track) return;
     this.currentTrack = track;
     this.bgmStep = 0;
-    if (this.isBGMPlaying) {
+    if (this.isBGMPlaying && !this.isBgmMuted) {
       this.stopBGM();
       this.startBGM(this.currentSpeed, track);
     }
@@ -127,8 +215,7 @@ export class AudioManager {
     if (track) this.currentTrack = track;
     this.currentSpeed = speedMultiplier;
 
-    // Only restart interval if speed or track actually changed!
-    if (this.isBGMPlaying && (trackChanged || speedChanged)) {
+    if (this.isBGMPlaying && !this.isBgmMuted && (trackChanged || speedChanged)) {
       clearInterval(this.bgmIntervalId ?? undefined);
       this.scheduleBGMInterval();
     }
@@ -145,7 +232,7 @@ export class AudioManager {
   }
 
   private playBGMStep() {
-    if (!this.ctx || this.isMuted || this.ctx.state !== 'running') return;
+    if (!this.ctx || this.isBgmMuted || this.ctx.state !== 'running' || !this.bgmGainNode) return;
 
     const isBoss = this.currentTrack === 'BOSS';
     const melodyArray = isBoss ? this.bossMelody : this.calmMelody;
@@ -156,45 +243,44 @@ export class AudioManager {
 
     const now = this.ctx.currentTime;
 
-    // 1. Melody Note (Increased volume to 0.12)
+    // 1. Melody Note
     const melOsc = this.ctx.createOscillator();
     const melGain = this.ctx.createGain();
     melOsc.type = isBoss ? 'sawtooth' : 'square';
     melOsc.frequency.setValueAtTime(melodyFreq, now);
 
-    const melVol = isBoss ? 0.14 : 0.11;
+    const melVol = isBoss ? 0.12 : 0.09;
     const melDur = isBoss ? 0.08 : 0.11;
     melGain.gain.setValueAtTime(melVol, now);
     melGain.gain.exponentialRampToValueAtTime(0.001, now + melDur);
 
     melOsc.connect(melGain);
-    melGain.connect(this.ctx.destination);
+    melGain.connect(this.bgmGainNode); // Connects to BGM Master Node!
     melOsc.start(now);
     melOsc.stop(now + melDur);
 
-    // 2. Bassline Note (Increased volume to 0.15)
+    // 2. Bassline Note
     const bassOsc = this.ctx.createOscillator();
     const bassGain = this.ctx.createGain();
     bassOsc.type = isBoss ? 'sawtooth' : 'triangle';
     bassOsc.frequency.setValueAtTime(bassFreq, now);
 
-    const bassVol = isBoss ? 0.16 : 0.13;
+    const bassVol = isBoss ? 0.14 : 0.10;
     const bassDur = isBoss ? 0.11 : 0.14;
     bassGain.gain.setValueAtTime(bassVol, now);
     bassGain.gain.exponentialRampToValueAtTime(0.001, now + bassDur);
 
     bassOsc.connect(bassGain);
-    bassGain.connect(this.ctx.destination);
+    bassGain.connect(this.bgmGainNode); // Connects to BGM Master Node!
     bassOsc.start(now);
     bassOsc.stop(now + bassDur);
 
-    // Advance step
     this.bgmStep = (this.bgmStep + 1) % melodyArray.length;
   }
 
-  // 1. Basic Tower Shot
+  // --- SOUND EFFECTS (Connected to SFX Master Node) ---
   public playBasicShot() {
-    if (!this.ensureContext() || !this.ctx) return;
+    if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
@@ -202,19 +288,17 @@ export class AudioManager {
     osc.frequency.setValueAtTime(700, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(180, this.ctx.currentTime + 0.08);
 
-    gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
+    gain.connect(this.sfxGainNode);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.08);
   }
 
-  // 2. Frost Tower Shot
   public playFrostShot() {
-    if (!this.ensureContext() || !this.ctx) return;
+    if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
@@ -222,19 +306,17 @@ export class AudioManager {
     osc.frequency.setValueAtTime(1000, this.ctx.currentTime);
     osc.frequency.linearRampToValueAtTime(1600, this.ctx.currentTime + 0.1);
 
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
+    gain.connect(this.sfxGainNode);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.1);
   }
 
-  // 3. Cannon Tower Shot
   public playCannonShot() {
-    if (!this.ensureContext() || !this.ctx) return;
+    if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
@@ -242,19 +324,17 @@ export class AudioManager {
     osc.frequency.setValueAtTime(160, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(35, this.ctx.currentTime + 0.2);
 
-    gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
+    gain.connect(this.sfxGainNode);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.2);
   }
 
-  // 4. Artillery Tower Shot
   public playArtilleryShot() {
-    if (!this.ensureContext() || !this.ctx) return;
+    if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc = this.ctx.createOscillator();
     const filter = this.ctx.createBiquadFilter();
     const gain = this.ctx.createGain();
@@ -266,20 +346,18 @@ export class AudioManager {
     filter.type = 'lowpass';
     filter.frequency.setValueAtTime(400, this.ctx.currentTime);
 
-    gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
 
     osc.connect(filter);
     filter.connect(gain);
-    gain.connect(this.ctx.destination);
-
+    gain.connect(this.sfxGainNode);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.35);
   }
 
-  // 5. Coin Chime
   public playCoin() {
-    if (!this.ensureContext() || !this.ctx) return;
+    if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc1 = this.ctx.createOscillator();
     const osc2 = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -290,12 +368,12 @@ export class AudioManager {
     osc1.frequency.setValueAtTime(523.25, this.ctx.currentTime);
     osc2.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.06);
 
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.16);
 
     osc1.connect(gain);
     osc2.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.sfxGainNode);
 
     osc1.start(this.ctx.currentTime);
     osc1.stop(this.ctx.currentTime + 0.06);
@@ -304,9 +382,8 @@ export class AudioManager {
     osc2.stop(this.ctx.currentTime + 0.16);
   }
 
-  // 6. Base Damage
   public playBaseDamage() {
-    if (!this.ensureContext() || !this.ctx) return;
+    if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
@@ -314,19 +391,18 @@ export class AudioManager {
     osc.frequency.setValueAtTime(110, this.ctx.currentTime);
     osc.frequency.linearRampToValueAtTime(70, this.ctx.currentTime + 0.25);
 
-    gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.sfxGainNode);
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.25);
   }
 
-  // 7. Meteor Ultimate Spell
   public playMeteor() {
-    if (!this.ensureContext() || !this.ctx) return;
+    if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc = this.ctx.createOscillator();
     const filter = this.ctx.createBiquadFilter();
     const gain = this.ctx.createGain();
@@ -339,20 +415,19 @@ export class AudioManager {
     filter.frequency.setValueAtTime(600, this.ctx.currentTime);
     filter.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.7);
 
-    gain.gain.setValueAtTime(0.55, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.7);
 
     osc.connect(filter);
     filter.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.sfxGainNode);
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.7);
   }
 
-  // 8. Global Freeze Spell
   public playFreeze() {
-    if (!this.ensureContext() || !this.ctx) return;
+    if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
@@ -360,19 +435,18 @@ export class AudioManager {
     osc.frequency.setValueAtTime(1800, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(350, this.ctx.currentTime + 0.5);
 
-    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.sfxGainNode);
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.5);
   }
 
-  // 9. Boss Alert
   public playBossAlert() {
-    if (!this.ensureContext() || !this.ctx) return;
+    if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
@@ -380,11 +454,11 @@ export class AudioManager {
     osc.frequency.setValueAtTime(440, this.ctx.currentTime);
     osc.frequency.setValueAtTime(622, this.ctx.currentTime + 0.15);
 
-    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.sfxGainNode);
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.35);
