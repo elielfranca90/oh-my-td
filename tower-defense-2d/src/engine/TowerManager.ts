@@ -2,6 +2,7 @@ import type { TowerType } from '../types';
 import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
+import { FXManager } from './FXManager';
 import { GameState } from './GameState';
 import { MapManager2D } from './MapManager';
 import { ParticleManager } from './ParticleManager';
@@ -21,6 +22,7 @@ export class TowerManager2D {
 
   public selectedBuildType: TowerType = 'BASIC';
   public selectedTower: Tower2D | null = null;
+  public sproutTiles: { x: number; y: number }[] = [];
 
   constructor(
     mapManager: MapManager2D,
@@ -52,6 +54,7 @@ export class TowerManager2D {
     switch (type) {
       case 'ARTILLERY': return 110;
       case 'CANNON': return 90;
+      case 'SOLAR_PRISM': return 80;
       case 'FROST': return 70;
       case 'BASIC':
       default: return 50;
@@ -81,6 +84,13 @@ export class TowerManager2D {
     }
 
     const tower = new Tower2D(gridX, gridY, this.mapManager.tileSize, this.selectedBuildType, `tower-${Date.now()}`);
+
+    // Check Overgrowth Sprout Twist (+25% range bonus)
+    const isSproutTile = this.sproutTiles.some(s => s.x === gridX && s.y === gridY);
+    if (isSproutTile) {
+      tower.data.onSproutTile = true;
+      tower.data.range = Math.round(tower.data.range * 1.25);
+    }
 
     // Apply Talent Damage Bonus if unlocked
     if (this.talentManager) {
@@ -125,7 +135,7 @@ export class TowerManager2D {
     }
   }
 
-  public update(enemies: Enemy2D[]) {
+  public update(enemies: Enemy2D[], fxManager?: FXManager) {
     for (const tower of this.towers) {
       const readyToShoot = tower.update();
       if (!readyToShoot) continue;
@@ -138,7 +148,11 @@ export class TowerManager2D {
         return Math.hypot(dx, dy) <= tower.data.range;
       });
 
-      if (inRangeEnemies.length === 0) continue;
+      if (inRangeEnemies.length === 0) {
+        tower.data.laserTargetId = undefined;
+        tower.data.beamDuration = 0;
+        continue;
+      }
 
       // 1. Frost Tower: AoE Glacial Pulse
       if (tower.data.type === 'FROST') {
@@ -173,6 +187,31 @@ export class TowerManager2D {
       }
 
       if (target) {
+        // 2. Solar Prism Laser Beam (Focus mechanic: +10% damage per sec)
+        if (tower.data.type === 'SOLAR_PRISM') {
+          if (tower.data.laserTargetId === target.data.id) {
+            tower.data.beamDuration = (tower.data.beamDuration || 0) + 1;
+          } else {
+            tower.data.laserTargetId = target.data.id;
+            tower.data.beamDuration = 0;
+          }
+
+          const focusBonus = Math.min(1.0, Math.floor((tower.data.beamDuration || 0) / 60) * 0.1);
+          const laserDmg = Math.round(tower.data.damage * (1 + focusBonus));
+
+          const dmgDealt = target.takeDamage(laserDmg, false);
+          if (dmgDealt > 0 && this.analyticsManager) {
+            this.analyticsManager.recordDamage('SOLAR_PRISM', dmgDealt);
+          }
+
+          if (fxManager && Math.random() < 0.3) {
+            fxManager.addDamageText(target.data.position.x, target.data.position.y, `-${dmgDealt}`, '#ffff8d');
+          }
+
+          tower.data.cooldownTimer = Math.max(8, tower.data.onSproutTile ? 12 : 24);
+          continue;
+        }
+
         let damage = tower.data.damage;
         let color = '#ffeb3b';
         let speed = 9;
@@ -224,12 +263,27 @@ export class TowerManager2D {
           isCrit,
           tower.data.type
         );
-        tower.data.cooldownTimer = tower.data.fireRate;
+        tower.data.cooldownTimer = tower.data.onSproutTile ? Math.floor(tower.data.fireRate / 2) : tower.data.fireRate;
       }
     }
   }
 
   public render(ctx: CanvasRenderingContext2D, mousePos: { x: number; y: number } | null) {
+    // Render Solar Prism Laser Beams
+    for (const tower of this.towers) {
+      if (tower.data.type === 'SOLAR_PRISM' && tower.data.laserTargetId) {
+        // Find target position
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(tower.data.position.x, tower.data.position.y);
+        ctx.lineTo(tower.data.position.x + (Math.random() * 6 - 3), tower.data.position.y - 40);
+        ctx.strokeStyle = '#ffff8d';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
     for (const tower of this.towers) {
       let isHovered = false;
       if (mousePos) {

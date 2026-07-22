@@ -1,4 +1,11 @@
-export type EnemyType = 'STANDARD' | 'RUNNER' | 'TANK' | 'BOSS';
+export type EnemyType =
+  | 'STANDARD'
+  | 'RUNNER'
+  | 'TANK'
+  | 'SHIELDED'
+  | 'BOSS'
+  | 'SPORE_SPRINTER'
+  | 'MOSS_GIANT';
 
 export interface WaveConfig {
   waveNumber: number;
@@ -7,7 +14,7 @@ export interface WaveConfig {
 
 export class WaveManager {
   public waves: WaveConfig[] = [
-    // Waves 1 to 10 (Base campaign)
+    // Wave 1
     {
       waveNumber: 1,
       enemies: [
@@ -19,6 +26,7 @@ export class WaveManager {
         { type: 'STANDARD', delay: 1200 },
       ],
     },
+    // Wave 2
     {
       waveNumber: 2,
       enemies: [
@@ -31,29 +39,31 @@ export class WaveManager {
         { type: 'STANDARD', delay: 1000 },
       ],
     },
+    // Wave 3
     {
       waveNumber: 3,
       enemies: [
         { type: 'STANDARD', delay: 900 },
+        { type: 'SPORE_SPRINTER', delay: 1000 },
         { type: 'TANK', delay: 1800 },
         { type: 'STANDARD', delay: 900 },
-        { type: 'TANK', delay: 1800 },
-        { type: 'RUNNER', delay: 700 },
+        { type: 'SPORE_SPRINTER', delay: 1000 },
         { type: 'TANK', delay: 1800 },
       ],
     },
+    // Wave 4
     {
       waveNumber: 4,
       enemies: [
         { type: 'RUNNER', delay: 500 },
-        { type: 'RUNNER', delay: 500 },
-        { type: 'RUNNER', delay: 500 },
-        { type: 'TANK', delay: 1400 },
-        { type: 'TANK', delay: 1400 },
+        { type: 'SPORE_SPRINTER', delay: 600 },
         { type: 'RUNNER', delay: 500 },
         { type: 'TANK', delay: 1400 },
+        { type: 'MOSS_GIANT', delay: 2000 },
+        { type: 'RUNNER', delay: 500 },
       ],
     },
+    // Wave 5 - MID-GAME BOSS
     {
       waveNumber: 5,
       enemies: [
@@ -65,71 +75,66 @@ export class WaveManager {
         { type: 'RUNNER', delay: 600 },
       ],
     },
+    // Wave 6
     {
       waveNumber: 6,
       enemies: [
-        { type: 'RUNNER', delay: 450 },
+        { type: 'MOSS_GIANT', delay: 1800 },
         { type: 'RUNNER', delay: 450 },
         { type: 'RUNNER', delay: 450 },
         { type: 'TANK', delay: 1200 },
-        { type: 'TANK', delay: 1200 },
-        { type: 'RUNNER', delay: 450 },
-        { type: 'TANK', delay: 1200 },
+        { type: 'MOSS_GIANT', delay: 1800 },
         { type: 'RUNNER', delay: 450 },
       ],
     },
+    // Wave 7 - SWARM
     {
       waveNumber: 7,
       enemies: [
         { type: 'STANDARD', delay: 400 },
         { type: 'RUNNER', delay: 400 },
-        { type: 'STANDARD', delay: 400 },
+        { type: 'SPORE_SPRINTER', delay: 400 },
         { type: 'RUNNER', delay: 400 },
         { type: 'STANDARD', delay: 400 },
         { type: 'RUNNER', delay: 400 },
-        { type: 'STANDARD', delay: 400 },
-        { type: 'RUNNER', delay: 400 },
-        { type: 'STANDARD', delay: 400 },
+        { type: 'SPORE_SPRINTER', delay: 400 },
         { type: 'RUNNER', delay: 400 },
       ],
     },
+    // Wave 8 - BOSS + ESCORT
     {
       waveNumber: 8,
       enemies: [
         { type: 'TANK', delay: 1000 },
-        { type: 'TANK', delay: 1000 },
+        { type: 'MOSS_GIANT', delay: 1600 },
         { type: 'BOSS', delay: 2000 },
-        { type: 'RUNNER', delay: 400 },
         { type: 'RUNNER', delay: 400 },
         { type: 'RUNNER', delay: 400 },
         { type: 'TANK', delay: 1000 },
       ],
     },
+    // Wave 9 - CHAOS
     {
       waveNumber: 9,
       enemies: [
         { type: 'RUNNER', delay: 350 },
-        { type: 'RUNNER', delay: 350 },
+        { type: 'SPORE_SPRINTER', delay: 350 },
         { type: 'TANK', delay: 900 },
-        { type: 'RUNNER', delay: 350 },
+        { type: 'MOSS_GIANT', delay: 1600 },
         { type: 'TANK', delay: 900 },
-        { type: 'RUNNER', delay: 350 },
-        { type: 'TANK', delay: 900 },
-        { type: 'RUNNER', delay: 350 },
         { type: 'RUNNER', delay: 350 },
       ],
     },
+    // Wave 10 - ULTIMATE BOSS WAVE
     {
       waveNumber: 10,
       enemies: [
         { type: 'TANK', delay: 800 },
-        { type: 'TANK', delay: 800 },
+        { type: 'MOSS_GIANT', delay: 1600 },
         { type: 'BOSS', delay: 2000 },
-        { type: 'RUNNER', delay: 400 },
         { type: 'RUNNER', delay: 400 },
         { type: 'TANK', delay: 800 },
         { type: 'BOSS', delay: 2500 },
-        { type: 'RUNNER', delay: 400 },
         { type: 'RUNNER', delay: 400 },
         { type: 'TANK', delay: 800 },
       ],
@@ -178,7 +183,7 @@ export class WaveManager {
   }
 
   private generateEndlessWave(waveNum: number): WaveConfig {
-    const enemyTypes: EnemyType[] = ['STANDARD', 'RUNNER', 'TANK'];
+    const enemyTypes: EnemyType[] = ['STANDARD', 'RUNNER', 'TANK', 'SPORE_SPRINTER', 'MOSS_GIANT'];
     const count = 12 + Math.floor((waveNum - 10) * 2);
     const enemies: { type: EnemyType; delay: number }[] = [];
     const baseDelay = Math.max(250, 750 - (waveNum - 10) * 25);

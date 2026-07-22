@@ -60,16 +60,16 @@ export class MapManager2D {
   // --- MAP 2: VALE DA MORTE (Dual Spawn) ---
   private getMap2Data(): TileType[][] {
     return [
-      [2, 1, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 1, 2], // Spawns at (1,0) and (12,0)
+      [2, 1, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 1, 2],
       [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
       [0, 1, 0, 3, 3, 0, 0, 0, 3, 3, 0, 0, 1, 0],
-      [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0], // Merge at Row 3
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
       [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
       [0, 3, 3, 0, 0, 0, 1, 0, 0, 0, 3, 3, 0, 0],
       [0, 3, 3, 0, 0, 0, 1, 0, 0, 0, 3, 3, 0, 0],
       [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
       [2, 2, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 2, 2],
-      [2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2], // Base at (3,9) or (9,9)
+      [2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2],
     ];
   }
 
@@ -93,7 +93,7 @@ export class MapManager2D {
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
         const type = this.mapData[row][col];
-        this.spriteManager.drawTile(ctx, type, col * this.tileSize, row * this.tileSize);
+        this.spriteManager.drawTile(ctx, this.currentMapId, type, col * this.tileSize, row * this.tileSize);
 
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
         ctx.lineWidth = 1;

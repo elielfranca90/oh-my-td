@@ -4,6 +4,8 @@ export class Enemy2D {
   public data: IEnemy2D;
   public baseDamage: number;
   public pathIndex: number;
+  private hasTriggeredSpore = false;
+  private mossRegenTimer = 0;
 
   constructor(waypoints: Vector2D[], type: EnemyType, id: string, hpMultiplier = 1.0, pathIndex = 0) {
     const config = this.getEnemyConfig(type);
@@ -34,6 +36,7 @@ export class Enemy2D {
       slowTimer: 0,
       slowFactor: 1,
       freezeTimer: 0,
+      sporeBoostTimer: 0,
     };
   }
 
@@ -45,6 +48,10 @@ export class Enemy2D {
         return { hp: 35, shield: 0, speed: 1.1, radius: 20, reward: 25, color: '#8e24aa', baseDamage: 2, armorFactor: 0.6, dodgeChance: 0.0 };
       case 'SHIELDED':
         return { hp: 14, shield: 22, speed: 2.2, radius: 14, reward: 18, color: '#0288d1', baseDamage: 1, armorFactor: 0.9, dodgeChance: 0.0 };
+      case 'SPORE_SPRINTER':
+        return { hp: 10, shield: 0, speed: 2.4, radius: 13, reward: 12, color: '#7cb342', baseDamage: 1, armorFactor: 1.0, dodgeChance: 0.0 };
+      case 'MOSS_GIANT':
+        return { hp: 45, shield: 0, speed: 1.0, radius: 22, reward: 30, color: '#33691e', baseDamage: 3, armorFactor: 0.7, dodgeChance: 0.0 };
       case 'BOSS':
         return { hp: 160, shield: 0, speed: 0.8, radius: 26, reward: 100, color: '#d50000', baseDamage: 5, armorFactor: 0.8, dodgeChance: 0.0 };
       case 'STANDARD':
@@ -59,7 +66,7 @@ export class Enemy2D {
       return -1; // Dodged!
     }
 
-    // 2. Apply Armor Factor for light shots (Tank)
+    // 2. Apply Armor Factor for light shots (Tank / Moss Giant)
     let actualDamage = amount;
     if (isLightShot && this.data.armorFactor < 1.0) {
       actualDamage = Math.max(1, Math.round(amount * this.data.armorFactor));
@@ -82,7 +89,16 @@ export class Enemy2D {
     // 4. HP Damage
     this.data.hp = Math.max(0, this.data.hp - actualDamage);
     if (this.data.hp <= 0) this.data.isDead = true;
+
     return actualDamage;
+  }
+
+  public shouldTriggerSporeCloud(): boolean {
+    if (this.data.type === 'SPORE_SPRINTER' && !this.hasTriggeredSpore && this.data.hp <= this.data.maxHp * 0.5) {
+      this.hasTriggeredSpore = true;
+      return true;
+    }
+    return false;
   }
 
   public applySlow(factor: number, durationFrames = 120) {
@@ -94,10 +110,23 @@ export class Enemy2D {
     this.data.freezeTimer = Math.max(this.data.freezeTimer, durationFrames);
   }
 
-  public update(waypoints: Vector2D[]): boolean {
+  public applySporeBoost(durationFrames = 180) {
+    this.data.sporeBoostTimer = Math.max(this.data.sporeBoostTimer || 0, durationFrames);
+  }
+
+  public update(waypoints: Vector2D[], isStandingOnGrass = false): boolean {
     if (this.data.isDead) return false;
 
-    // Handle timers
+    // Moss Giant Natural Healing on Grass
+    if (this.data.type === 'MOSS_GIANT' && isStandingOnGrass && this.data.hp < this.data.maxHp) {
+      this.mossRegenTimer++;
+      if (this.mossRegenTimer >= 20) { // +1 HP every 20 frames (~3 HP/sec)
+        this.data.hp = Math.min(this.data.maxHp, this.data.hp + 1);
+        this.mossRegenTimer = 0;
+      }
+    }
+
+    // Handle Timers
     if (this.data.freezeTimer > 0) {
       this.data.freezeTimer--;
       return false; // Stationary while frozen
@@ -110,6 +139,12 @@ export class Enemy2D {
       if (this.data.slowTimer <= 0) {
         this.data.slowFactor = 1;
       }
+    }
+
+    // Spore Speed Boost (+30% speed)
+    if (this.data.sporeBoostTimer && this.data.sporeBoostTimer > 0) {
+      this.data.sporeBoostTimer--;
+      effectiveSpeed *= 1.3;
     }
 
     let distanceToMove = effectiveSpeed;
@@ -140,7 +175,15 @@ export class Enemy2D {
   public render(ctx: CanvasRenderingContext2D) {
     if (this.data.isDead) return;
 
-    // Energy Shield Barrier (Blue Sphere)
+    // Spore Boost Aura
+    if (this.data.sporeBoostTimer && this.data.sporeBoostTimer > 0) {
+      ctx.beginPath();
+      ctx.arc(this.data.position.x, this.data.position.y, this.data.radius + 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(124, 179, 66, 0.4)';
+      ctx.fill();
+    }
+
+    // Energy Shield Barrier
     if (this.data.shieldHp > 0) {
       ctx.beginPath();
       ctx.arc(this.data.position.x, this.data.position.y, this.data.radius + 5, 0, Math.PI * 2);
@@ -171,7 +214,7 @@ export class Enemy2D {
     ctx.fill();
 
     // Outline / Details per type
-    ctx.strokeStyle = this.data.type === 'BOSS' ? '#ffd700' : this.data.type === 'TANK' ? '#e1bee7' : '#ffffff';
+    ctx.strokeStyle = this.data.type === 'BOSS' ? '#ffd700' : this.data.type === 'MOSS_GIANT' ? '#aed581' : '#ffffff';
     ctx.lineWidth = this.data.type === 'BOSS' ? 3.5 : 1.5;
     ctx.stroke();
 

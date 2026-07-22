@@ -157,6 +157,13 @@ export class UIManager {
                 <div class="cost">🪙 70g</div>
               </div>
             </button>
+            <button id="build-solar-btn" class="btn store-btn">
+              <div class="tower-icon solar"></div>
+              <div>
+                <strong>Solar</strong>
+                <div class="cost">🪙 80g</div>
+              </div>
+            </button>
             <button id="build-cannon-btn" class="btn store-btn">
               <div class="tower-icon cannon"></div>
               <div>
@@ -366,6 +373,7 @@ export class UIManager {
     // Store Buttons
     document.getElementById('build-basic-btn')?.addEventListener('click', () => this.setBuildType('BASIC'));
     document.getElementById('build-frost-btn')?.addEventListener('click', () => this.setBuildType('FROST'));
+    document.getElementById('build-solar-btn')?.addEventListener('click', () => this.setBuildType('SOLAR_PRISM'));
     document.getElementById('build-cannon-btn')?.addEventListener('click', () => this.setBuildType('CANNON'));
     document.getElementById('build-artillery-btn')?.addEventListener('click', () => this.setBuildType('ARTILLERY'));
 
@@ -461,6 +469,7 @@ export class UIManager {
     this.towerManager.selectedBuildType = type;
     document.getElementById('build-basic-btn')?.classList.toggle('active', type === 'BASIC');
     document.getElementById('build-frost-btn')?.classList.toggle('active', type === 'FROST');
+    document.getElementById('build-solar-btn')?.classList.toggle('active', type === 'SOLAR_PRISM');
     document.getElementById('build-cannon-btn')?.classList.toggle('active', type === 'CANNON');
     document.getElementById('build-artillery-btn')?.classList.toggle('active', type === 'ARTILLERY');
   }

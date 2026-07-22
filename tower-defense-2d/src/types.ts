@@ -3,7 +3,14 @@ export interface Vector2D {
   y: number;
 }
 
-export type EnemyType = 'STANDARD' | 'RUNNER' | 'TANK' | 'SHIELDED' | 'BOSS';
+export type EnemyType =
+  | 'STANDARD'
+  | 'RUNNER'
+  | 'TANK'
+  | 'SHIELDED'
+  | 'BOSS'
+  | 'SPORE_SPRINTER'
+  | 'MOSS_GIANT';
 
 export interface IEnemy2D {
   id: string;
@@ -26,9 +33,10 @@ export interface IEnemy2D {
   slowTimer: number;
   slowFactor: number;
   freezeTimer: number;
+  sporeBoostTimer?: number;
 }
 
-export type TowerType = 'BASIC' | 'CANNON' | 'FROST' | 'ARTILLERY';
+export type TowerType = 'BASIC' | 'CANNON' | 'FROST' | 'ARTILLERY' | 'SOLAR_PRISM';
 export type TargetingStrategy = 'FIRST' | 'STRONGEST' | 'WEAKEST' | 'LAST';
 
 export interface ITower2D {
@@ -46,6 +54,9 @@ export interface ITower2D {
   targeting: TargetingStrategy;
   splashRadius?: number;
   slowFactor?: number;
+  laserTargetId?: string;
+  beamDuration?: number;
+  onSproutTile?: boolean;
 }
 
 export interface IProjectile2D {

@@ -34,6 +34,8 @@ export class Tower2D {
     switch (type) {
       case 'CANNON':
         return { cost: 90, range: 120, damage: 18, fireRate: 90 };
+      case 'SOLAR_PRISM':
+        return { cost: 80, range: 140, damage: 6, fireRate: 24 };
       case 'FROST':
         return { cost: 70, range: 130, damage: 2, fireRate: 40, slowFactor: 0.5 };
       case 'ARTILLERY':
@@ -98,6 +100,7 @@ export class Tower2D {
     // Base body color per type
     let color = '#1565c0'; // Basic
     if (this.data.type === 'CANNON') color = '#d84315';
+    if (this.data.type === 'SOLAR_PRISM') color = '#ff8f00';
     if (this.data.type === 'FROST') color = '#00838f';
     if (this.data.type === 'ARTILLERY') color = '#4a148c';
 
@@ -114,6 +117,7 @@ export class Tower2D {
     ctx.arc(this.data.position.x, this.data.position.y, 9, 0, Math.PI * 2);
     let coreColor = '#90caf9';
     if (this.data.type === 'CANNON') coreColor = '#ff7043';
+    if (this.data.type === 'SOLAR_PRISM') coreColor = '#ffeb3b';
     if (this.data.type === 'FROST') coreColor = '#80deea';
     if (this.data.type === 'ARTILLERY') coreColor = '#e1bee7';
     ctx.fillStyle = coreColor;

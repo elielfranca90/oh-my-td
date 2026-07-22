@@ -7,6 +7,7 @@ export class AnalyticsManager {
   public damageByTower: Record<TowerType, number> = {
     BASIC: 0,
     FROST: 0,
+    SOLAR_PRISM: 0,
     CANNON: 0,
     ARTILLERY: 0,
   };
@@ -16,6 +17,8 @@ export class AnalyticsManager {
     RUNNER: 0,
     TANK: 0,
     SHIELDED: 0,
+    SPORE_SPRINTER: 0,
+    MOSS_GIANT: 0,
     BOSS: 0,
   };
 
