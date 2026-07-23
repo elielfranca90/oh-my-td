@@ -50,6 +50,33 @@
         gap: 4px;
         padding: 6px 10px;
       }
+      /* Title Bar */
+      .game-title-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        padding-bottom: 2px;
+        border-bottom: 1px solid #2a2a2a;
+      }
+
+      .game-title-text {
+        font-size: 0.95rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        background: linear-gradient(90deg, #90caf9, #64b5f6, #e3f2fd);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
+      }
+
+      .game-subtitle {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #ffb74d;
+        -webkit-text-fill-color: #ffb74d;
+        margin-left: 4px;
+      }
 
       /* Row 1: Stats & Map Selector */
       .stats-row {
@@ -674,6 +701,12 @@
         canvas {
           max-height: min(45vh, 340px);
         }
+        .game-title-text {
+          font-size: 0.82rem;
+        }
+        .game-subtitle {
+          font-size: 0.68rem;
+        }
       }
 
       /* Narrow Mobile Viewports (Galaxy S23, A51/A55, iPhone SE/13/14/15 - width <= 400px) */
@@ -721,6 +754,12 @@
 
         canvas {
           max-height: min(40vh, 290px);
+        }
+        .game-title-text {
+          font-size: 0.75rem;
+        }
+        .game-subtitle {
+          font-size: 0.62rem;
         }
       }
 

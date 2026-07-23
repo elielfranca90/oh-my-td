@@ -63,6 +63,11 @@ export class UIManager {
     container.innerHTML = `
       <!-- TOP STATUS & WAVE CONTROL BAR -->
       <div id="top-bar" class="ui-panel">
+        <!-- ROW 0: GAME TITLE -->
+        <div class="game-title-row">
+          <span class="game-title-text">🏰 TOWER DEFENSE 2D <span class="game-subtitle">· Oh My TD</span></span>
+        </div>
+
         <!-- ROW 1: STATS & MAP SELECTOR -->
         <div class="stats-row">
           <div class="stat"><span class="icon">🪙</span> <span class="stat-label">Gold:</span> <strong id="gold-val">50</strong></div>
