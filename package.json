@@ -1,6 +1,7 @@
 {
   "name": "oh-my-td",
   "private": true,
+  "license": "MIT",
   "version": "1.0.0",
   "scripts": {
     "dev": "cd tower-defense-2d && npm run dev",

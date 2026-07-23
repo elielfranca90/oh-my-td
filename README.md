@@ -106,3 +106,8 @@ A arquitetura detalhada e especificações do projeto estão disponíveis na pas
 Desenvolvido por **Eliel França**:
 * 👔 **LinkedIn**: [https://www.linkedin.com/in/eliel-franca/](https://www.linkedin.com/in/eliel-franca/)
 * 𝕏 **X (Twitter)**: [@elielofranca](https://x.com/elielofranca)
+---
+
+## 📄 Licença
+
+Este projeto está sob a licença **MIT**. Veja o arquivo [`LICENSE`](./LICENSE) para mais detalhes.
