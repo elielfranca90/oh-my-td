@@ -93,6 +93,14 @@ npm run build
 * **Bateria de Testes Vitest:** 15 testes unitários e de integração cobrindo motores matemáticos, wave scaling e física do grid.
 ---
 
+## 📚 Documentação Técnica
+
+A arquitetura detalhada e especificações do projeto estão disponíveis na pasta [`/docs`](./docs):
++- 📐 [**ARCHITECTURE_CANVAS.md**](./docs/ARCHITECTURE_CANVAS.md): Arquitetura do motor Canvas 2D, loop de renderização e sintetização de áudio.
+- 📝 [**PRD.md**](./docs/PRD.md): Documento de Requisitos do Produto e User Stories.
+- 🛠️ [**TECH_SPEC.md**](./docs/TECH_SPEC.md): Especificação Técnica e Contrato de Testes.
+---
+
 ## 👤 Autor & Contato
 
 Desenvolvido por **Eliel França**:
