@@ -6,7 +6,7 @@ Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower 
 
 ## 🌟 Visão Geral
 
-O projeto evoluiu de um MVP em Three.js para uma engine nativa **HTML5 Canvas 2D top-down**. A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 3 mapas com mecânicas e trilhas sonoras únicas, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida, controles por toque mobile e layout **zero-scroll** em `100vh`.
+O projeto evoluiu de um MVP em Three.js para uma engine nativa **HTML5 Canvas 2D top-down**. A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 3 mapas com mecânicas e trilhas sonoras únicas, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida, controles por toque mobile e layout **zero-scroll** em `100vh` e `100dvh` com suporte a *Safe Area Insets* (Galaxy S23, A51/A55, iPhones).
 
 ---
 

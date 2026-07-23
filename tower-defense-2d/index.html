@@ -14,8 +14,9 @@
       html, body {
         width: 100vw;
         height: 100vh;
+        height: 100dvh;
         margin: 0;
-        padding: 4px 6px;
+        padding: env(safe-area-inset-top, 4px) env(safe-area-inset-right, 6px) env(safe-area-inset-bottom, 4px) env(safe-area-inset-left, 6px);
         background-color: #121212;
         color: #ffffff;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -35,7 +36,8 @@
         width: 100%;
         max-width: 860px;
         height: 100vh;
-        max-height: 98vh;
+        height: 100dvh;
+        max-height: 100dvh;
         gap: 4px;
       }
 
@@ -624,7 +626,7 @@
       /* --- MOBILE RESPONSIVE MEDIA QUERIES --- */
       @media (max-width: 640px) {
         body {
-          padding: 2px 4px;
+          padding: env(safe-area-inset-top, 2px) env(safe-area-inset-right, 4px) env(safe-area-inset-bottom, 2px) env(safe-area-inset-left, 4px);
         }
 
         #top-bar {
@@ -668,11 +670,79 @@
           padding: 8px 4px;
           font-size: 0.82rem;
         }
+
+        canvas {
+          max-height: min(45vh, 340px);
+        }
+      }
+
+      /* Narrow Mobile Viewports (Galaxy S23, A51/A55, iPhone SE/13/14/15 - width <= 400px) */
+      @media (max-width: 400px) {
+        .stat-label {
+          display: none;
+        }
+
+        .stats-row {
+          font-size: 0.70rem;
+          gap: 2px 4px;
+          flex-wrap: wrap;
+          justify-content: space-around;
+        }
+
+        .map-select {
+          font-size: 0.72rem;
+          padding: 2px 4px;
+          max-width: 130px;
+        }
+
+        .audio-controls-group {
+          padding: 1px 4px;
+          gap: 4px;
+        }
+
+        .vol-slider {
+          width: 36px;
+        }
+
+        .btn {
+          padding: 3px 5px;
+          font-size: 0.72rem;
+        }
+
+        .store-btn {
+          padding: 5px 2px;
+          font-size: 0.72rem;
+        }
+
+        .mobile-tab-btn {
+          padding: 5px 2px;
+          font-size: 0.72rem;
+        }
+
+        canvas {
+          max-height: min(40vh, 290px);
+        }
       }
 
       @media (orientation: landscape) and (max-height: 500px) {
+        #game-wrapper {
+          justify-content: flex-start;
+        }
+
+        #top-bar {
+          padding: 2px 6px;
+        }
+
+        .stats-row {
+          font-size: 0.70rem;
+        }
+
+        .audio-toggles-row {
+          padding-top: 2px;
+        }
+
         canvas {
-          max-height: min(75vh, 380px);
+          max-height: min(65vh, 320px);
         }
       }
 

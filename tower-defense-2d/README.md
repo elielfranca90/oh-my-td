@@ -29,4 +29,4 @@ npm run build
 * **7 Inimigos Únicos:** Standard, Runner (Esquiva), Tank (Armadura), Shielded (Escudo de Energia), Spore Sprinter (Nuvem de Velocidade), Moss Giant (Regeneração) e BOSS (Reinforcements).
 * **Meta-Progressão & Badges:** Skill Tree permanente (🌟 Stars) e Modal de Conquistas (`🏆 Badges`).
 * **Relatório Pós-Partida & Recordes:** Painel de Analytics com Torre MVP e salvamento de High Score no `LocalStorage`.
-* **UX Mobile Responsivo:** Barra de abas mobile com auto-inspector e controle duplo de volume (BGM & SFX).
+* **UX Mobile Responsivo & Zero-Scroll:** Suporte completo a `100dvh` (Dynamic Viewport Height) para Safari iOS/Android, suporte a *Safe Area Insets* (Notch/Dynamic Island), compactação responsiva de status para telas ultra-estreitas (Galaxy S23, A51/A55, iPhone SE/13/14/15), barra de abas mobile com auto-inspector e controle duplo de volume (BGM & SFX).

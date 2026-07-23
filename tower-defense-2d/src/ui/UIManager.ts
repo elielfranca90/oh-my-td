@@ -65,11 +65,11 @@ export class UIManager {
       <div id="top-bar" class="ui-panel">
         <!-- ROW 1: STATS & MAP SELECTOR -->
         <div class="stats-row">
-          <div class="stat"><span class="icon">🪙</span> Gold: <strong id="gold-val">50</strong></div>
-          <div class="stat"><span class="icon">❤️</span> Base HP: <strong id="hp-val">20/20</strong></div>
-          <div class="stat"><span class="icon">🌊</span> Wave: <strong id="wave-val">0/10</strong></div>
-          <div class="stat"><span class="icon">🌟</span> Stars: <strong id="stars-val">0</strong></div>
-          <div class="stat"><span class="icon">🏆</span> Best: <strong id="highscore-val">0</strong></div>
+          <div class="stat"><span class="icon">🪙</span> <span class="stat-label">Gold:</span> <strong id="gold-val">50</strong></div>
+          <div class="stat"><span class="icon">❤️</span> <span class="stat-label">HP:</span> <strong id="hp-val">20/20</strong></div>
+          <div class="stat"><span class="icon">🌊</span> <span class="stat-label">Wave:</span> <strong id="wave-val">0/10</strong></div>
+          <div class="stat"><span class="icon">🌟</span> <span class="stat-label">Stars:</span> <strong id="stars-val">0</strong></div>
+          <div class="stat"><span class="icon">🏆</span> <span class="stat-label">Best:</span> <strong id="highscore-val">0</strong></div>
 
           <div class="map-selector-row">
             <span class="icon">🗺️</span>
