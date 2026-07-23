@@ -91,3 +91,10 @@ npm run build
 * **Mobile Tab Bar & Auto-Inspector:** Abas em celulares (`Build`, `Spells`, `Skills`, `Inspector`) com troca automática ao tocar em torres.
 * **Controles Independentes de Áudio:** Sliders individuais para volume da Música (`🎵 BGM`) e dos Efeitos Sonoros (`🔊 SFX`) com salvamento automático.
 * **Bateria de Testes Vitest:** 15 testes unitários e de integração cobrindo motores matemáticos, wave scaling e física do grid.
+---
+
+## 👤 Autor & Contato
+
+Desenvolvido por **Eliel França**:
+* 👔 **LinkedIn**: [https://www.linkedin.com/in/eliel-franca/](https://www.linkedin.com/in/eliel-franca/)
+* 𝕏 **X (Twitter)**: [@elielofranca](https://x.com/elielofranca)

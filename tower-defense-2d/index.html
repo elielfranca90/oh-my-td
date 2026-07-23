@@ -53,11 +53,17 @@
       /* Title Bar */
       .game-title-row {
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
         width: 100%;
-        padding-bottom: 2px;
+        padding-bottom: 3px;
         border-bottom: 1px solid #2a2a2a;
+        gap: 6px;
+      }
+
+      .game-title-group {
+        display: flex;
+        align-items: center;
       }
 
       .game-title-text {
@@ -76,6 +82,49 @@
         color: #ffb74d;
         -webkit-text-fill-color: #ffb74d;
         margin-left: 4px;
+      }
+
+      .author-social-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+      }
+
+      .author-label {
+        color: #888888;
+        font-size: 0.68rem;
+        font-weight: bold;
+      }
+
+      .social-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 6px;
+        background-color: #2a2a2a;
+        border: 1px solid #444444;
+        border-radius: 4px;
+        color: #90caf9;
+        text-decoration: none;
+        font-size: 0.70rem;
+        font-weight: bold;
+        transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+      }
+
+      .social-link:hover {
+        background-color: #1565c0;
+        border-color: #2196f3;
+        color: #ffffff;
+      }
+
+      .social-link.x-link {
+        color: #ffffff;
+      }
+
+      .social-link.x-link:hover {
+        background-color: #333333;
+        border-color: #888888;
       }
 
       /* Row 1: Stats & Map Selector */
@@ -754,6 +803,16 @@
 
         canvas {
           max-height: min(40vh, 290px);
+        }
+        .author-label {
+          display: none;
+        }
+        .social-name {
+          display: none;
+        }
+        .social-link {
+          padding: 2px 4px;
+          font-size: 0.72rem;
         }
         .game-title-text {
           font-size: 0.75rem;

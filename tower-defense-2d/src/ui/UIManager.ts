@@ -65,7 +65,19 @@ export class UIManager {
       <div id="top-bar" class="ui-panel">
         <!-- ROW 0: GAME TITLE -->
         <div class="game-title-row">
-          <span class="game-title-text">🏰 TOWER DEFENSE 2D <span class="game-subtitle">· Oh My TD</span></span>
+          <div class="game-title-group">
+            <span class="game-title-text">🏰 TOWER DEFENSE 2D <span class="game-subtitle">· Oh My TD</span></span>
+          </div>
+
+          <div class="author-social-group">
+            <span class="author-label">Dev:</span>
+            <a href="https://www.linkedin.com/in/eliel-franca/" target="_blank" rel="noopener noreferrer" class="social-link linkedin-link" title="LinkedIn - Eliel França">
+              <span class="social-icon">👔</span> <span class="social-name">LinkedIn</span>
+            </a>
+            <a href="https://x.com/elielofranca" target="_blank" rel="noopener noreferrer" class="social-link x-link" title="X (Twitter) - @elielofranca">
+              <span class="social-icon">𝕏</span> <span class="social-name">@elielofranca</span>
+            </a>
+          </div>
         </div>
 
         <!-- ROW 1: STATS & MAP SELECTOR -->

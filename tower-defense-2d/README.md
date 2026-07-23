@@ -30,3 +30,10 @@ npm run build
 * **Meta-Progressão & Badges:** Skill Tree permanente (🌟 Stars) e Modal de Conquistas (`🏆 Badges`).
 * **Relatório Pós-Partida & Recordes:** Painel de Analytics com Torre MVP e salvamento de High Score no `LocalStorage`.
 * **UX Mobile Responsivo & Zero-Scroll:** Suporte completo a `100dvh` (Dynamic Viewport Height) para Safari iOS/Android, suporte a *Safe Area Insets* (Notch/Dynamic Island), compactação responsiva de status para telas ultra-estreitas (Galaxy S23, A51/A55, iPhone SE/13/14/15), barra de abas mobile com auto-inspector e controle duplo de volume (BGM & SFX).
+---
+
+## 👤 Autor & Contato
+
+Desenvolvido por **Eliel França**:
+- 👔 **LinkedIn**: [https://www.linkedin.com/in/eliel-franca/](https://www.linkedin.com/in/eliel-franca/)
+- 𝕏 **X (Twitter)**: [@elielofranca](https://x.com/elielofranca)
