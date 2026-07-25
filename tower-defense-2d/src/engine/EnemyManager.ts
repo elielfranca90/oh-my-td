@@ -129,7 +129,7 @@ export class EnemyManager2D {
   }
 
   private spawnEnemy(type: EnemyType, hpMultiplier = 1.0) {
-    if (type === 'BOSS') {
+    if (type === 'BOSS' || type === 'BLACK_MEGA_BOSS') {
       this.audioManager.playBossAlert();
     }
 

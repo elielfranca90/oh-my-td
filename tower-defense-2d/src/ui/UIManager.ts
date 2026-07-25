@@ -938,9 +938,14 @@ export class UIManager {
         const sec = Math.ceil(this.spellManager.freezeCooldownMs / 1000);
         freezeCd.innerText = `${sec}s`;
         freezeCd.classList.remove('hidden');
-      } else {
+        } else {
         freezeCd.classList.add('hidden');
       }
+    }
+
+    // Safety check for End Game modal display
+    if (this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') {
+      this.updateEndGameModal();
     }
   }
 }
