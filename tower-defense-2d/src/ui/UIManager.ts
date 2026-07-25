@@ -4,12 +4,12 @@ import { AudioManager } from '../engine/AudioManager';
 import { EventBus } from '../engine/EventBus';
 import { Game2D } from '../engine/Game';
 import { GameState } from '../engine/GameState';
+import type { MapId } from '../engine/MapManager';
 import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
 import { TalentManager } from '../engine/TalentManager';
 import type { Tower2D } from '../engine/Tower';
 import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager } from '../engine/WaveManager';
-import type { MapId } from '../engine/MapManager';
 import type { ChallengeMode, TowerType } from '../types';
 
 export class UIManager {
@@ -27,6 +27,7 @@ export class UIManager {
   private currentGold = -1;
   private currentHp = -1;
   private currentWave = -1;
+  private isDockCollapsed = false;
 
   // DOM Overlay Elements
   private overlayEl!: HTMLElement;
@@ -34,6 +35,7 @@ export class UIManager {
   private talentsOverlayEl!: HTMLElement;
   private achievementsOverlayEl!: HTMLElement;
   private changelogOverlayEl!: HTMLElement;
+  private bottomDockEl!: HTMLElement;
   private storeStateEl!: HTMLElement;
   private inspectorStateEl!: HTMLElement;
 
@@ -99,89 +101,81 @@ export class UIManager {
           </div>
         </header>
 
-        <!-- CONTEXTUAL SIDEBAR / BOTTOM SHEET PANEL -->
-        <aside id="context-panel" class="context-panel pointer-events-auto">
-          <!-- STORE & SPELLS STATE -->
-          <div id="store-state" class="panel-state active">
-            <div class="panel-header">
-              <span>🏗️ Construir Torres</span>
-            </div>
+        <!-- BOTTOM HORIZONTAL DOCK (Zero Map Obstruction) -->
+        <footer id="bottom-dock" class="bottom-dock pointer-events-auto">
+          <!-- STORE & SPELLS STATE (Horizontal Layout) -->
+          <div id="store-state" class="dock-state active">
+            <button id="dock-collapse-btn" class="dock-toggle-btn" title="Minimizar / Expandir Painel">
+              <span id="dock-toggle-icon">🔻</span>
+            </button>
 
-            <div class="tower-cards-grid">
-              <button id="card-basic" class="tower-card active" data-type="BASIC">
-                <div class="t-icon basic"></div>
-                <div class="t-details">
-                  <strong class="t-name">Básica</strong>
-                  <span class="t-cost">🪙 50g</span>
-                </div>
-              </button>
-              <button id="card-frost" class="tower-card" data-type="FROST">
-                <div class="t-icon frost"></div>
-                <div class="t-details">
-                  <strong class="t-name">Gelo</strong>
-                  <span class="t-cost">🪙 70g</span>
-                </div>
-              </button>
-              <button id="card-solar" class="tower-card" data-type="SOLAR_PRISM">
-                <div class="t-icon solar"></div>
-                <div class="t-details">
-                  <strong class="t-name">Prisma</strong>
-                  <span class="t-cost">🪙 80g</span>
-                </div>
-              </button>
-              <button id="card-cannon" class="tower-card" data-type="CANNON">
-                <div class="t-icon cannon"></div>
-                <div class="t-details">
-                  <strong class="t-name">Canhão</strong>
-                  <span class="t-cost">🪙 90g</span>
-                </div>
-              </button>
-              <button id="card-artillery" class="tower-card" data-type="ARTILLERY">
-                <div class="t-icon artillery"></div>
-                <div class="t-details">
-                  <strong class="t-name">Artilharia</strong>
-                  <span class="t-cost">🪙 110g</span>
-                </div>
-              </button>
-            </div>
+            <div class="dock-content-wrapper">
+              <div class="dock-section-label">🏗️ TORRES</div>
 
-            <div class="spells-section">
-              <div class="panel-header compact">
-                <span>☄️ Poderes Supremos</span>
-              </div>
-              <div class="spells-chips-row">
-                <button id="chip-meteor" class="spell-chip">
-                  <span class="chip-icon">☄️</span>
-                  <span class="chip-label">Meteoro</span>
-                  <span id="meteor-chip-cost" class="chip-cost">150g</span>
-                  <span id="meteor-chip-cd" class="chip-cd hidden"></span>
+              <div class="dock-towers-row">
+                <button id="card-basic" class="dock-card active" data-type="BASIC" title="Torre Básica (50g)">
+                  <span class="badge basic"></span>
+                  <span class="name">Básica</span>
+                  <span class="cost">🪙 50g</span>
                 </button>
-                <button id="chip-freeze" class="spell-chip">
-                  <span class="chip-icon">❄️</span>
-                  <span class="chip-label">Congelar</span>
-                  <span id="freeze-chip-cost" class="chip-cost">120g</span>
-                  <span id="freeze-chip-cd" class="chip-cd hidden"></span>
+                <button id="card-frost" class="dock-card" data-type="FROST" title="Torre de Gelo (70g)">
+                  <span class="badge frost"></span>
+                  <span class="name">Gelo</span>
+                  <span class="cost">🪙 70g</span>
+                </button>
+                <button id="card-solar" class="dock-card" data-type="SOLAR_PRISM" title="Prisma Solar (80g)">
+                  <span class="badge solar"></span>
+                  <span class="name">Prisma</span>
+                  <span class="cost">🪙 80g</span>
+                </button>
+                <button id="card-cannon" class="dock-card" data-type="CANNON" title="Canhão (90g)">
+                  <span class="badge cannon"></span>
+                  <span class="name">Canhão</span>
+                  <span class="cost">🪙 90g</span>
+                </button>
+                <button id="card-artillery" class="dock-card" data-type="ARTILLERY" title="Artilharia (110g)">
+                  <span class="badge artillery"></span>
+                  <span class="name">Artilharia</span>
+                  <span class="cost">🪙 110g</span>
+                </button>
+              </div>
+
+              <div class="dock-divider"></div>
+
+              <div class="dock-section-label">☄️ PODERES</div>
+
+              <div class="dock-spells-row">
+                <button id="chip-meteor" class="dock-spell-chip" title="Meteoro (150g)">
+                  <span>☄️ Meteoro</span>
+                  <span id="meteor-chip-cost" class="cost">150g</span>
+                  <span id="meteor-chip-cd" class="cd hidden"></span>
+                </button>
+                <button id="chip-freeze" class="dock-spell-chip" title="Congelar (120g)">
+                  <span>❄️ Congelar</span>
+                  <span id="freeze-chip-cost" class="cost">120g</span>
+                  <span id="freeze-chip-cd" class="cd hidden"></span>
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- INSPECTOR STATE -->
-          <div id="inspector-state" class="panel-state hidden">
-            <div class="panel-header space-between">
-              <strong id="inspector-title">Torre Nível 1</strong>
-              <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
-            </div>
+          <!-- INSPECTOR STATE (Horizontal Inline Layout) -->
+          <div id="inspector-state" class="dock-state hidden">
+            <div class="inspector-dock-wrapper">
+              <div class="inspector-info-header">
+                <strong id="inspector-title">Torre Nível 1</strong>
+                <div id="inspector-stats-summary" class="stats-summary-inline"></div>
+              </div>
 
-            <div id="inspector-details-box" class="inspector-details-box"></div>
-
-            <div class="inspector-actions-group">
-              <button id="btn-inspect-target" class="btn secondary action-btn">🎯 Target: FIRST</button>
-              <button id="btn-inspect-upgrade" class="btn success action-btn">⬆️ Upgrade (40g)</button>
-              <button id="btn-inspect-sell" class="btn danger action-btn">💰 Sell (35g)</button>
+              <div class="inspector-dock-actions">
+                <button id="btn-inspect-target" class="btn secondary">🎯 FIRST</button>
+                <button id="btn-inspect-upgrade" class="btn success">⬆️ Upgrade (40g)</button>
+                <button id="btn-inspect-sell" class="btn danger">💰 Vender (35g)</button>
+                <button id="inspector-close-btn" class="btn secondary close-icon-btn" title="Fechar Inspeção">✖</button>
+              </div>
             </div>
           </div>
-        </aside>
+        </footer>
 
         <!-- FLOATING TIME & WAVE CONTROLS (Bottom Right) -->
         <div id="time-controls" class="time-controls pointer-events-auto">
@@ -318,57 +312,12 @@ export class UIManager {
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
                   <strong class="version-tag">v2.0</strong>
-                  <span class="changelog-title">UI 2.0 DOM Overlay & Performance Reativa</span>
+                  <span class="changelog-title">UI 2.0 DOM Overlay & Barra Inferior Retrátil</span>
                 </div>
                 <ul class="changelog-bullets">
-                  <li><strong>Layout Canvas Fullscreen:</strong> UI em DOM Overlay sobreposto (100vw x 100vh) com pointer-events otimizados.</li>
-                  <li><strong>Status HUD Minimalista:</strong> Barra superior limpa com HP, Gold, Wave e acesso a Configurações.</li>
-                  <li><strong>Reatividade Desacoplada:</strong> Sistema Pub/Sub (EventBus) garantindo 0 reflows e 0 mutações DOM no Game Loop.</li>
-                  <li><strong>Painel Contextual Reativo:</strong> Alternância suave entre Loja e Inspeção via animações de GPU (transform/opacity).</li>
-                </ul>
-              </div>
-
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <strong class="version-tag">v1.6</strong>
-                  <span class="changelog-title">Modo Desafio & Central de Novidades</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>Modo Desafio Selecionável:</strong> Jogue nos modos <em>Sem Magias</em>, <em>Invasão Veloz</em>, <em>Hardcore</em> ou <em>Corrida do Ouro</em>.</li>
-                  <li><strong>Ícone Presente Interativo:</strong> Modal animado de novidades para acompanhar o progresso.</li>
-                </ul>
-              </div>
-
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <strong class="version-tag">v1.5</strong>
-                  <span class="changelog-title">Biomas Visuais & Trilha Sonora Sintetizada</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>3 Biomas Únicos:</strong> Gráficos dedicados para Green Valley, Death Pass Lava e Citadel Neon.</li>
-                  <li><strong>Música Sintetizada:</strong> Trilhas dinâmicas BGM sintetizadas em tempo real via Web Audio API.</li>
-                </ul>
-              </div>
-
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <strong class="version-tag">v1.4</strong>
-                  <span class="changelog-title">Prisma Solar & Tropas Especializadas</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>Nova Torre Prisma Solar:</strong> Dispara feixe concentrado contínuo com escalonamento de dano.</li>
-                  <li><strong>Inimigos Especiais:</strong> Introdução de <em>Spore Sprinter</em> e <em>Moss Giant</em>.</li>
-                </ul>
-              </div>
-
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <strong class="version-tag">v1.3</strong>
-                  <span class="changelog-title">Árvore de Talentos & Sistema de Badges</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>Talentos Permanentes:</strong> Gaste estrelas para evoluir dano, ouro inicial, HP e recargas.</li>
-                  <li><strong>7 Badges Desbloqueáveis:</strong> Conquistas com notificações e modal de galeria.</li>
+                  <li><strong>Dock Inferior Horizontal:</strong> Barra de construção e inspeção na parte inferior, deixando 100% do mapa visível.</li>
+                  <li><strong>Minimização Retrátil (🔻/🔺):</strong> Botão para recolher o painel inferior a qualquer momento durante a partida.</li>
+                  <li><strong>Desacoplamento Event-Driven:</strong> Pub/Sub (EventBus) garantindo 0 reflows e 0 mutações DOM no Game Loop.</li>
                 </ul>
               </div>
             </div>
@@ -401,6 +350,7 @@ export class UIManager {
     this.achievementsOverlayEl = document.getElementById('achievements-modal-overlay')!;
     this.changelogOverlayEl = document.getElementById('changelog-modal-overlay')!;
 
+    this.bottomDockEl = document.getElementById('bottom-dock')!;
     this.storeStateEl = document.getElementById('store-state')!;
     this.inspectorStateEl = document.getElementById('inspector-state')!;
 
@@ -426,7 +376,15 @@ export class UIManager {
   }
 
   private setupUIEvents() {
-    // 1. Settings Toggle & Close
+    // Dock Collapse Toggle
+    document.getElementById('dock-collapse-btn')?.addEventListener('click', () => {
+      this.isDockCollapsed = !this.isDockCollapsed;
+      this.bottomDockEl.classList.toggle('collapsed', this.isDockCollapsed);
+      const icon = document.getElementById('dock-toggle-icon');
+      if (icon) icon.innerText = this.isDockCollapsed ? '🔺' : '🔻';
+    });
+
+    // Settings Toggle & Close
     document.getElementById('settings-toggle-btn')?.addEventListener('click', () => {
       this.gameState.isPaused = true;
       EventBus.getInstance().emit('pause:change', true);
@@ -446,7 +404,7 @@ export class UIManager {
       EventBus.getInstance().emit('pause:change', false);
     });
 
-    // 2. Settings Sub-Modals
+    // Settings Sub-Modals
     document.getElementById('settings-talents-btn')?.addEventListener('click', () => {
       this.updateTalentsModal();
       this.talentsOverlayEl.classList.remove('hidden');
@@ -479,7 +437,7 @@ export class UIManager {
       }
     });
 
-    // 3. Audio & Settings Sliders
+    // Audio & Settings Sliders
     const mapSelect = document.getElementById('settings-map-select') as HTMLSelectElement;
     if (mapSelect) {
       mapSelect.value = this.game['mapManager'].currentMapId;
@@ -534,8 +492,8 @@ export class UIManager {
       });
     }
 
-    // 4. Tower Store Cards
-    const towerCards = document.querySelectorAll<HTMLButtonElement>('.tower-card');
+    // Tower Cards
+    const towerCards = document.querySelectorAll<HTMLButtonElement>('.dock-card');
     towerCards.forEach((card) => {
       card.addEventListener('click', () => {
         const type = card.getAttribute('data-type') as TowerType;
@@ -545,7 +503,7 @@ export class UIManager {
       });
     });
 
-    // 5. Spells Chips
+    // Spells Chips
     document.getElementById('chip-meteor')?.addEventListener('click', () => {
       this.spellManager.selectSpell('METEOR');
     });
@@ -554,7 +512,7 @@ export class UIManager {
       this.spellManager.triggerGlobalFreeze(this.game['enemyManager'].getEnemies());
     });
 
-    // 6. Time & Wave Controls
+    // Time & Wave Controls
     document.getElementById('btn-speed-1x')?.addEventListener('click', () => this.setGameSpeed(1));
     document.getElementById('btn-speed-2x')?.addEventListener('click', () => this.setGameSpeed(2));
     document.getElementById('btn-speed-4x')?.addEventListener('click', () => this.setGameSpeed(4));
@@ -569,7 +527,7 @@ export class UIManager {
       this.waveManager.startNextWave();
     });
 
-    // 7. Inspector Actions
+    // Inspector Actions
     document.getElementById('inspector-close-btn')?.addEventListener('click', () => {
       this.towerManager.selectedTower = null;
       EventBus.getInstance().emit('tower:select', null);
@@ -618,7 +576,7 @@ export class UIManager {
     });
   }
 
-  // --- REACTION HANDLERS (EXCLUSIVELY EVENT-DRIVEN) ---
+  // --- REACTION HANDLERS ---
 
   private onGoldChanged(gold: number) {
     if (this.currentGold === gold) return;
@@ -654,7 +612,7 @@ export class UIManager {
   }
 
   private onBuildTypeChanged(type: TowerType) {
-    const cards = document.querySelectorAll<HTMLButtonElement>('.tower-card');
+    const cards = document.querySelectorAll<HTMLButtonElement>('.dock-card');
     cards.forEach((card) => {
       const cardType = card.getAttribute('data-type');
       card.classList.toggle('active', cardType === type);
@@ -701,7 +659,7 @@ export class UIManager {
   }
 
   private updateTowerAffordability() {
-    const cards = document.querySelectorAll<HTMLButtonElement>('.tower-card');
+    const cards = document.querySelectorAll<HTMLButtonElement>('.dock-card');
     cards.forEach((card) => {
       const type = card.getAttribute('data-type') as TowerType;
       if (type) {
@@ -730,34 +688,33 @@ export class UIManager {
     const title = document.getElementById('inspector-title');
     if (title) title.innerText = `${tower.data.type} (Nível ${tower.data.level})`;
 
-    const statsBox = document.getElementById('inspector-details-box');
+    const statsBox = document.getElementById('inspector-stats-summary');
     if (statsBox) {
       statsBox.innerHTML = `
-        <div class="stat-row"><span>🎯 Alvo:</span><strong>${tower.data.targeting}</strong></div>
-        <div class="stat-row"><span>⚔️ Dano:</span><strong>${tower.data.damage}</strong></div>
-        <div class="stat-row"><span>📏 Alcance:</span><strong>${tower.data.range}px</strong></div>
-        <div class="stat-row"><span>⚡ Frequência:</span><strong>${(1000 / tower.data.fireRate).toFixed(1)}/s</strong></div>
+        <span>⚔️ ${tower.data.damage}</span>
+        <span>📏 ${tower.data.range}px</span>
+        <span>⚡ ${(1000 / tower.data.fireRate).toFixed(1)}/s</span>
       `;
     }
 
     const targetBtn = document.getElementById('btn-inspect-target');
-    if (targetBtn) targetBtn.innerText = `🎯 Alvo: ${tower.data.targeting}`;
+    if (targetBtn) targetBtn.innerText = `🎯 ${tower.data.targeting}`;
 
     const upgradeBtn = document.getElementById('btn-inspect-upgrade') as HTMLButtonElement;
     if (upgradeBtn) {
       if (tower.data.level >= 3) {
-        upgradeBtn.innerText = '⭐ Nível Máximo';
+        upgradeBtn.innerText = '⭐ Máximo';
         upgradeBtn.disabled = true;
       } else {
         const cost = tower.getUpgradeCost();
-        upgradeBtn.innerText = `⬆️ Upgrade (${cost}g)`;
+        upgradeBtn.innerText = `⬆️ ${cost}g`;
         upgradeBtn.disabled = this.gameState.gold < cost;
       }
     }
 
     const sellBtn = document.getElementById('btn-inspect-sell');
     if (sellBtn) {
-      sellBtn.innerText = `💰 Vender (${tower.getSellValue()}g)`;
+      sellBtn.innerText = `💰 ${tower.getSellValue()}g`;
     }
   }
 
@@ -865,10 +822,6 @@ export class UIManager {
     }
   }
 
-  /**
-   * Called during loop ONLY for lightweight UI frame updates (e.g. wave button text or cooldown numbers)
-   * NO reflows, NO structural DOM recreation!
-   */
   public update() {
     // 1. Next Wave Button State
     const waveBtnLabel = document.getElementById('start-wave-label');
