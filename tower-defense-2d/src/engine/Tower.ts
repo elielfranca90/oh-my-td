@@ -33,9 +33,9 @@ export class Tower2D {
   private getTowerConfig(type: TowerType) {
     switch (type) {
       case 'CANNON':
-        return { cost: 90, range: 120, damage: 18, fireRate: 90 };
+        return { cost: 105, range: 120, damage: 14, fireRate: 90 };
       case 'SOLAR_PRISM':
-        return { cost: 80, range: 140, damage: 6, fireRate: 24 };
+        return { cost: 100, range: 140, damage: 4, fireRate: 24 };
       case 'FROST':
         return { cost: 70, range: 130, damage: 2, fireRate: 40, slowFactor: 0.5 };
       case 'ARTILLERY':

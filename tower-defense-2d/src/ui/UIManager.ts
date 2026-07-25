@@ -117,15 +117,15 @@ export class UIManager {
                   <span class="name">Gelo</span>
                   <span class="cost">🪙 70g</span>
                 </button>
-                <button id="card-solar" class="toolbar-card" data-type="SOLAR_PRISM" title="Prisma Solar (80g)">
+                <button id="card-solar" class="toolbar-card" data-type="SOLAR_PRISM" title="Prisma Solar (100g)">
                   <span class="dot solar"></span>
                   <span class="name">Prisma</span>
-                  <span class="cost">🪙 80g</span>
+                  <span class="cost">🪙 100g</span>
                 </button>
-                <button id="card-cannon" class="toolbar-card" data-type="CANNON" title="Canhão (90g)">
+                <button id="card-cannon" class="toolbar-card" data-type="CANNON" title="Canhão (105g)">
                   <span class="dot cannon"></span>
                   <span class="name">Canhão</span>
-                  <span class="cost">🪙 90g</span>
+                  <span class="cost">🪙 105g</span>
                 </button>
                 <button id="card-artillery" class="toolbar-card" data-type="ARTILLERY" title="Artilharia (110g)">
                   <span class="dot artillery"></span>

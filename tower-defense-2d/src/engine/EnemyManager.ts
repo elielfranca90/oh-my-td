@@ -113,7 +113,11 @@ export class EnemyManager2D {
 
     const waypoints = this.mapManager.getWaypoints(pathIndex);
     const speedMultiplier = this.gameState.challengeMode === 'FAST_ENEMIES' ? 1.4 : 1.0;
-    const goldMultiplier = this.gameState.challengeMode === 'TURBO_GOLD' ? 1.5 : 1.0;
+    const currentWaveNum = this.waveManager.currentWaveIndex + 1;
+    let goldMultiplier = this.gameState.challengeMode === 'TURBO_GOLD' ? 1.5 : 1.0;
+    if (currentWaveNum >= 4) {
+      goldMultiplier *= 0.75;
+    }
 
     const enemy = new Enemy2D(
       waypoints,

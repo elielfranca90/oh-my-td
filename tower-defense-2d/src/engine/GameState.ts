@@ -19,7 +19,7 @@ export class GameState {
     const goldBonus = talentManager ? talentManager.getStartingGoldBonus() : 0;
     const hpBonus = talentManager ? talentManager.getBaseHpBonus() : 0;
 
-    this.gold = 50 + goldBonus;
+    this.gold = 70 + goldBonus;
     if (this.challengeMode === 'HARDCORE') {
       this.maxBaseHp = 1;
       this.baseHp = 1;

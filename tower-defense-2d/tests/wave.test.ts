@@ -34,6 +34,6 @@ describe('WaveManager & Endless Scaling Tests', () => {
 
     expect(wm.currentWaveIndex).toBe(10); // Wave 11
     const spawnInfo11 = wm.getNextEnemyToSpawn(1000);
-    expect(spawnInfo11?.hpMultiplier).toBeCloseTo(1.12, 2); // 1.12^1
+    expect(spawnInfo11?.hpMultiplier).toBeCloseTo(5.31, 2); // 4.5 * 1.18^1
   });
 });

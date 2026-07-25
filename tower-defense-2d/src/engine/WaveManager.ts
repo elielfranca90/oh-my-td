@@ -235,10 +235,24 @@ export class WaveManager {
 
       const currentWaveNum = this.currentWaveIndex + 1;
       let hpMultiplier = 1.0;
-      if (currentWaveNum > 10) {
-        hpMultiplier = Math.pow(1.12, currentWaveNum - 10);
-      }
+      const campaignHpScales: Record<number, number> = {
+        1: 1.0,
+        2: 1.15,
+        3: 1.3,
+        4: 1.5,
+        5: 1.85,
+        6: 2.2,
+        7: 2.6,
+        8: 3.1,
+        9: 3.7,
+        10: 4.5,
+      };
 
+      if (currentWaveNum <= 10) {
+        hpMultiplier = campaignHpScales[currentWaveNum] || 1.0;
+      } else {
+        hpMultiplier = Number((4.5 * Math.pow(1.18, currentWaveNum - 10)).toFixed(2));
+      }
       return { type: enemy.type, hpMultiplier };
     }
 

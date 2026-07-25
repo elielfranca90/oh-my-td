@@ -54,8 +54,8 @@ export class TowerManager2D {
   public getTowerCost(type: TowerType): number {
     switch (type) {
       case 'ARTILLERY': return 110;
-      case 'CANNON': return 90;
-      case 'SOLAR_PRISM': return 80;
+      case 'CANNON': return 105;
+      case 'SOLAR_PRISM': return 100;
       case 'FROST': return 70;
       case 'BASIC':
       default: return 50;
