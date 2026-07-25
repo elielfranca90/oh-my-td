@@ -1,3 +1,5 @@
+import { SpriteManager } from './SpriteManager';
+
 import type { ITower2D, TargetingStrategy, TowerType, Vector2D } from '../types';
 
 export class Tower2D {
@@ -157,15 +159,25 @@ export class Tower2D {
     ctx.strokeRect(this.data.position.x - half, this.data.position.y - half, this.size, this.size);
 
     // Core icon / shape
-    ctx.beginPath();
-    ctx.arc(this.data.position.x, this.data.position.y, 9, 0, Math.PI * 2);
-    let coreColor = '#90caf9';
-    if (this.data.type === 'CANNON') coreColor = '#ff7043';
-    if (this.data.type === 'SOLAR_PRISM') coreColor = '#ffeb3b';
-    if (this.data.type === 'FROST') coreColor = '#80deea';
-    if (this.data.type === 'ARTILLERY') coreColor = '#e1bee7';
-    ctx.fillStyle = coreColor;
-    ctx.fill();
+    const drawn = SpriteManager.getInstance().drawSpriteAsset(
+      ctx,
+      this.data.type,
+      this.data.position.x,
+      this.data.position.y,
+      24
+    );
+
+    if (!drawn) {
+      ctx.beginPath();
+      ctx.arc(this.data.position.x, this.data.position.y, 9, 0, Math.PI * 2);
+      let coreColor = '#90caf9';
+      if (this.data.type === 'CANNON') coreColor = '#ff7043';
+      if (this.data.type === 'SOLAR_PRISM') coreColor = '#ffeb3b';
+      if (this.data.type === 'FROST') coreColor = '#80deea';
+      if (this.data.type === 'ARTILLERY') coreColor = '#e1bee7';
+      ctx.fillStyle = coreColor;
+      ctx.fill();
+    }
 
     // Level indicator dots
     for (let i = 0; i < this.data.level; i++) {

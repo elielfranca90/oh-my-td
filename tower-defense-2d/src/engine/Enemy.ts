@@ -1,4 +1,5 @@
 import { MegaBossSpriteRenderer } from './MegaBossSpriteRenderer';
+import { SpriteManager } from './SpriteManager';
 
 import type { EnemyType, IEnemy2D, Vector2D } from '../types';
 
@@ -229,14 +230,24 @@ export class Enemy2D {
         state
       );
     } else {
-      ctx.beginPath();
-      ctx.arc(this.data.position.x, this.data.position.y, this.data.radius, 0, Math.PI * 2);
-      ctx.fillStyle = this.data.freezeTimer > 0 ? '#80deea' : this.data.color;
-      ctx.fill();
+      const drawn = SpriteManager.getInstance().drawSpriteAsset(
+        ctx,
+        this.data.type,
+        this.data.position.x,
+        this.data.position.y,
+        this.data.radius * 2.4
+      );
 
-      ctx.strokeStyle = this.data.type === 'BOSS' ? '#ffd700' : this.data.type === 'MOSS_GIANT' ? '#aed581' : '#ffffff';
-      ctx.lineWidth = this.data.type === 'BOSS' ? 3.5 : 1.5;
-      ctx.stroke();
+      if (!drawn) {
+        ctx.beginPath();
+        ctx.arc(this.data.position.x, this.data.position.y, this.data.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.data.freezeTimer > 0 ? '#80deea' : this.data.color;
+        ctx.fill();
+
+        ctx.strokeStyle = this.data.type === 'BOSS' ? '#ffd700' : this.data.type === 'MOSS_GIANT' ? '#aed581' : '#ffffff';
+        ctx.lineWidth = this.data.type === 'BOSS' ? 3.5 : 1.5;
+        ctx.stroke();
+      }
     }
 
     // HP Bar & Shield Bar

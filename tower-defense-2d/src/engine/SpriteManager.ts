@@ -1,10 +1,15 @@
 import type { MapId, TileType } from './MapManager';
 
 export class SpriteManager {
+  private static instance: SpriteManager;
+
   private map1Atlas: HTMLCanvasElement;
   private map2Atlas: HTMLCanvasElement;
   private map3Atlas: HTMLCanvasElement;
   public readonly tileSize = 60;
+
+  private images: Map<string, HTMLImageElement> = new Map();
+  private loaded: Map<string, boolean> = new Map();
 
   constructor() {
     this.map1Atlas = this.createAtlasCanvas();
@@ -14,8 +19,49 @@ export class SpriteManager {
     this.generateMap1Atlas();
     this.generateMap2Atlas();
     this.generateMap3Atlas();
+    this.loadGeneratedAssets();
   }
 
+  public static getInstance(): SpriteManager {
+    if (!SpriteManager.instance) {
+      SpriteManager.instance = new SpriteManager();
+    }
+    return SpriteManager.instance;
+  }
+
+  private loadGeneratedAssets() {
+    if (typeof window === 'undefined') return;
+    const assets = [
+      { key: 'RUNNER', src: '/assets/runner_sprite.svg' },
+      { key: 'TANK', src: '/assets/tank_sprite.svg' },
+      { key: 'SOLAR_PRISM', src: '/assets/solar_prism_icon.svg' },
+      { key: 'MEGA_BOSS_AVATAR', src: '/assets/mega_boss_avatar.svg' },
+    ];
+
+    for (const a of assets) {
+      const img = new Image();
+      img.src = a.src;
+      img.onload = () => {
+        this.loaded.set(a.key, true);
+      };
+      this.images.set(a.key, img);
+    }
+  }
+
+  public drawSpriteAsset(
+    ctx: CanvasRenderingContext2D,
+    key: string,
+    x: number,
+    y: number,
+    size: number
+  ): boolean {
+    if (this.loaded.get(key) && this.images.has(key)) {
+      const img = this.images.get(key)!;
+      ctx.drawImage(img, x - size / 2, y - size / 2, size, size);
+      return true;
+    }
+    return false;
+  }
   private createAtlasCanvas(): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.width = this.tileSize * 4; // 4 tile types (0=Buildable, 1=Path, 2=Mountain, 3=Forest/Crystal)
