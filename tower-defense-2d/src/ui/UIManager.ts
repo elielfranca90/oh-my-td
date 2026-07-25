@@ -27,7 +27,6 @@ export class UIManager {
   private currentGold = -1;
   private currentHp = -1;
   private currentWave = -1;
-  private isDockCollapsed = false;
 
   // DOM Overlay Elements
   private overlayEl!: HTMLElement;
@@ -35,7 +34,6 @@ export class UIManager {
   private talentsOverlayEl!: HTMLElement;
   private achievementsOverlayEl!: HTMLElement;
   private changelogOverlayEl!: HTMLElement;
-  private bottomDockEl!: HTMLElement;
   private storeStateEl!: HTMLElement;
   private inspectorStateEl!: HTMLElement;
 
@@ -74,7 +72,7 @@ export class UIManager {
       <!-- UI OVERLAY CONTAINER (Fixed Fullscreen, pointer-events: none) -->
       <div id="ui-wrapper" class="ui-wrapper">
         
-        <!-- TOP HUD STATUS BAR -->
+        <!-- 1. TOP HUD STATUS BAR -->
         <header id="hud-top" class="hud-top pointer-events-auto">
           <div class="hud-left-stats">
             <div class="hud-stat-badge hp" title="Vida da Base">
@@ -101,56 +99,52 @@ export class UIManager {
           </div>
         </header>
 
-        <!-- BOTTOM HORIZONTAL DOCK (Zero Map Obstruction) -->
-        <footer id="bottom-dock" class="bottom-dock pointer-events-auto">
-          <!-- STORE & SPELLS STATE (Horizontal Layout) -->
-          <div id="store-state" class="dock-state active">
-            <button id="dock-collapse-btn" class="dock-toggle-btn" title="Minimizar / Expandir Painel">
-              <span id="dock-toggle-icon">🔻</span>
-            </button>
-
-            <div class="dock-content-wrapper">
-              <div class="dock-section-label">🏗️ TORRES</div>
-
-              <div class="dock-towers-row">
-                <button id="card-basic" class="dock-card active" data-type="BASIC" title="Torre Básica (50g)">
-                  <span class="badge basic"></span>
+        <!-- 2. FIXED RED ZONE ACTION TOOLBAR (Just below top bar, above map) -->
+        <nav id="action-toolbar" class="action-toolbar pointer-events-auto">
+          <!-- STORE STATE -->
+          <div id="store-state" class="toolbar-state active">
+            <div class="toolbar-section">
+              <span class="toolbar-label">🏗️ TORRES:</span>
+              <div class="toolbar-items-row">
+                <button id="card-basic" class="toolbar-card active" data-type="BASIC" title="Torre Básica (50g)">
+                  <span class="dot basic"></span>
                   <span class="name">Básica</span>
                   <span class="cost">🪙 50g</span>
                 </button>
-                <button id="card-frost" class="dock-card" data-type="FROST" title="Torre de Gelo (70g)">
-                  <span class="badge frost"></span>
+                <button id="card-frost" class="toolbar-card" data-type="FROST" title="Torre de Gelo (70g)">
+                  <span class="dot frost"></span>
                   <span class="name">Gelo</span>
                   <span class="cost">🪙 70g</span>
                 </button>
-                <button id="card-solar" class="dock-card" data-type="SOLAR_PRISM" title="Prisma Solar (80g)">
-                  <span class="badge solar"></span>
+                <button id="card-solar" class="toolbar-card" data-type="SOLAR_PRISM" title="Prisma Solar (80g)">
+                  <span class="dot solar"></span>
                   <span class="name">Prisma</span>
                   <span class="cost">🪙 80g</span>
                 </button>
-                <button id="card-cannon" class="dock-card" data-type="CANNON" title="Canhão (90g)">
-                  <span class="badge cannon"></span>
+                <button id="card-cannon" class="toolbar-card" data-type="CANNON" title="Canhão (90g)">
+                  <span class="dot cannon"></span>
                   <span class="name">Canhão</span>
                   <span class="cost">🪙 90g</span>
                 </button>
-                <button id="card-artillery" class="dock-card" data-type="ARTILLERY" title="Artilharia (110g)">
-                  <span class="badge artillery"></span>
+                <button id="card-artillery" class="toolbar-card" data-type="ARTILLERY" title="Artilharia (110g)">
+                  <span class="dot artillery"></span>
                   <span class="name">Artilharia</span>
                   <span class="cost">🪙 110g</span>
                 </button>
               </div>
+            </div>
 
-              <div class="dock-divider"></div>
+            <div class="toolbar-divider"></div>
 
-              <div class="dock-section-label">☄️ PODERES</div>
-
-              <div class="dock-spells-row">
-                <button id="chip-meteor" class="dock-spell-chip" title="Meteoro (150g)">
+            <div class="toolbar-section">
+              <span class="toolbar-label">☄️ PODERES:</span>
+              <div class="toolbar-items-row">
+                <button id="chip-meteor" class="toolbar-chip" title="Invocar Meteoro (150g)">
                   <span>☄️ Meteoro</span>
                   <span id="meteor-chip-cost" class="cost">150g</span>
                   <span id="meteor-chip-cd" class="cd hidden"></span>
                 </button>
-                <button id="chip-freeze" class="dock-spell-chip" title="Congelar (120g)">
+                <button id="chip-freeze" class="toolbar-chip" title="Congelamento Global (120g)">
                   <span>❄️ Congelar</span>
                   <span id="freeze-chip-cost" class="cost">120g</span>
                   <span id="freeze-chip-cd" class="cd hidden"></span>
@@ -159,25 +153,25 @@ export class UIManager {
             </div>
           </div>
 
-          <!-- INSPECTOR STATE (Horizontal Inline Layout) -->
-          <div id="inspector-state" class="dock-state hidden">
-            <div class="inspector-dock-wrapper">
-              <div class="inspector-info-header">
+          <!-- INSPECTOR STATE -->
+          <div id="inspector-state" class="toolbar-state hidden">
+            <div class="inspector-toolbar-row">
+              <div class="inspector-info-group">
                 <strong id="inspector-title">Torre Nível 1</strong>
                 <div id="inspector-stats-summary" class="stats-summary-inline"></div>
               </div>
 
-              <div class="inspector-dock-actions">
+              <div class="inspector-toolbar-actions">
                 <button id="btn-inspect-target" class="btn secondary">🎯 FIRST</button>
                 <button id="btn-inspect-upgrade" class="btn success">⬆️ Upgrade (40g)</button>
                 <button id="btn-inspect-sell" class="btn danger">💰 Vender (35g)</button>
-                <button id="inspector-close-btn" class="btn secondary close-icon-btn" title="Fechar Inspeção">✖</button>
+                <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
               </div>
             </div>
           </div>
-        </footer>
+        </nav>
 
-        <!-- FLOATING TIME & WAVE CONTROLS (Bottom Right) -->
+        <!-- 3. FLOATING TIME & WAVE CONTROLS (Bottom Right) -->
         <div id="time-controls" class="time-controls pointer-events-auto">
           <div class="speed-btns-group">
             <button id="btn-speed-1x" class="speed-btn active">1x</button>
@@ -312,11 +306,10 @@ export class UIManager {
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
                   <strong class="version-tag">v2.0</strong>
-                  <span class="changelog-title">UI 2.0 DOM Overlay & Barra Inferior Retrátil</span>
+                  <span class="changelog-title">UI 2.0 DOM Overlay na Área Superior</span>
                 </div>
                 <ul class="changelog-bullets">
-                  <li><strong>Dock Inferior Horizontal:</strong> Barra de construção e inspeção na parte inferior, deixando 100% do mapa visível.</li>
-                  <li><strong>Minimização Retrátil (🔻/🔺):</strong> Botão para recolher o painel inferior a qualquer momento durante a partida.</li>
+                  <li><strong>Barra de Ações Superior Fixa:</strong> Posicionada na área preta acima do mapa, garantindo 100% de visibilidade e zero sobreposição dos tiles.</li>
                   <li><strong>Desacoplamento Event-Driven:</strong> Pub/Sub (EventBus) garantindo 0 reflows e 0 mutações DOM no Game Loop.</li>
                 </ul>
               </div>
@@ -350,7 +343,6 @@ export class UIManager {
     this.achievementsOverlayEl = document.getElementById('achievements-modal-overlay')!;
     this.changelogOverlayEl = document.getElementById('changelog-modal-overlay')!;
 
-    this.bottomDockEl = document.getElementById('bottom-dock')!;
     this.storeStateEl = document.getElementById('store-state')!;
     this.inspectorStateEl = document.getElementById('inspector-state')!;
 
@@ -376,14 +368,6 @@ export class UIManager {
   }
 
   private setupUIEvents() {
-    // Dock Collapse Toggle
-    document.getElementById('dock-collapse-btn')?.addEventListener('click', () => {
-      this.isDockCollapsed = !this.isDockCollapsed;
-      this.bottomDockEl.classList.toggle('collapsed', this.isDockCollapsed);
-      const icon = document.getElementById('dock-toggle-icon');
-      if (icon) icon.innerText = this.isDockCollapsed ? '🔺' : '🔻';
-    });
-
     // Settings Toggle & Close
     document.getElementById('settings-toggle-btn')?.addEventListener('click', () => {
       this.gameState.isPaused = true;
@@ -493,7 +477,7 @@ export class UIManager {
     }
 
     // Tower Cards
-    const towerCards = document.querySelectorAll<HTMLButtonElement>('.dock-card');
+    const towerCards = document.querySelectorAll<HTMLButtonElement>('.toolbar-card');
     towerCards.forEach((card) => {
       card.addEventListener('click', () => {
         const type = card.getAttribute('data-type') as TowerType;
@@ -612,7 +596,7 @@ export class UIManager {
   }
 
   private onBuildTypeChanged(type: TowerType) {
-    const cards = document.querySelectorAll<HTMLButtonElement>('.dock-card');
+    const cards = document.querySelectorAll<HTMLButtonElement>('.toolbar-card');
     cards.forEach((card) => {
       const cardType = card.getAttribute('data-type');
       card.classList.toggle('active', cardType === type);
@@ -659,7 +643,7 @@ export class UIManager {
   }
 
   private updateTowerAffordability() {
-    const cards = document.querySelectorAll<HTMLButtonElement>('.dock-card');
+    const cards = document.querySelectorAll<HTMLButtonElement>('.toolbar-card');
     cards.forEach((card) => {
       const type = card.getAttribute('data-type') as TowerType;
       if (type) {

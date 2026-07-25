@@ -54,8 +54,8 @@
         z-index: 10;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        padding: 12px;
+        justify-content: flex-start;
+        padding: 10px;
         box-sizing: border-box;
       }
 
@@ -63,20 +63,20 @@
         pointer-events: auto;
       }
 
-      /* TOP HUD BAR */
+      /* 1. TOP HUD STATUS BAR */
       .hud-top {
         display: flex;
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        max-width: 1000px;
+        max-width: 840px;
         margin: 0 auto;
-        padding: 8px 16px;
-        background: rgba(18, 18, 26, 0.85);
+        padding: 6px 14px;
+        background: rgba(18, 18, 26, 0.88);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
         border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 14px;
+        border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
       }
 
@@ -149,71 +149,43 @@
       .hud-btn:active { transform: scale(0.95); }
       .hud-btn.active { background: #e040fb; border-color: #ea80fc; }
 
-      /* BOTTOM HORIZONTAL DOCK (Zero Map Obstruction) */
-      .bottom-dock {
-        position: fixed;
-        left: 16px;
-        bottom: 14px;
-        max-width: calc(100vw - 320px);
-        background: rgba(18, 18, 26, 0.88);
+      /* 2. FIXED RED ZONE ACTION TOOLBAR (Just below top bar, above map) */
+      .action-toolbar {
+        width: 100%;
+        max-width: 840px;
+        margin: 6px auto 0 auto;
+        padding: 6px 14px;
+        background: rgba(18, 18, 26, 0.92);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 14px;
-        padding: 8px 12px;
+        border-radius: 12px;
         box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
-        z-index: 20;
         box-sizing: border-box;
-        transition: padding 200ms ease, width 200ms ease;
       }
 
-      .bottom-dock.collapsed {
-        padding: 4px 8px;
-      }
-
-      .bottom-dock.collapsed .dock-content-wrapper,
-      .bottom-dock.collapsed .inspector-dock-wrapper {
-        display: none !important;
-      }
-
-      .dock-state {
+      .toolbar-state {
         display: flex;
         align-items: center;
-        gap: 10px;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
         transition: opacity 180ms ease, transform 180ms ease;
       }
 
-      .dock-state.hidden {
+      .toolbar-state.hidden {
         display: none !important;
         opacity: 0;
         pointer-events: none;
       }
 
-      .dock-toggle-btn {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 6px;
-        color: #ffffff;
-        padding: 4px 6px;
-        font-size: 0.8rem;
-        cursor: pointer;
+      .toolbar-section {
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 8px;
       }
 
-      .dock-toggle-btn:hover {
-        background: rgba(255, 255, 255, 0.18);
-      }
-
-      .dock-content-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        overflow-x: auto;
-      }
-
-      .dock-section-label {
+      .toolbar-label {
         font-size: 0.72rem;
         font-weight: 800;
         color: #90caf9;
@@ -221,91 +193,85 @@
         white-space: nowrap;
       }
 
-      .dock-towers-row {
+      .toolbar-items-row {
         display: flex;
         align-items: center;
         gap: 6px;
       }
 
-      .dock-card {
+      .toolbar-card {
         display: flex;
         align-items: center;
         gap: 6px;
         background: rgba(255, 255, 255, 0.06);
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 8px;
-        padding: 6px 10px;
+        padding: 5px 10px;
         color: #ffffff;
         cursor: pointer;
         white-space: nowrap;
         transition: transform 140ms ease-out, background 140ms ease, border-color 140ms ease;
       }
 
-      .dock-card:hover {
+      .toolbar-card:hover {
         background: rgba(255, 255, 255, 0.14);
         border-color: rgba(255, 255, 255, 0.25);
       }
 
-      .dock-card:active {
+      .toolbar-card:active {
         transform: scale(0.96);
       }
 
-      .dock-card.active {
+      .toolbar-card.active {
         background: rgba(33, 150, 243, 0.24);
         border-color: #40c4ff;
         box-shadow: 0 0 10px rgba(64, 196, 255, 0.3);
       }
 
-      .dock-card:disabled, .dock-card.disabled {
+      .toolbar-card:disabled, .toolbar-card.disabled {
         opacity: 0.4;
         cursor: not-allowed;
         transform: none !important;
       }
 
-      .badge {
+      .dot {
         width: 10px;
         height: 10px;
         border-radius: 50%;
         display: inline-block;
       }
 
-      .badge.basic { background: #4caf50; }
-      .badge.frost { background: #00bcd4; }
-      .badge.solar { background: #ffb300; }
-      .badge.cannon { background: #ff5722; }
-      .badge.artillery { background: #9c27b0; }
+      .dot.basic { background: #4caf50; }
+      .dot.frost { background: #00bcd4; }
+      .dot.solar { background: #ffb300; }
+      .dot.cannon { background: #ff5722; }
+      .dot.artillery { background: #9c27b0; }
 
-      .dock-card .name {
+      .toolbar-card .name {
         font-size: 0.82rem;
         font-weight: 700;
       }
 
-      .dock-card .cost {
+      .toolbar-card .cost {
         font-size: 0.75rem;
         color: #ffd700;
         font-weight: 600;
       }
 
-      .dock-divider {
+      .toolbar-divider {
         width: 1px;
         height: 24px;
         background: rgba(255, 255, 255, 0.15);
       }
 
-      .dock-spells-row {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .dock-spell-chip {
+      .toolbar-chip {
         display: flex;
         align-items: center;
         gap: 6px;
         background: rgba(255, 255, 255, 0.06);
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 8px;
-        padding: 6px 10px;
+        padding: 5px 10px;
         color: #ffffff;
         font-size: 0.8rem;
         font-weight: 700;
@@ -314,61 +280,61 @@
         transition: transform 140ms ease-out, background 140ms ease;
       }
 
-      .dock-spell-chip:hover {
+      .toolbar-chip:hover {
         background: rgba(255, 255, 255, 0.14);
       }
 
-      .dock-spell-chip:active {
+      .toolbar-chip:active {
         transform: scale(0.96);
       }
 
-      .dock-spell-chip.active {
+      .toolbar-chip.active {
         background: rgba(224, 64, 251, 0.25);
         border-color: #e040fb;
         box-shadow: 0 0 10px rgba(224, 64, 251, 0.4);
       }
 
-      .dock-spell-chip:disabled {
+      .toolbar-chip:disabled {
         opacity: 0.4;
         cursor: not-allowed;
       }
 
-      .dock-spell-chip .cost { color: #ffd700; }
-      .dock-spell-chip .cd { color: #ff5252; }
+      .toolbar-chip .cost { color: #ffd700; }
+      .toolbar-chip .cd { color: #ff5252; }
 
-      /* INSPECTOR INLINE LAYOUT */
-      .inspector-dock-wrapper {
+      /* INSPECTOR TOOLBAR ROW */
+      .inspector-toolbar-row {
         display: flex;
         align-items: center;
-        gap: 14px;
+        justify-content: space-between;
         width: 100%;
       }
 
-      .inspector-info-header {
+      .inspector-info-group {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 0.85rem;
+        gap: 12px;
+        font-size: 0.88rem;
       }
 
       .stats-summary-inline {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         color: #b0bec5;
-        font-size: 0.8rem;
+        font-size: 0.82rem;
         background: rgba(0, 0, 0, 0.25);
-        padding: 4px 8px;
+        padding: 4px 10px;
         border-radius: 6px;
       }
 
-      .inspector-dock-actions {
+      .inspector-toolbar-actions {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
       }
 
-      /* FLOATING TIME CONTROLS (Bottom Right) */
+      /* 3. FLOATING TIME CONTROLS (Bottom Right) */
       .time-controls {
         position: fixed;
         right: 16px;
@@ -642,22 +608,26 @@
         .hud-stat-badge { padding: 4px 6px; font-size: 0.8rem; }
         .hud-center-wave { padding: 4px 8px; font-size: 0.8rem; }
 
-        .bottom-dock {
-          left: 6px;
-          right: 6px;
-          bottom: 70px;
-          max-width: none;
-          padding: 6px;
+        .action-toolbar {
+          padding: 6px 8px;
+          margin-top: 4px;
         }
 
-        .dock-content-wrapper {
+        .toolbar-state {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 6px;
+        }
+
+        .toolbar-items-row {
           overflow-x: auto;
+          width: 100%;
           padding-bottom: 2px;
         }
 
-        .dock-card, .btn, .dock-spell-chip, .speed-btn, .start-wave-main-btn {
-          min-height: 48px;
-          min-width: 48px;
+        .toolbar-card, .btn, .toolbar-chip, .speed-btn, .start-wave-main-btn {
+          min-height: 44px;
+          min-width: 44px;
         }
 
         .time-controls {
@@ -667,7 +637,7 @@
           align-items: center;
         }
 
-        .inspector-dock-wrapper {
+        .inspector-toolbar-row {
           flex-direction: column;
           align-items: flex-start;
           gap: 6px;
