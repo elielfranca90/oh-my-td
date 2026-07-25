@@ -1,0 +1,356 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background & Base Gradients -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0c2a4a"/>
+      <stop offset="50%" stop-color="#051326"/>
+      <stop offset="100%" stop-color="#020812"/>
+    </radialGradient>
+    
+    <radialGradient id="auraGlow" cx="50%" cy="45%" r="45%">
+      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.6"/>
+      <stop offset="35%" stop-color="#0077ff" stop-opacity="0.35"/>
+      <stop offset="70%" stop-color="#052046" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="coreBeamGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="25%" stop-color="#a5f3fc" stop-opacity="0.9"/>
+      <stop offset="55%" stop-color="#00d8ff" stop-opacity="0.6"/>
+      <stop offset="85%" stop-color="#0055ff" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#001133" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Frame Gradients -->
+    <linearGradient id="frameBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a5f3fc"/>
+      <stop offset="30%" stop-color="#0284c7"/>
+      <stop offset="70%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+
+    <linearGradient id="frameInner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#06152d"/>
+    </linearGradient>
+
+    <!-- Ice Facet Gradients (Light to Deep Dark) -->
+    <linearGradient id="icePureWhite" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#cff4fe"/>
+      <stop offset="100%" stop-color="#7dd3fc"/>
+    </linearGradient>
+
+    <linearGradient id="iceLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="50%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <linearGradient id="iceMidLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="70%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#075985"/>
+    </linearGradient>
+
+    <linearGradient id="iceMidRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="60%" stop-color="#0c4a6e"/>
+      <stop offset="100%" stop-color="#082f49"/>
+    </linearGradient>
+
+    <linearGradient id="iceDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c4a6e"/>
+      <stop offset="50%" stop-color="#075985"/>
+      <stop offset="100%" stop-color="#031d33"/>
+    </linearGradient>
+
+    <linearGradient id="iceDeepShadow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#082f49"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+
+    <!-- Rune & FX Gradients -->
+    <linearGradient id="runeCyan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <linearGradient id="blizzardArcGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#38bdf8" stop-opacity="0.6"/>
+      <stop offset="80%" stop-color="#0284c7" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="blizzardArcGrad2" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#a5f3fc" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#00d8ff" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Glowing Filters -->
+    <filter id="glowHeavy" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur1"/>
+      <feGaussianBlur stdDeviation="24" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="glowCyan" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feComponentTransfer in="blur" result="brightBlur">
+        <feFuncA type="linear" slope="2.5"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="brightBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="shadowDark" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#01040a" flood-opacity="0.8"/>
+    </filter>
+
+    <!-- Reusable Geometric Elements -->
+    <g id="sparkle">
+      <path d="M0,-12 L3,-3 L12,0 L3,3 L0,12 L-3,3 L-12,0 L-3,-3 Z" fill="#ffffff"/>
+    </g>
+
+    <g id="smallShard">
+      <polygon points="0,-15 5,0 0,18 -6,2" fill="url(#iceLight)"/>
+      <polygon points="0,-15 0,18 -6,2" fill="url(#icePureWhite)" opacity="0.6"/>
+    </g>
+  </defs>
+
+  <!-- ================= BACKGROUND & ICON FRAME ================= -->
+  <!-- Rounded Frame Outer -->
+  <rect x="16" y="16" width="480" height="480" rx="88" fill="url(#bgGrad)" stroke="url(#frameBorder)" stroke-width="6" filter="url(#shadowDark)"/>
+  <rect x="24" y="24" width="464" height="464" rx="80" fill="none" stroke="#0b2545" stroke-width="3" opacity="0.6"/>
+
+  <!-- Background Ambient Glow -->
+  <circle cx="256" cy="230" r="200" fill="url(#auraGlow)"/>
+
+  <!-- Geometric Background Rays -->
+  <g opacity="0.15">
+    <polygon points="256,230 180,0 210,0" fill="#38bdf8"/>
+    <polygon points="256,230 302,0 332,0" fill="#38bdf8"/>
+    <polygon points="256,230 512,150 512,180" fill="#38bdf8"/>
+    <polygon points="256,230 512,290 512,320" fill="#38bdf8"/>
+    <polygon points="256,230 0,150 0,180" fill="#38bdf8"/>
+    <polygon points="256,230 0,290 0,320" fill="#38bdf8"/>
+  </g>
+
+  <!-- Background Snow & Ice Particles -->
+  <g opacity="0.7">
+    <use href="#sparkle" x="90" y="120" transform="scale(0.6)" filter="url(#glowCyan)"/>
+    <use href="#sparkle" x="420" y="140" transform="scale(0.8)" filter="url(#glowCyan)"/>
+    <use href="#sparkle" x="380" y="360" transform="scale(0.5)" filter="url(#glowCyan)"/>
+    <use href="#sparkle" x="110" y="380" transform="scale(0.7)" filter="url(#glowCyan)"/>
+    <circle cx="140" cy="190" r="2" fill="#ffffff" opacity="0.8"/>
+    <circle cx="360" cy="100" r="3" fill="#a5f3fc" opacity="0.9"/>
+    <circle cx="390" cy="240" r="2.5" fill="#ffffff" opacity="0.6"/>
+    <circle cx="120" cy="280" r="3.5" fill="#7dd3fc" opacity="0.5"/>
+  </g>
+
+  <!-- ================= TOWER BASE / CITADEL PEDESTAL ================= -->
+  <g id="citadelBase">
+    <!-- Bottom Shadow Base -->
+    <polygon points="120,440 256,480 392,440 420,410 256,430 92,410" fill="url(#iceDeepShadow)"/>
+    
+    <!-- Outer Ice Tier 1 (Lowest Platform) -->
+    <!-- Left Facet -->
+    <polygon points="92,410 256,445 256,425 110,395" fill="url(#iceDark)"/>
+    <!-- Right Facet -->
+    <polygon points="256,445 420,410 402,395 256,425" fill="url(#iceMidRight)"/>
+    <!-- Front Face -->
+    <polygon points="110,395 256,425 402,395 256,408" fill="url(#iceMidLeft)"/>
+
+    <!-- Pedestal Spikes (Left & Right Flanking Base Crystals) -->
+    <!-- Left Base Spike -->
+    <polygon points="80,415 120,385 140,410 100,425" fill="url(#iceDark)"/>
+    <polygon points="80,415 120,385 115,360" fill="url(#iceLight)"/>
+    <polygon points="120,385 140,410 125,365" fill="url(#iceMidLeft)"/>
+
+    <!-- Right Base Spike -->
+    <polygon points="432,415 392,385 372,410 412,425" fill="url(#iceDeepShadow)"/>
+    <polygon points="432,415 392,385 397,360" fill="url(#iceMidRight)"/>
+    <polygon points="392,385 372,410 387,365" fill="url(#iceDark)"/>
+
+    <!-- Inner Ice Tier 2 (Step Up) -->
+    <polygon points="135,385 256,410 377,385 360,365 256,380 152,365" fill="url(#iceMidRight)"/>
+    <polygon points="135,385 256,410 256,395 148,375" fill="url(#iceLight)"/>
+    <polygon points="256,410 377,385 364,375 256,395" fill="url(#iceMidLeft)"/>
+    
+    <!-- Base Glow Runes / Ice Cracks -->
+    <path d="M160,380 L200,390 L230,385 M352,380 L312,390 L282,385" stroke="url(#runeCyan)" stroke-width="2.5" fill="none" stroke-linecap="round" filter="url(#glowCyan)"/>
+  </g>
+
+  <!-- ================= LOWER & MID TOWER STRUCTURE ================= -->
+  <!-- Outer Guard Spires (Left and Right Pillars) -->
+  <g id="sidePillars">
+    <!-- Left Outer Pillar -->
+    <polygon points="140,365 170,240 190,260 165,370" fill="url(#iceDark)"/>
+    <polygon points="170,240 190,260 185,375 175,372" fill="url(#iceMidLeft)"/>
+    <polygon points="140,365 170,240 155,250" fill="url(#icePureWhite)" opacity="0.8"/>
+    <!-- Edge Highlight -->
+    <line x1="170" y1="240" x2="165" y2="370" stroke="#ffffff" stroke-width="1.5" opacity="0.9"/>
+
+    <!-- Right Outer Pillar -->
+    <polygon points="372,365 342,240 322,260 347,370" fill="url(#iceDeepShadow)"/>
+    <polygon points="342,240 322,260 327,375 337,372" fill="url(#iceMidRight)"/>
+    <polygon points="372,365 342,240 357,250" fill="url(#iceLight)" opacity="0.5"/>
+    <!-- Edge Highlight -->
+    <line x1="342" y1="240" x2="347" y2="370" stroke="#a5f3fc" stroke-width="1.5" opacity="0.7"/>
+  </g>
+
+  <!-- Main Citadel Tower Body -->
+  <g id="mainTowerBody">
+    <!-- Central Back Wall (Dark Interior Shadow) -->
+    <polygon points="185,365 256,385 327,365 310,210 256,180 202,210" fill="#020d1a"/>
+
+    <!-- Lower Main Facets -->
+    <!-- Outer Left Facet -->
+    <polygon points="185,365 212,230 235,265 200,373" fill="url(#iceDark)"/>
+    <!-- Inner Left Facet -->
+    <polygon points="200,373 235,265 256,385" fill="url(#iceMidLeft)"/>
+    <!-- Inner Right Facet -->
+    <polygon points="256,385 235,265 256,210 277,265" fill="url(#iceLight)"/>
+    <!-- Inner Right-Center Facet -->
+    <polygon points="256,385 277,265 312,373" fill="url(#iceMidRight)"/>
+    <!-- Outer Right Facet -->
+    <polygon points="312,373 277,265 300,230 327,365" fill="url(#iceDeepShadow)"/>
+
+    <!-- Sharp Center Ridge Line -->
+    <line x1="256" y1="210" x2="256" y2="385" stroke="#ffffff" stroke-width="2" filter="url(#glowCyan)"/>
+
+    <!-- Glowing Sub-Zero Runic Inlays on Tower Body -->
+    <path d="M220,330 L235,310 L235,280 M292,330 L277,310 L277,280 M256,360 L256,310" stroke="url(#runeCyan)" stroke-width="2" fill="none" stroke-linecap="round" filter="url(#glowCyan)"/>
+  </g>
+
+  <!-- ================= GLACIAL CORE & POWER CHAMBER ================= -->
+  <!-- Intense Glowing Core Beam Behind Levitating Crystal -->
+  <ellipse cx="256" cy="220" rx="65" ry="85" fill="url(#coreBeamGlow)" filter="url(#glowHeavy)"/>
+
+  <!-- Levitating Sub-Zero Core Crystal (Heart of Citadel) -->
+  <g id="glacialCore" filter="url(#glowCyan)">
+    <!-- Central Core Facets -->
+    <!-- Top Left -->
+    <polygon points="256,150 215,220 256,235" fill="url(#icePureWhite)"/>
+    <!-- Top Right -->
+    <polygon points="256,150 297,220 256,235" fill="url(#iceLight)"/>
+    <!-- Bottom Left -->
+    <polygon points="215,220 256,290 256,235" fill="url(#iceMidLeft)"/>
+    <!-- Bottom Right -->
+    <polygon points="297,220 256,290 256,235" fill="url(#iceMidRight)"/>
+    <!-- Front Central Gem Facet -->
+    <polygon points="256,175 280,220 256,260 232,220" fill="#ffffff" opacity="0.85"/>
+  </g>
+
+  <!-- ================= UPPER CITADEL & FLOATING CROWN ================= -->
+  <!-- Top Arch Support Spires -->
+  <g id="upperCrownSpires">
+    <!-- Left Arch Spire -->
+    <polygon points="202,210 220,130 238,175 215,225" fill="url(#iceLight)"/>
+    <polygon points="220,130 238,175 232,180" fill="url(#icePureWhite)"/>
+    
+    <!-- Right Arch Spire -->
+    <polygon points="310,210 292,130 274,175 297,225" fill="url(#iceMidRight)"/>
+    <polygon points="292,130 274,175 280,180" fill="url(#iceDark)"/>
+  </g>
+
+  <!-- Floating Apex Glacial Crystal (The Spire Top) -->
+  <g id="floatingApexSpire" filter="url(#glowCyan)">
+    <!-- Main Apex Top Crystal -->
+    <!-- Front Left Facet -->
+    <polygon points="256,35 220,115 256,130" fill="url(#icePureWhite)"/>
+    <!-- Front Right Facet -->
+    <polygon points="256,35 292,115 256,130" fill="url(#iceLight)"/>
+    <!-- Back Left Facet -->
+    <polygon points="256,35 220,115 235,100" fill="url(#iceMidLeft)"/>
+    <!-- Back Right Facet -->
+    <polygon points="256,35 292,115 277,100" fill="url(#iceDark)"/>
+    <!-- Bottom Under Facet Left -->
+    <polygon points="220,115 256,155 256,130" fill="url(#iceMidLeft)"/>
+    <!-- Bottom Under Facet Right -->
+    <polygon points="292,115 256,155 256,130" fill="url(#iceMidRight)"/>
+    
+    <!-- Center Highlight Line -->
+    <line x1="256" y1="35" x2="256" y2="155" stroke="#ffffff" stroke-width="2"/>
+    <!-- Apex Tip Light Flare -->
+    <use href="#sparkle" x="256" y="35" transform="scale(1)" filter="url(#glowCyan)"/>
+  </g>
+
+  <!-- ================= FLOATING CRYSTAL SHARDS & ORBITS ================= -->
+  <!-- Detached Orbiting Sub-Zero Shards -->
+  <g id="orbitingShards">
+    <!-- Top Left Floating Shard -->
+    <g transform="translate(140, 110) rotate(-18)">
+      <polygon points="0,-25 10,0 0,30 -12,5" fill="url(#iceLight)" filter="url(#glowCyan)"/>
+      <polygon points="0,-25 10,0 0,30" fill="url(#icePureWhite)"/>
+      <line x1="0" y1="-25" x2="0" y2="30" stroke="#ffffff" stroke-width="1"/>
+    </g>
+
+    <!-- Top Right Floating Shard -->
+    <g transform="translate(372, 115) rotate(22)">
+      <polygon points="0,-28 12,2 0,32 -10,3" fill="url(#iceMidRight)" filter="url(#glowCyan)"/>
+      <polygon points="0,-28 0,32 -10,3" fill="url(#iceLight)"/>
+      <line x1="0" y1="-28" x2="0" y2="32" stroke="#ffffff" stroke-width="1"/>
+    </g>
+
+    <!-- Mid Left Small Floating Shard -->
+    <g transform="translate(105, 230) rotate(12)">
+      <use href="#smallShard" filter="url(#glowCyan)"/>
+    </g>
+
+    <!-- Mid Right Small Floating Shard -->
+    <g transform="translate(410, 240) rotate(-15)">
+      <use href="#smallShard" filter="url(#glowCyan)"/>
+    </g>
+
+    <!-- Bottom Left Floating Shard -->
+    <g transform="translate(130, 310) rotate(-35)">
+      <use href="#smallShard" transform="scale(0.8)"/>
+    </g>
+
+    <!-- Bottom Right Floating Shard -->
+    <g transform="translate(385, 315) rotate(40)">
+      <use href="#smallShard" transform="scale(0.85)"/>
+    </g>
+  </g>
+
+  <!-- ================= SWIRLING BLIZZARD AURA & ENERGY RINGS ================= -->
+  <g id="blizzardAura">
+    <!-- Outer Swirling Arc 1 -->
+    <path d="M70,270 C110,160 370,120 445,210 C490,260 390,340 256,350 C140,360 60,300 110,240" fill="none" stroke="url(#blizzardArcGrad1)" stroke-width="4" stroke-dasharray="140 30 80 40" stroke-linecap="round" filter="url(#glowHeavy)"/>
+
+    <!-- Inner Swirling Arc 2 -->
+    <path d="M440,285 C390,380 150,395 85,315 C30,250 160,170 270,160 C380,150 440,210 390,270" fill="none" stroke="url(#blizzardArcGrad2)" stroke-width="2.5" stroke-dasharray="100 40 120 30" stroke-linecap="round" filter="url(#glowCyan)"/>
+
+    <!-- Orbiting Frost Energy Ring (Perspective Ellipse around Core) -->
+    <ellipse cx="256" cy="225" rx="160" ry="42" fill="none" stroke="url(#runeCyan)" stroke-width="1.8" stroke-dasharray="180 40 60 20" transform="rotate(-10 256 225)" opacity="0.8" filter="url(#glowCyan)"/>
+    <ellipse cx="256" cy="225" rx="140" ry="35" fill="none" stroke="#ffffff" stroke-width="1" stroke-dasharray="80 120" transform="rotate(8 256 225)" opacity="0.6"/>
+  </g>
+
+  <!-- ================= FINAL SPECULAR HIGHLIGHTS & LIGHT FLARES ================= -->
+  <g id="specularOverlay">
+    <!-- Sharp Edge Highlights -->
+    <!-- Central Tower Apex Rim -->
+    <path d="M256,150 L215,220 L256,235 L297,220 Z" fill="none" stroke="#ffffff" stroke-width="1.2" opacity="0.75"/>
+    
+    <!-- Core Center Lens Flare Sparkles -->
+    <use href="#sparkle" x="256" y="220" transform="scale(1.4)" filter="url(#glowCyan)"/>
+    <use href="#sparkle" x="256" y="220" transform="scale(0.7)"/>
+
+    <!-- Additional Vignette & Edge Glint Details -->
+    <circle cx="215" cy="220" r="3" fill="#ffffff" filter="url(#glowCyan)"/>
+    <circle cx="297" cy="220" r="3" fill="#ffffff" filter="url(#glowCyan)"/>
+    <circle cx="256" cy="130" r="2.5" fill="#ffffff"/>
+    <circle cx="256" cy="290" r="2.5" fill="#a5f3fc"/>
+  </g>
+</svg>

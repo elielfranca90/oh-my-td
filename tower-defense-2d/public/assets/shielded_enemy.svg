@@ -1,0 +1,274 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- GLOW AND NEON FILTERS -->
+    <filter id="ultra-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur1" />
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2" />
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur3" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur3" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="cyan-glow-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="shield-rim-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+      <feComponentTransfer in="blur" result="boost">
+        <feFuncA type="linear" slope="2" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="boost" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- GRADIENTS -->
+    <!-- Ambient Shield Glow -->
+    <radialGradient id="bg-shield-blur" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.35" />
+      <stop offset="60%" stop-color="#0066ff" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#002b66" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Primary Shield Surface Gradient -->
+    <radialGradient id="shield-bubble-grad" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8" />
+      <stop offset="15%" stop-color="#70f3ff" stop-opacity="0.45" />
+      <stop offset="45%" stop-color="#00b7ff" stop-opacity="0.18" />
+      <stop offset="80%" stop-color="#0044ff" stop-opacity="0.35" />
+      <stop offset="94%" stop-color="#00d9ff" stop-opacity="0.75" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.95" />
+    </radialGradient>
+
+    <!-- Shield Outer Rim Highlight -->
+    <linearGradient id="shield-rim-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="30%" stop-color="#00f0ff" />
+      <stop offset="70%" stop-color="#0044ff" />
+      <stop offset="100%" stop-color="#00ffff" />
+    </linearGradient>
+
+    <!-- Cobalt Armor Metallic Gradients -->
+    <linearGradient id="cobalt-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1b2a4a" />
+      <stop offset="50%" stop-color="#0b1326" />
+      <stop offset="100%" stop-color="#050814" />
+    </linearGradient>
+
+    <linearGradient id="cobalt-mid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2a4878" />
+      <stop offset="50%" stop-color="#182e54" />
+      <stop offset="100%" stop-color="#0e1a33" />
+    </linearGradient>
+
+    <linearGradient id="cobalt-light" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#4a76ba" />
+      <stop offset="40%" stop-color="#284982" />
+      <stop offset="100%" stop-color="#132447" />
+    </linearGradient>
+
+    <!-- Mech Accent & Energy Gradients -->
+    <linearGradient id="cyan-energy-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="30%" stop-color="#00f6ff" />
+      <stop offset="70%" stop-color="#0088ff" />
+      <stop offset="100%" stop-color="#0033aa" />
+    </linearGradient>
+
+    <linearGradient id="thruster-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="20%" stop-color="#00ffff" />
+      <stop offset="60%" stop-color="#0055ff" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#001133" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- PATTERNS -->
+    <!-- Forcefield Hex Grid Pattern -->
+    <pattern id="hex-grid" width="24" height="41.569" patternUnits="userSpaceOnUse">
+      <path d="M 12 0 L 24 6.928 L 24 20.785 L 12 27.713 L 0 20.785 L 0 6.928 Z 
+               M 0 41.569 L 12 34.641 L 24 41.569 
+               M 12 27.713 L 12 34.641" 
+            fill="none" stroke="#00f0ff" stroke-width="1.2" stroke-opacity="0.4" />
+      <circle cx="12" cy="13.856" r="1.5" fill="#00ffff" fill-opacity="0.5" />
+    </pattern>
+
+    <!-- Tech Lines Pattern for Wings -->
+    <pattern id="tech-circuit" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M0 15 h10 l5 -5 h10 M15 15 v10" fill="none" stroke="#00d9ff" stroke-width="0.8" stroke-opacity="0.3" />
+    </pattern>
+
+    <!-- CLIP PATHS -->
+    <clipPath id="shield-clip">
+      <circle cx="256" cy="256" r="216" />
+    </clipPath>
+  </defs>
+
+  <!-- ==================== BACKGROUND AMBIENT GLOW ==================== -->
+  <circle cx="256" cy="256" r="240" fill="url(#bg-shield-blur)" />
+
+  <!-- ==================== REAR THRUSTER PLUMES ==================== -->
+  <g id="thrusters" filter="url(#ultra-glow)">
+    <!-- Main Engine Flame -->
+    <polygon points="256,340 236,360 244,450 256,480 268,450 276,360" fill="url(#thruster-grad)" />
+    <!-- Wing Thruster Left -->
+    <polygon points="175,325 162,340 167,410 175,430 181,410 186,340" fill="url(#thruster-grad)" />
+    <!-- Wing Thruster Right -->
+    <polygon points="337,325 326,340 331,410 337,430 344,410 350,340" fill="url(#thruster-grad)" />
+  </g>
+
+  <!-- ==================== MECH CHASSIS (THE WARRIOR) ==================== -->
+  <g id="mech-chassis">
+    <!-- SHADOW / BASE STRUCTURE -->
+    <path d="M 256,90 L 350,170 L 430,280 L 370,330 L 330,320 L 256,360 L 182,320 L 142,330 L 82,280 L 162,170 Z" fill="#030712" />
+
+    <!-- WINGS & HEAVY ARMOR THRUSTERS (LEFT & RIGHT) -->
+    <!-- Left Outer Wing -->
+    <path d="M 162,170 L 70,260 L 60,300 L 135,315 L 175,270 Z" fill="url(#cobalt-dark)" stroke="#1a3a6e" stroke-width="1.5" />
+    <path d="M 150,185 L 78,255 L 72,285 L 130,298 L 162,260 Z" fill="url(#cobalt-mid)" />
+    <path d="M 90,250 L 125,290" stroke="#00f0ff" stroke-width="2" filter="url(#cyan-glow-soft)" />
+
+    <!-- Right Outer Wing -->
+    <path d="M 350,170 L 442,260 L 452,300 L 377,315 L 337,270 Z" fill="url(#cobalt-dark)" stroke="#1a3a6e" stroke-width="1.5" />
+    <path d="M 362,185 L 434,255 L 440,285 L 382,298 L 350,260 Z" fill="url(#cobalt-mid)" />
+    <path d="M 422,250 L 387,290" stroke="#00f0ff" stroke-width="2" filter="url(#cyan-glow-soft)" />
+
+    <!-- WEAPON CANNONS (WING MOUNTED) -->
+    <!-- Left Cannons -->
+    <rect x="112" y="190" width="8" height="60" rx="4" fill="url(#cobalt-dark)" stroke="#2a5599" />
+    <rect x="114" y="170" width="4" height="30" rx="2" fill="#00f0ff" filter="url(#cyan-glow-soft)" />
+    <!-- Right Cannons -->
+    <rect x="392" y="190" width="8" height="60" rx="4" fill="url(#cobalt-dark)" stroke="#2a5599" />
+    <rect x="394" y="170" width="4" height="30" rx="2" fill="#00f0ff" filter="url(#cyan-glow-soft)" />
+
+    <!-- MAIN FUSELAGE / BODY PLATES -->
+    <!-- Lower Body Base -->
+    <path d="M 256,350 L 320,315 L 340,250 L 256,270 L 172,250 L 192,315 Z" fill="url(#cobalt-dark)" />
+    
+    <!-- Mid Rear Armor -->
+    <path d="M 256,335 L 305,305 L 315,240 L 256,220 L 197,240 L 207,305 Z" fill="url(#cobalt-mid)" stroke="#204275" stroke-width="2" />
+    
+    <!-- Swept Shoulder Armor (Left) -->
+    <path d="M 240,130 L 165,190 L 185,260 L 235,230 L 250,160 Z" fill="url(#cobalt-light)" stroke="#3b6cb7" stroke-width="1.5" />
+    <path d="M 230,150 L 180,195 L 192,245 L 225,225 Z" fill="url(#cobalt-dark)" />
+    <line x1="180" y1="195" x2="225" y2="225" stroke="#00f0ff" stroke-width="1.5" filter="url(#cyan-glow-soft)" />
+
+    <!-- Swept Shoulder Armor (Right) -->
+    <path d="M 272,130 L 347,190 L 327,260 L 277,230 L 262,160 Z" fill="url(#cobalt-light)" stroke="#3b6cb7" stroke-width="1.5" />
+    <path d="M 282,150 L 332,195 L 320,245 L 287,225 Z" fill="url(#cobalt-dark)" />
+    <line x1="332" y1="195" x2="287" y2="225" stroke="#00f0ff" stroke-width="1.5" filter="url(#cyan-glow-soft)" />
+
+    <!-- NOSE CONE / CENTER SPONSOR -->
+    <path d="M 256,95 L 282,150 L 270,220 L 256,240 L 242,220 L 230,150 Z" fill="url(#cobalt-light)" stroke="#5288db" stroke-width="1.5" />
+    <path d="M 256,105 L 274,150 L 264,210 L 256,222 L 248,210 L 238,150 Z" fill="url(#cobalt-dark)" />
+
+    <!-- TECH/PANEL LINES & NOSE HIGHLIGHTS -->
+    <path d="M 256,100 L 256,220" stroke="#00f0ff" stroke-width="2" filter="url(#cyan-glow-soft)" />
+    <polyline points="230,160 210,170 190,165" fill="none" stroke="#00d9ff" stroke-width="1.5" />
+    <polyline points="282,160 302,170 322,165" fill="none" stroke="#00d9ff" stroke-width="1.5" />
+
+    <!-- POWER CORE / COCKPIT VISOR (CENTRAL GLOWING UNIT) -->
+    <polygon points="256,160 270,185 256,210 242,185" fill="#ffffff" filter="url(#ultra-glow)" />
+    <polygon points="256,168 264,185 256,200 248,185" fill="#00f0ff" />
+    
+    <!-- Chest Power Vent Ridges -->
+    <line x1="240" y1="235" x2="272" y2="235" stroke="#00f0ff" stroke-width="2" filter="url(#cyan-glow-soft)" />
+    <line x1="244" y1="243" x2="268" y2="243" stroke="#00f0ff" stroke-width="2" filter="url(#cyan-glow-soft)" />
+    <line x1="248" y1="251" x2="264" y2="251" stroke="#00f0ff" stroke-width="1.5" filter="url(#cyan-glow-soft)" />
+
+    <!-- Vent Flaps Bottom -->
+    <path d="M 235,310 L 256,325 L 277,310" fill="none" stroke="#3b6cb7" stroke-width="2" />
+  </g>
+
+  <!-- ==================== ENERGY SHIELD SYSTEM (FOREGROUND) ==================== -->
+  <g id="energy-shield">
+    
+    <!-- 1. BACK SHIELD INNER DEPTH GLOW -->
+    <circle cx="256" cy="256" r="214" fill="none" stroke="#00a2ff" stroke-width="6" stroke-opacity="0.4" filter="url(#cyan-glow-soft)" />
+
+    <!-- 2. HEXAGON FORCEFIELD MESH (CLIPPED TO SPHERE) -->
+    <g clip-path="url(#shield-clip)">
+      <!-- Hex Pattern Base Layer -->
+      <rect x="30" y="30" width="452" height="452" fill="url(#hex-grid)" opacity="0.8" />
+      
+      <!-- Energy Grid Wave Highlight (Dynamic Curved Shading over Hexes) -->
+      <path d="M 60,150 Q 256,50 452,150 Q 380,350 256,450 Q 100,380 60,150 Z" fill="url(#cyan-energy-grad)" opacity="0.15" />
+      
+      <!-- Forcefield Internal Energy Arc Lines -->
+      <path d="M 70,200 Q 200,120 400,160" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.5" filter="url(#cyan-glow-soft)" />
+      <path d="M 100,320 Q 256,420 420,300" fill="none" stroke="#00f0ff" stroke-width="2.5" opacity="0.6" filter="url(#cyan-glow-soft)" />
+      <path d="M 80,260 Q 256,220 432,260" fill="none" stroke="#00f0ff" stroke-width="1.5" stroke-dasharray="12 6 4 6" opacity="0.7" />
+    </g>
+
+    <!-- 3. MAIN SHIELD SPHERE (SEMI-TRANSPARENT GRADIENT BUBBLE) -->
+    <circle cx="256" cy="256" r="216" fill="url(#shield-bubble-grad)" />
+
+    <!-- 4. SHIELD PERIMETER RIM (HIGH-INTENSITY GLOWING BORDER) -->
+    <circle cx="256" cy="256" r="216" fill="none" stroke="url(#shield-rim-grad)" stroke-width="5" filter="url(#shield-rim-glow)" />
+    <circle cx="256" cy="256" r="213.5" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.9" />
+
+    <!-- 5. SPECULAR CURVED REFLECTIONS (3D SPHERE GLASS EFFECT) -->
+    <!-- Top-Left Main Gloss Arc -->
+    <path d="M 80,180 A 200,200 0 0,1 280,60" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.75" filter="url(#cyan-glow-soft)" />
+    <path d="M 95,160 A 185,185 0 0,1 260,75" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.9" />
+    
+    <!-- Bottom-Right Subtle Secondary Gloss -->
+    <path d="M 280,448 A 200,200 0 0,0 440,280" fill="none" stroke="#00f0ff" stroke-width="3" stroke-linecap="round" opacity="0.5" filter="url(#cyan-glow-soft)" />
+
+    <!-- 6. SHIELD GENERATOR ORBITAL NODES (4 ANCHORS AT CORNERS) -->
+    <!-- Top-Left Node -->
+    <g transform="translate(104, 104)">
+      <circle cx="0" cy="0" r="10" fill="url(#cobalt-dark)" stroke="#00f0ff" stroke-width="2" />
+      <circle cx="0" cy="0" r="4" fill="#ffffff" filter="url(#ultra-glow)" />
+      <!-- Energy Tether to Barrier -->
+      <path d="M -5,-5 L -12,-12" stroke="#00ffff" stroke-width="2" filter="url(#cyan-glow-soft)" />
+    </g>
+
+    <!-- Top-Right Node -->
+    <g transform="translate(408, 104)">
+      <circle cx="0" cy="0" r="10" fill="url(#cobalt-dark)" stroke="#00f0ff" stroke-width="2" />
+      <circle cx="0" cy="0" r="4" fill="#ffffff" filter="url(#ultra-glow)" />
+      <path d="M 5,-5 L 12,-12" stroke="#00ffff" stroke-width="2" filter="url(#cyan-glow-soft)" />
+    </g>
+
+    <!-- Bottom-Right Node -->
+    <g transform="translate(408, 408)">
+      <circle cx="0" cy="0" r="10" fill="url(#cobalt-dark)" stroke="#00f0ff" stroke-width="2" />
+      <circle cx="0" cy="0" r="4" fill="#ffffff" filter="url(#ultra-glow)" />
+      <path d="M 5,5 L 12,12" stroke="#00ffff" stroke-width="2" filter="url(#cyan-glow-soft)" />
+    </g>
+
+    <!-- Bottom-Left Node -->
+    <g transform="translate(104, 408)">
+      <circle cx="0" cy="0" r="10" fill="url(#cobalt-dark)" stroke="#00f0ff" stroke-width="2" />
+      <circle cx="0" cy="0" r="4" fill="#ffffff" filter="url(#ultra-glow)" />
+      <path d="M -5,5 L -12,12" stroke="#00ffff" stroke-width="2" filter="url(#cyan-glow-soft)" />
+    </g>
+
+    <!-- 7. ENERGY DISCHARGE SPARKS / PLASMA LIGHTNING ARCS -->
+    <g filter="url(#ultra-glow)">
+      <!-- Lightning Arc 1 (Top Right Rim) -->
+      <path d="M 370,85 Q 390,70 410,95 T 430,80" fill="none" stroke="#ffffff" stroke-width="2" />
+      <!-- Lightning Arc 2 (Left Mid Rim) -->
+      <path d="M 45,230 Q 30,250 50,270 T 40,300" fill="none" stroke="#00ffff" stroke-width="1.8" />
+      <!-- Lightning Arc 3 (Bottom Center Impact Flare) -->
+      <path d="M 220,468 Q 256,450 290,470" fill="none" stroke="#ffffff" stroke-width="2.5" />
+      <circle cx="256" cy="462" r="3" fill="#ffffff" />
+    </g>
+
+    <!-- Impact Ripple Rings (Top Right Front) -->
+    <ellipse cx="360" cy="140" rx="35" ry="14" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.8" transform="rotate(-30 360 140)" filter="url(#cyan-glow-soft)" />
+    <ellipse cx="360" cy="140" rx="20" ry="8" fill="none" stroke="#00f0ff" stroke-width="2" opacity="0.9" transform="rotate(-30 360 140)" />
+    <circle cx="360" cy="140" r="4" fill="#ffffff" filter="url(#ultra-glow)" />
+
+  </g>
+</svg>

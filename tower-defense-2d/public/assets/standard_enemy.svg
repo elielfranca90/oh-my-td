@@ -1,0 +1,411 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Glow and Shadow Filters -->
+    <filter id="yellowGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="redGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="intenseGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur1" />
+      <feGaussianBlur stdDeviation="5" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Crimson Armor Gradients -->
+    <linearGradient id="rg_armor_base" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3344" />
+      <stop offset="40%" stop-color="#b3001b" />
+      <stop offset="80%" stop-color="#59000d" />
+      <stop offset="100%" stop-color="#260005" />
+    </linearGradient>
+
+    <linearGradient id="rg_armor_dark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#800014" />
+      <stop offset="60%" stop-color="#40000a" />
+      <stop offset="100%" stop-color="#1a0004" />
+    </linearGradient>
+
+    <linearGradient id="rg_armor_hi" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff8080" />
+      <stop offset="50%" stop-color="#e6002e" />
+      <stop offset="100%" stop-color="#800014" />
+    </linearGradient>
+
+    <!-- Gold Trim Gradient -->
+    <linearGradient id="rg_gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe066" />
+      <stop offset="35%" stop-color="#d49b28" />
+      <stop offset="75%" stop-color="#805400" />
+      <stop offset="100%" stop-color="#402a00" />
+    </linearGradient>
+
+    <!-- Dark Steel / Metal Gradient -->
+    <linearGradient id="rg_dark_steel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#737982" />
+      <stop offset="40%" stop-color="#3b3e45" />
+      <stop offset="85%" stop-color="#1a1b1e" />
+      <stop offset="100%" stop-color="#0d0e10" />
+    </linearGradient>
+
+    <!-- Goblin Skin Gradients -->
+    <linearGradient id="rg_skin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6b8e4e" />
+      <stop offset="50%" stop-color="#43612b" />
+      <stop offset="85%" stop-color="#253818" />
+      <stop offset="100%" stop-color="#121c0b" />
+    </linearGradient>
+
+    <linearGradient id="rg_skin_dark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38522b" />
+      <stop offset="100%" stop-color="#121d0a" />
+    </linearGradient>
+
+    <!-- Fiery Lava Blade Edge Gradient -->
+    <linearGradient id="rg_blade_edge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="20%" stop-color="#ffee55" />
+      <stop offset="50%" stop-color="#ff7700" />
+      <stop offset="80%" stop-color="#dd0000" />
+      <stop offset="100%" stop-color="#550000" />
+    </linearGradient>
+
+    <!-- Horn & Spike Gradients -->
+    <linearGradient id="rg_horn" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6e6767" />
+      <stop offset="50%" stop-color="#363232" />
+      <stop offset="100%" stop-color="#141212" />
+    </linearGradient>
+
+    <linearGradient id="rg_spike" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e6e6e6" />
+      <stop offset="40%" stop-color="#999999" />
+      <stop offset="80%" stop-color="#4c4c4c" />
+      <stop offset="100%" stop-color="#1f1f1f" />
+    </linearGradient>
+
+    <!-- Radial Gradients -->
+    <radialGradient id="eyeGlowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="35%" stop-color="#ffff00" />
+      <stop offset="70%" stop-color="#ff5500" />
+      <stop offset="100%" stop-color="#ff0000" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="groundShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.8" />
+      <stop offset="65%" stop-color="#000000" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="fireAura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff4400" stop-opacity="0.3" />
+      <stop offset="60%" stop-color="#880000" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Ambient Fire Aura -->
+  <circle cx="256" cy="256" r="200" fill="url(#fireAura)" />
+
+  <!-- Ground Drop Shadow (Isometric Perspective Base) -->
+  <ellipse cx="256" cy="435" rx="160" ry="35" fill="url(#groundShadow)" />
+
+  <!-- CHARACTER MAIN GROUP -->
+  <g id="crimson_goblin_warrior">
+    
+    <!-- 1. BACK WEAPON / BATTLEAXE (Behind Right Arm) -->
+    <g id="battleaxe">
+      <!-- Handle Shaft -->
+      <path d="M 280 260 L 415 105 L 427 115 L 292 270 Z" fill="url(#rg_dark_steel)" />
+      <!-- Gold Wire Wrapping on Handle -->
+      <path d="M 285 255 L 410 110" stroke="url(#rg_gold)" stroke-width="3.5" stroke-dasharray="8 5" fill="none" />
+      <!-- Pommel Spike -->
+      <path d="M 275 265 L 255 288 L 272 292 L 285 273 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1" />
+
+      <!-- Main Savage Axe Head -->
+      <!-- Back Spike of Axe -->
+      <path d="M 375 140 L 330 110 L 370 115 Z" fill="url(#rg_dark_steel)" stroke="#111" stroke-width="1.5" />
+      <!-- Massive Curved Front Blade -->
+      <path d="M 390 130 C 420 80, 470 50, 485 95 C 495 130, 480 180, 425 210 C 385 230, 375 185, 385 160 C 395 145, 392 135, 390 130 Z" fill="url(#rg_dark_steel)" stroke="#1a0004" stroke-width="2" />
+      
+      <!-- Molten Glowing Edge Overlay -->
+      <path d="M 450 65 C 475 55, 492 90, 482 130 C 472 170, 435 205, 425 208 C 435 190, 470 160, 465 120 C 460 90, 440 75, 450 65 Z" fill="url(#rg_blade_edge)" filter="url(#yellowGlow)" />
+      <path d="M 462 75 C 478 88, 480 120, 470 145" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8" filter="url(#intenseGlow)" />
+
+      <!-- Fiery Etched Runes on Blade -->
+      <path d="M 405 135 L 425 125 L 415 150 L 445 140 M 425 160 L 440 175" stroke="#ffff55" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" filter="url(#yellowGlow)" />
+
+      <!-- Gold Reinforcement Collar -->
+      <path d="M 390 130 L 408 175 L 385 160 Z" fill="url(#rg_gold)" stroke="#3d2600" stroke-width="1" />
+    </g>
+
+    <!-- 2. REAR RIGHT LEG & BOOT -->
+    <g id="rear_leg">
+      <!-- Thigh Armor -->
+      <path d="M 285 305 L 340 300 L 348 345 L 290 350 Z" fill="url(#rg_armor_dark)" stroke="#1a0004" stroke-width="1.5" />
+      <!-- Knee Guard -->
+      <path d="M 335 335 L 360 330 L 355 355 L 330 355 Z" fill="url(#rg_gold)" />
+      <!-- Shin Greave -->
+      <path d="M 330 350 L 365 345 L 375 395 L 335 400 Z" fill="url(#rg_armor_base)" stroke="#47000b" stroke-width="1.5" />
+      <!-- Greave Spikes -->
+      <path d="M 365 360 L 385 355 L 368 375 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1" />
+      <!-- Heavy Boot -->
+      <path d="M 335 400 L 375 395 L 390 410 L 370 422 L 330 417 Z" fill="url(#rg_dark_steel)" />
+      <path d="M 375 395 L 395 402 L 385 412 Z" fill="url(#rg_spike)" />
+    </g>
+
+    <!-- 3. FRONT LEFT LEG & BOOT -->
+    <g id="front_leg">
+      <!-- Thigh Muscle & Straps -->
+      <path d="M 170 315 L 215 325 L 205 365 L 160 350 Z" fill="url(#rg_skin_dark)" stroke="#0d1408" stroke-width="1.5" />
+      <!-- Shin Greave (Crimson Plate) -->
+      <path d="M 150 355 L 195 365 L 180 415 L 135 405 Z" fill="url(#rg_armor_base)" stroke="#47000b" stroke-width="1.5" />
+      <!-- Center Ridge Highlight -->
+      <path d="M 172 360 L 158 410" stroke="#ff8080" stroke-width="2" fill="none" opacity="0.7" />
+      <!-- Knee Guard & Spike -->
+      <path d="M 150 355 L 195 365 L 170 345 Z" fill="url(#rg_gold)" />
+      <path d="M 170 345 L 148 322 L 162 350 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1" />
+      <!-- Armored Boot -->
+      <path d="M 135 405 L 180 415 L 175 432 L 120 428 L 125 412 Z" fill="url(#rg_dark_steel)" stroke="#000" stroke-width="1.5" />
+      <!-- Boot Toe Spike Cap -->
+      <path d="M 125 412 L 105 422 L 122 428 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1" />
+    </g>
+
+    <!-- 4. PELVIS, BELT & TASSETS -->
+    <g id="pelvis_belt">
+      <!-- Layered Armor Flaps (Tassets) -->
+      <path d="M 180 295 L 220 305 L 205 355 L 165 340 Z" fill="url(#rg_armor_base)" stroke="#47000b" stroke-width="1.5" />
+      <path d="M 270 300 L 310 290 L 320 340 L 280 345 Z" fill="url(#rg_armor_base)" stroke="#47000b" stroke-width="1.5" />
+      <!-- Center Leather Loincloth with Chainmail Trim -->
+      <path d="M 215 305 L 275 300 L 268 365 L 220 360 Z" fill="#221815" stroke="#000" stroke-width="1.5" />
+      <path d="M 220 350 L 269 355" stroke="url(#rg_gold)" stroke-width="4" stroke-dasharray="4 3" fill="none" />
+      
+      <!-- Belt Structure -->
+      <path d="M 190 285 Q 256 315 315 280 L 310 305 Q 256 338 185 308 Z" fill="url(#rg_dark_steel)" stroke="#000" stroke-width="1.5" />
+      <path d="M 192 288 Q 256 317 313 283" stroke="url(#rg_gold)" stroke-width="2" fill="none" />
+      <path d="M 187 305 Q 256 335 308 303" stroke="url(#rg_gold)" stroke-width="2" fill="none" />
+
+      <!-- Horned Skull Belt Buckle -->
+      <g id="belt_buckle">
+        <circle cx="256" cy="310" r="16" fill="url(#rg_gold)" stroke="#261a00" stroke-width="1.5" />
+        <!-- Skull Eyes -->
+        <circle cx="250" cy="308" r="3" fill="#000" />
+        <circle cx="262" cy="308" r="3" fill="#000" />
+        <circle cx="250" cy="308" r="1.5" fill="#ff2200" filter="url(#yellowGlow)" />
+        <circle cx="262" cy="308" r="1.5" fill="#ff2200" filter="url(#yellowGlow)" />
+        <!-- Buckle Horns -->
+        <path d="M 242 305 C 232 295, 230 285, 222 290 C 230 300, 238 305, 242 312 Z" fill="url(#rg_spike)" />
+        <path d="M 270 305 C 280 295, 282 285, 290 290 C 282 300, 274 305, 270 312 Z" fill="url(#rg_spike)" />
+      </g>
+    </g>
+
+    <!-- 5. TORSO & BREASTPLATE -->
+    <g id="torso">
+      <!-- Lower Abdominal Plate -->
+      <path d="M 200 255 Q 256 280 300 250 L 305 285 Q 256 315 195 290 Z" fill="url(#rg_armor_dark)" stroke="#1a0004" stroke-width="1.5" />
+      <!-- Mid Chest Plate -->
+      <path d="M 190 220 Q 256 245 310 215 L 305 255 Q 256 285 195 260 Z" fill="url(#rg_armor_base)" stroke="#47000b" stroke-width="1.5" />
+      <!-- Upper Chest Armor Plate -->
+      <path d="M 185 185 Q 256 215 315 180 L 310 220 Q 256 250 190 225 Z" fill="url(#rg_armor_hi)" stroke="#47000b" stroke-width="1.5" />
+
+      <!-- Gold Trim Structure on Chest -->
+      <path d="M 200 225 Q 256 248 300 220" stroke="url(#rg_gold)" stroke-width="2.5" fill="none" />
+      <path d="M 195 190 Q 256 218 305 185" stroke="url(#rg_gold)" stroke-width="3" fill="none" />
+
+      <!-- Glowing Fiery Core / Sternum Seam -->
+      <path d="M 256 190 L 256 270" stroke="#ffcc00" stroke-width="3.5" filter="url(#yellowGlow)" fill="none" />
+      <path d="M 240 225 L 272 225 M 244 248 L 268 248" stroke="#ff5500" stroke-width="2" filter="url(#yellowGlow)" fill="none" />
+    </g>
+
+    <!-- 6. LEFT ARM & SPIKED TOWER SHIELD (Front Left View) -->
+    <g id="left_arm_shield">
+      <!-- Muscular Green Arm Background -->
+      <path d="M 175 220 L 140 250 L 165 285 L 195 240 Z" fill="url(#rg_skin)" />
+      
+      <!-- Massive Savage Spiked Shield -->
+      <!-- Outer Dark Steel Backing -->
+      <path d="M 70 210 L 165 190 L 175 310 L 125 365 L 60 310 Z" fill="url(#rg_dark_steel)" stroke="#000" stroke-width="2" />
+      <!-- Shield Crimson Outer Plate -->
+      <path d="M 78 218 L 157 200 L 165 302 L 122 352 L 70 302 Z" fill="url(#rg_armor_base)" stroke="#47000b" stroke-width="1.5" />
+      <!-- Shield Inner Plate -->
+      <path d="M 88 228 L 147 212 L 153 294 L 120 338 L 80 294 Z" fill="url(#rg_armor_dark)" />
+      
+      <!-- Gold Shield Trim & Bevels -->
+      <path d="M 70 210 L 165 190 L 175 310 L 125 365 L 60 310 Z" stroke="url(#rg_gold)" stroke-width="3" fill="none" />
+      <path d="M 125 200 L 125 355" stroke="url(#rg_gold)" stroke-width="2" fill="none" />
+      <path d="M 75 260 L 168 250" stroke="url(#rg_gold)" stroke-width="2" fill="none" />
+
+      <!-- Fiery Rune Emblem on Shield -->
+      <polygon points="125,230 135,250 155,250 140,262 145,282 125,270 105,282 110,262 95,250 115,250" fill="none" stroke="#ffaa00" stroke-width="2" filter="url(#yellowGlow)" />
+
+      <!-- GIANT CENTER BOSS SPIKE (Extending Aggressively Forward-Left) -->
+      <path d="M 115 250 L 30 265 L 120 280 Z" fill="url(#rg_spike)" stroke="#000" stroke-width="1.5" />
+      <!-- Spike Highlight Edge -->
+      <path d="M 115 250 L 30 265 L 120 265 Z" fill="#ffffff" opacity="0.4" />
+
+      <!-- Corner Shield Spikes -->
+      <path d="M 70 210 L 42 185 L 82 200 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1" />
+      <path d="M 165 190 L 185 165 L 172 202 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1" />
+      <path d="M 125 365 L 120 400 L 140 358 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1" />
+    </g>
+
+    <!-- 7. HEAD, GOBLIN FACE & HELMET -->
+    <g id="head_and_helmet">
+      <!-- Muscular Green Neck -->
+      <path d="M 220 160 L 292 160 L 285 190 L 227 190 Z" fill="url(#rg_skin_dark)" />
+      <path d="M 235 165 L 245 188 M 275 165 L 267 188" stroke="#1d2e13" stroke-width="2" />
+
+      <!-- Savage Goblin Ears -->
+      <!-- Left Ear -->
+      <g id="left_ear">
+        <path d="M 205 170 C 165 155, 125 160, 115 178 C 135 188, 175 192, 198 185 Z" fill="url(#rg_skin)" stroke="#121c0b" stroke-width="1.5" />
+        <path d="M 190 173 C 160 168, 138 170, 128 178" stroke="#253818" stroke-width="1.5" fill="none" />
+        <!-- Earring -->
+        <circle cx="126" cy="180" r="5" fill="none" stroke="url(#rg_gold)" stroke-width="2" />
+      </g>
+      <!-- Right Ear -->
+      <g id="right_ear">
+        <path d="M 307 170 C 347 155, 387 160, 397 178 C 377 188, 337 192, 314 185 Z" fill="url(#rg_skin_dark)" stroke="#121c0b" stroke-width="1.5" />
+        <path d="M 322 173 C 352 168, 374 170, 384 178" stroke="#121c0b" stroke-width="1.5" fill="none" />
+        <!-- Earring -->
+        <circle cx="386" cy="180" r="5" fill="none" stroke="url(#rg_gold)" stroke-width="2" />
+      </g>
+
+      <!-- Goblin Lower Face / Jaw -->
+      <path d="M 220 175 L 292 175 L 280 205 L 232 205 Z" fill="url(#rg_skin)" />
+      
+      <!-- Open Snarl Mouth & Fangs -->
+      <path d="M 230 185 Q 256 202 282 185 Q 256 194 230 185 Z" fill="#1f0006" stroke="#40000a" stroke-width="1" />
+      <!-- Fangs -->
+      <polygon points="238,186 242,195 246,186" fill="#fffdd0" />
+      <polygon points="266,186 270,195 274,186" fill="#fffdd0" />
+      <polygon points="248,193 252,185 256,193" fill="#fffdd0" />
+      <polygon points="258,193 262,185 266,193" fill="#fffdd0" />
+
+      <!-- Crimson Warrior Helmet -->
+      <!-- Helmet Brow Guard -->
+      <path d="M 195 165 Q 256 145 317 165 L 322 140 Q 256 118 190 140 Z" fill="url(#rg_armor_dark)" stroke="url(#rg_gold)" stroke-width="2" />
+      <!-- Helmet Main Crown Dome -->
+      <path d="M 202 145 C 205 95, 307 95, 310 145 Z" fill="url(#rg_armor_base)" stroke="#47000b" stroke-width="1.5" />
+      <!-- Central Helmet Crest/Ridge -->
+      <path d="M 256 98 L 256 160" stroke="url(#rg_gold)" stroke-width="4.5" fill="none" />
+      <path d="M 256 95 L 256 160" stroke="#fff" stroke-width="1" opacity="0.6" fill="none" />
+
+      <!-- GIANT DEMONIC HELMET HORNS -->
+      <!-- Left Horn -->
+      <g id="left_horn">
+        <path d="M 208 135 C 175 105, 135 95, 105 122 C 128 128, 160 133, 192 148 Z" fill="url(#rg_horn)" stroke="#0d0e10" stroke-width="1.5" />
+        <!-- Horn Ridges -->
+        <path d="M 165 115 Q 172 128 160 137 M 138 116 Q 145 125 133 131" stroke="#2b2727" stroke-width="2" fill="none" />
+        <path d="M 208 135 C 190 120, 160 115, 105 122" stroke="#999" stroke-width="1" fill="none" opacity="0.4" />
+      </g>
+      <!-- Right Horn -->
+      <g id="right_horn">
+        <path d="M 304 135 C 337 105, 377 95, 407 122 C 384 128, 352 133, 320 148 Z" fill="url(#rg_horn)" stroke="#0d0e10" stroke-width="1.5" />
+        <!-- Horn Ridges -->
+        <path d="M 347 115 Q 340 128 352 137 M 374 116 Q 367 125 379 131" stroke="#141212" stroke-width="2" fill="none" />
+        <path d="M 304 135 C 322 120, 352 115, 407 122" stroke="#999" stroke-width="1" fill="none" opacity="0.4" />
+      </g>
+
+      <!-- Visor Dark Shadow Cavity -->
+      <path d="M 212 162 L 300 162 L 292 178 L 220 178 Z" fill="#050002" />
+
+      <!-- INTENSE GLOWING YELLOW EYES -->
+      <g id="glowing_yellow_eyes">
+        <!-- Left Eye -->
+        <ellipse cx="238" cy="170" rx="10" ry="4.5" transform="rotate(14 238 170)" fill="url(#eyeGlowGrad)" filter="url(#yellowGlow)" />
+        <ellipse cx="238" cy="170" rx="4" ry="2" transform="rotate(14 238 170)" fill="#ffffff" filter="url(#intenseGlow)" />
+        
+        <!-- Right Eye -->
+        <ellipse cx="274" cy="170" rx="10" ry="4.5" transform="rotate(-14 274 170)" fill="url(#eyeGlowGrad)" filter="url(#yellowGlow)" />
+        <ellipse cx="274" cy="170" rx="4" ry="2" transform="rotate(-14 274 170)" fill="#ffffff" filter="url(#intenseGlow)" />
+      </g>
+    </g>
+
+    <!-- 8. MASSIVE SPIKED SHOULDER PAULDRONS (Top Layer Depth) -->
+    <!-- LEFT PAULDRON -->
+    <g id="left_pauldron">
+      <!-- Main Crimson Armor Plate Shell -->
+      <path d="M 145 195 C 140 150, 210 135, 228 175 C 220 218, 155 228, 145 195 Z" fill="url(#rg_armor_base)" stroke="#47000b" stroke-width="2" />
+      <!-- Inner Plate Tier -->
+      <path d="M 155 195 C 150 162, 202 150, 218 180" fill="url(#rg_armor_hi)" opacity="0.8" />
+      <!-- Gold Rim Trim -->
+      <path d="M 145 195 C 160 225, 215 215, 228 175" stroke="url(#rg_gold)" stroke-width="3.5" fill="none" />
+      
+      <!-- 3 Giant Curved Spikes -->
+      <!-- Spike 1 (Lower Outward) -->
+      <path d="M 158 172 L 85 130 L 175 160 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1.5" />
+      <path d="M 158 172 L 85 130 L 168 165 Z" fill="#ffffff" opacity="0.3" />
+      <!-- Spike 2 (Mid Upward) -->
+      <path d="M 178 153 L 115 95 L 195 145 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1.5" />
+      <path d="M 178 153 L 115 95 L 188 149 Z" fill="#ffffff" opacity="0.3" />
+      <!-- Spike 3 (Top Inner) -->
+      <path d="M 198 148 L 155 75 L 212 142 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1.5" />
+      <path d="M 198 148 L 155 75 L 206 145 Z" fill="#ffffff" opacity="0.3" />
+    </g>
+
+    <!-- RIGHT PAULDRON -->
+    <g id="right_pauldron">
+      <!-- Main Crimson Armor Plate Shell -->
+      <path d="M 367 195 C 372 150, 302 135, 284 175 C 292 218, 357 228, 367 195 Z" fill="url(#rg_armor_base)" stroke="#47000b" stroke-width="2" />
+      <!-- Inner Plate Tier -->
+      <path d="M 357 195 C 362 162, 310 150, 294 180" fill="url(#rg_armor_hi)" opacity="0.8" />
+      <!-- Gold Rim Trim -->
+      <path d="M 367 195 C 352 225, 297 215, 284 175" stroke="url(#rg_gold)" stroke-width="3.5" fill="none" />
+
+      <!-- 3 Giant Curved Spikes -->
+      <!-- Spike 1 (Lower Outward) -->
+      <path d="M 354 172 L 427 130 L 337 160 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1.5" />
+      <path d="M 354 172 L 427 130 L 344 165 Z" fill="#ffffff" opacity="0.3" />
+      <!-- Spike 2 (Mid Upward) -->
+      <path d="M 334 153 L 397 95 L 317 145 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1.5" />
+      <path d="M 334 153 L 397 95 L 324 149 Z" fill="#ffffff" opacity="0.3" />
+      <!-- Spike 3 (Top Inner) -->
+      <path d="M 314 148 L 357 75 L 300 142 Z" fill="url(#rg_spike)" stroke="#111" stroke-width="1.5" />
+      <path d="M 314 148 L 357 75 L 306 145 Z" fill="#ffffff" opacity="0.3" />
+    </g>
+
+    <!-- 9. FOREGROUND FX, SPECULAR HIGHLIGHTS & FLOATING EMBERS -->
+    <g id="fx_particles">
+      <!-- Metallic & Armor Specular Highlights -->
+      <path d="M 220 135 C 240 120, 270 120, 292 135" stroke="#ffaaaa" stroke-width="2" fill="none" opacity="0.6" />
+      <path d="M 155 170 C 170 155, 195 150, 210 160" stroke="#ffaaaa" stroke-width="2" fill="none" opacity="0.6" />
+      <path d="M 357 170 C 342 155, 317 150, 302 160" stroke="#ffaaaa" stroke-width="2" fill="none" opacity="0.6" />
+      <path d="M 78 218 L 157 200" stroke="#ffea88" stroke-width="2" fill="none" opacity="0.8" />
+
+      <!-- Floating Lava Embers -->
+      <circle cx="440" cy="110" r="3" fill="#ffee55" filter="url(#yellowGlow)" />
+      <circle cx="470" cy="140" r="2" fill="#ff7700" filter="url(#yellowGlow)" />
+      <circle cx="410" cy="80" r="2.5" fill="#ff3300" filter="url(#yellowGlow)" />
+      <circle cx="455" cy="175" r="1.5" fill="#ffff99" filter="url(#yellowGlow)" />
+      
+      <circle cx="90" cy="240" r="2" fill="#ffee55" filter="url(#yellowGlow)" />
+      <circle cx="65" cy="275" r="1.5" fill="#ff5500" filter="url(#yellowGlow)" />
+      
+      <circle cx="232" cy="165" r="1.5" fill="#ffffff" filter="url(#yellowGlow)" />
+      <circle cx="280" cy="165" r="1.5" fill="#ffffff" filter="url(#yellowGlow)" />
+
+      <!-- Ember Sparks -->
+      <polygon points="450,180 453,186 447,184" fill="#ffaa00" filter="url(#yellowGlow)" />
+      <polygon points="390,60 394,64 388,65" fill="#ffdd44" filter="url(#yellowGlow)" />
+      <polygon points="110,210 114,213 109,216" fill="#ff7700" filter="url(#yellowGlow)" />
+    </g>
+    
+  </g>
+</svg>

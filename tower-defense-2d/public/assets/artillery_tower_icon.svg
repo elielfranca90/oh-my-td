@@ -1,0 +1,344 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Filters for Lighting and Glow Effects -->
+    <filter id="ultra-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur1" />
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2" />
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur3" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur3" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="plasma-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+      <feComponentTransfer in="blur" result="brightBlur">
+        <feFuncA type="linear" slope="1.8"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="brightBlur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="drop-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+
+    <filter id="inner-shadow">
+      <feComponentTransfer in="SourceAlpha">
+        <feFuncA type="linear" slope="1"/>
+      </feComponentTransfer>
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite operator="out" in2="SourceGraphic" result="inverse"/>
+      <feFlood flood-color="black" flood-opacity="0.6" result="color"/>
+      <feComposite operator="in" in2="inverse" result="shadow"/>
+      <feComposite operator="over" in2="SourceGraphic"/>
+    </filter>
+
+    <!-- Linear & Radial Gradients -->
+    <!-- Background Icon Frame -->
+    <radialGradient id="bg-radial" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#2d124d" />
+      <stop offset="50%" stop-color="#150826" />
+      <stop offset="100%" stop-color="#070210" />
+    </radialGradient>
+
+    <linearGradient id="frame-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd700" />
+      <stop offset="30%" stop-color="#ff2a8d" />
+      <stop offset="70%" stop-color="#8a2be2" />
+      <stop offset="100%" stop-color="#00ffff" />
+    </linearGradient>
+
+    <!-- Obsidian Base Gradients -->
+    <linearGradient id="obsidian-base" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f1a24" />
+      <stop offset="50%" stop-color="#110d17" />
+      <stop offset="100%" stop-color="#08050c" />
+    </linearGradient>
+
+    <linearGradient id="obsidian-facet-light" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3d314a" />
+      <stop offset="100%" stop-color="#1a1224" />
+    </linearGradient>
+
+    <linearGradient id="obsidian-facet-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16101e" />
+      <stop offset="100%" stop-color="#09060d" />
+    </linearGradient>
+
+    <!-- Gold Accent Trim -->
+    <linearGradient id="gold-trim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffeeaa" />
+      <stop offset="30%" stop-color="#d4af37" />
+      <stop offset="70%" stop-color="#aa7c11" />
+      <stop offset="100%" stop-color="#553c00" />
+    </linearGradient>
+
+    <!-- Royal Purple / Magenta Mortar Armor -->
+    <linearGradient id="magenta-armor-main" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff33b4" />
+      <stop offset="25%" stop-color="#c8137f" />
+      <stop offset="65%" stop-color="#6b084e" />
+      <stop offset="100%" stop-color="#3b022d" />
+    </linearGradient>
+
+    <linearGradient id="magenta-armor-light" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff66cc" />
+      <stop offset="50%" stop-color="#d81b8e" />
+      <stop offset="100%" stop-color="#8c0d58" />
+    </linearGradient>
+
+    <linearGradient id="barrel-metal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a3b5c" />
+      <stop offset="30%" stop-color="#291f36" />
+      <stop offset="70%" stop-color="#0f0a17" />
+      <stop offset="100%" stop-color="#050308" />
+    </linearGradient>
+
+    <!-- Chemical Goo / Ordnance Gradients -->
+    <radialGradient id="chem-goo-glow" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="25%" stop-color="#a6ff00" />
+      <stop offset="60%" stop-color="#00e640" />
+      <stop offset="90%" stop-color="#00661b" />
+      <stop offset="100%" stop-color="#00330c" />
+    </radialGradient>
+
+    <linearGradient id="chem-glass" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.8)" />
+      <stop offset="20%" stop-color="rgba(255,255,255,0.2)" />
+      <stop offset="80%" stop-color="rgba(0,255,100,0.3)" />
+      <stop offset="100%" stop-color="rgba(255,255,255,0.5)" />
+    </linearGradient>
+
+    <!-- Energy & Plasma Arc Gradients -->
+    <linearGradient id="plasma-arc-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00ffff" />
+      <stop offset="40%" stop-color="#ff00ff" />
+      <stop offset="70%" stop-color="#a6ff00" />
+      <stop offset="100%" stop-color="#ffffff" />
+    </linearGradient>
+
+    <radialGradient id="muzzle-flare-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="20%" stop-color="#ff66f4" />
+      <stop offset="50%" stop-color="#9900ff" />
+      <stop offset="80%" stop-color="#00ffff" />
+      <stop offset="100%" stop-color="rgba(0,0,0,0)" />
+    </radialGradient>
+  </defs>
+
+  <!-- 1. ICON BACKGROUND BADGE -->
+  <g id="Icon-Frame">
+    <!-- Outer Shield / App Icon Shape -->
+    <rect x="16" y="16" width="480" height="480" rx="100" fill="url(#frame-border)" />
+    <rect x="22" y="22" width="468" height="468" rx="94" fill="#0a0514" />
+    <rect x="28" y="28" width="456" height="456" rx="88" fill="url(#bg-radial)" />
+    
+    <!-- Background Grid Lines (Sci-Fi / Tactical Vibe) -->
+    <path d="M 256 40 L 256 472 M 40 256 L 472 256" stroke="rgba(255, 42, 141, 0.15)" stroke-width="2" stroke-dasharray="8 8" />
+    <circle cx="256" cy="256" r="180" fill="none" stroke="rgba(0, 255, 255, 0.1)" stroke-width="2" stroke-dasharray="6 12" />
+    <circle cx="256" cy="256" r="100" fill="none" stroke="rgba(166, 255, 0, 0.08)" stroke-width="1" />
+    
+    <!-- Ambient Energy Rays in Background -->
+    <path d="M 256 256 L 80 60 M 256 256 L 432 60 M 256 256 L 450 400 M 256 256 L 62 400" stroke="url(#plasma-arc-grad)" stroke-width="1.5" opacity="0.25" />
+  </g>
+
+  <!-- 2. FORTIFIED OBSIDIAN BASE -->
+  <g id="Obsidian-Base" filter="url(#drop-shadow)">
+    <!-- Base Shadow Plate -->
+    <polygon points="110,430 256,465 402,430 430,380 256,360 82,380" fill="#030206" />
+
+    <!-- Bottom Hex Ring Tier 1 -->
+    <polygon points="100,410 256,450 412,410 440,360 256,330 72,360" fill="url(#obsidian-base)" stroke="#4a2e66" stroke-width="1.5" />
+    <!-- Outer Facets -->
+    <polygon points="100,410 256,450 256,425 115,390" fill="url(#obsidian-facet-dark)" />
+    <polygon points="256,450 412,410 397,390 256,425" fill="url(#obsidian-facet-light)" />
+    <polygon points="412,410 440,360 418,350 397,390" fill="url(#obsidian-facet-dark)" />
+    <polygon points="72,360 100,410 115,390 94,350" fill="url(#obsidian-facet-light)" />
+
+    <!-- Gold Reinforcement Brackets & Corners -->
+    <path d="M 95,412 L 125,418 L 115,385 Z" fill="url(#gold-trim)" />
+    <path d="M 417,412 L 387,418 L 397,385 Z" fill="url(#gold-trim)" />
+    <path d="M 256,450 L 240,420 L 272,420 Z" fill="url(#gold-trim)" />
+
+    <!-- Magma / Plasma Fissures in Obsidian Base -->
+    <path d="M 140,400 L 180,415 L 210,405 L 256,420 L 310,400 L 370,412" fill="none" stroke="#ff00a0" stroke-width="3" filter="url(#ultra-glow)" />
+    <path d="M 140,400 L 180,415 L 210,405 L 256,420 L 310,400 L 370,412" fill="none" stroke="#00ffff" stroke-width="1" />
+
+    <!-- Tier 2 Fortified Obsidian Pedestal -->
+    <polygon points="130,370 256,400 382,370 400,330 256,305 112,330" fill="url(#obsidian-base)" stroke="#6b428d" stroke-width="2" />
+    <!-- Pedestal Facets -->
+    <polygon points="130,370 256,400 256,380 145,355" fill="url(#obsidian-facet-dark)" />
+    <polygon points="256,400 382,370 367,355 256,380" fill="url(#obsidian-facet-light)" />
+    <polygon points="112,330 130,370 145,355 130,320" fill="url(#obsidian-facet-light)" />
+    <polygon points="400,330 382,370 367,355 382,320" fill="url(#obsidian-facet-dark)" />
+
+    <!-- Heavy Gold Base Rim -->
+    <path d="M 130,320 L 256,340 L 382,320 L 367,305 L 256,322 L 145,305 Z" fill="url(#gold-trim)" />
+
+    <!-- Glowing Runic Power Inlays on Base -->
+    <path d="M 160,340 L 200,350 L 230,345" fill="none" stroke="#00ffcc" stroke-width="2.5" stroke-linecap="round" filter="url(#plasma-glow)" />
+    <path d="M 352,340 L 312,350 L 282,345" fill="none" stroke="#00ffcc" stroke-width="2.5" stroke-linecap="round" filter="url(#plasma-glow)" />
+  </g>
+
+  <!-- 3. TURRET ROTATION PLATFORM & HYDRAULICS -->
+  <g id="Turret-Swivel-Mount">
+    <!-- Mechanical Swivel Ring -->
+    <ellipse cx="256" cy="310" rx="105" ry="35" fill="url(#barrel-metal)" stroke="#d4af37" stroke-width="3" />
+    <ellipse cx="256" cy="310" rx="90" ry="28" fill="#090512" stroke="#ff2a8d" stroke-width="1.5" />
+    
+    <!-- Rotating Gear Teeth Detail -->
+    <path d="M 170,305 L 175,315 M 190,315 L 197,325 M 220,322 L 225,333 M 256,325 L 256,338 M 287,322 L 292,333 M 317,315 L 324,325 M 342,305 L 347,315" stroke="url(#gold-trim)" stroke-width="4" stroke-linecap="round" />
+
+    <!-- Heavy Hydraulic Pistons -->
+    <!-- Left Piston -->
+    <g id="Piston-Left">
+      <rect x="165" y="260" width="18" height="45" rx="4" fill="url(#barrel-metal)" stroke="#553c00" stroke-width="1" />
+      <rect x="169" y="275" width="10" height="35" rx="2" fill="url(#gold-trim)" />
+      <path d="M 160,255 L 188,255 L 180,270 L 168,270 Z" fill="url(#magenta-armor-main)" />
+    </g>
+    <!-- Right Piston -->
+    <g id="Piston-Right">
+      <rect x="329" y="260" width="18" height="45" rx="4" fill="url(#barrel-metal)" stroke="#553c00" stroke-width="1" />
+      <rect x="333" y="275" width="10" height="35" rx="2" fill="url(#gold-trim)" />
+      <path d="M 324,255 L 352,255 L 344,270 L 332,270 Z" fill="url(#magenta-armor-main)" />
+    </g>
+  </g>
+
+  <!-- 4. ROYAL PURPLE / MAGENTA MORTAR CANNON TURRET -->
+  <!-- Angled facing top-right (3/4 Isometric Perspective) -->
+  <g id="Mortar-Turret-Body" filter="url(#drop-shadow)">
+
+    <!-- Turret Breech / Rear Housing Base -->
+    <path d="M 170,260 C 160,220 180,180 220,170 C 260,160 300,185 320,220 C 330,250 310,285 270,295 C 230,305 180,290 170,260 Z" fill="url(#magenta-armor-main)" stroke="#ff66cc" stroke-width="2" />
+
+    <!-- Breech Side Armor Plates (Layered 3D Shielding) -->
+    <path d="M 160,250 C 155,210 185,175 225,165 L 240,195 C 210,205 190,225 190,255 Z" fill="url(#magenta-armor-light)" />
+    <path d="M 185,275 C 175,250 185,210 215,195 L 230,225 C 210,235 205,255 210,275 Z" fill="#4a0435" />
+
+    <!-- Gold Trim lines on Body -->
+    <path d="M 170,240 C 180,200 210,180 245,175" fill="none" stroke="url(#gold-trim)" stroke-width="4" stroke-linecap="round" />
+    <path d="M 185,270 C 210,285 250,285 280,265" fill="none" stroke="url(#gold-trim)" stroke-width="3" />
+
+    <!-- Glowing Power Core / Vents on Turret Side -->
+    <g id="Turret-Vents" filter="url(#plasma-glow)">
+      <path d="M 210,230 L 240,220 M 215,245 L 250,233 M 220,260 L 255,248" fill="none" stroke="#00ffff" stroke-width="3.5" stroke-linecap="round" />
+      <path d="M 210,230 L 240,220 M 215,245 L 250,233 M 220,260 L 255,248" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+
+    <!-- HEAVY MORTAR BARREL -->
+    <!-- Barrel Angle: Aimed towards X:360, Y:130 -->
+    <g id="Mortar-Barrel">
+      <!-- Main Barrel Cylinder Underlayer -->
+      <path d="M 225,200 L 335,120 L 385,155 L 275,235 Z" fill="url(#barrel-metal)" stroke="#1a0026" stroke-width="2" />
+      
+      <!-- Barrel Metallic Highlights / Reeds -->
+      <path d="M 240,190 L 350,110" stroke="#ffffff" stroke-width="2" opacity="0.3" />
+      <path d="M 265,223 L 375,143" stroke="#000000" stroke-width="4" opacity="0.6" />
+
+      <!-- Barrel Armor Shell (Royal Purple Outer Casing) -->
+      <path d="M 215,190 L 310,120 L 335,138 L 240,208 Z" fill="url(#magenta-armor-light)" />
+      <path d="M 245,212 L 340,142 L 360,156 L 265,226 Z" fill="url(#magenta-armor-main)" />
+
+      <!-- Reinforced Mechanical Barrel Rings -->
+      <!-- Ring 1 (Mid Barrel) -->
+      <path d="M 270,165 L 295,147 L 315,161 L 290,179 Z" fill="url(#gold-trim)" stroke="#3b022d" stroke-width="1.5" />
+      <circle cx="292" cy="163" r="3" fill="#ffffff" filter="url(#plasma-glow)" />
+
+      <!-- Ring 2 (Near Muzzle) -->
+      <path d="M 315,132 L 340,114 L 360,128 L 335,146 Z" fill="url(#gold-trim)" stroke="#3b022d" stroke-width="1.5" />
+
+      <!-- Glowing Plasma Conduits along Barrel -->
+      <path d="M 235,180 L 330,112" fill="none" stroke="#a6ff00" stroke-width="3" filter="url(#ultra-glow)" />
+      <path d="M 255,205 L 350,137" fill="none" stroke="#ff00a0" stroke-width="2.5" filter="url(#ultra-glow)" />
+
+      <!-- HUGE HEAVY MUZZLE CROWN -->
+      <!-- Muzzle Ring Rim (3D Ellipse/Polygon hybrid) -->
+      <path d="M 335,105 L 365,83 C 375,76 390,87 398,98 C 406,109 406,124 395,132 L 365,154 C 355,160 342,152 336,140 C 330,128 328,112 335,105 Z" fill="url(#gold-trim)" stroke="#1f0a2e" stroke-width="2" />
+
+      <!-- Outer Muzzle Flange Notch Details -->
+      <path d="M 345,97 L 355,90 M 370,88 L 380,81 M 392,102 L 402,96 M 388,122 L 398,118 M 365,138 L 375,133" stroke="#2b1a00" stroke-width="3.5" />
+
+      <!-- Inner Barrel Hole (Glowing Chamber) -->
+      <ellipse cx="366" cy="118" rx="28" ry="20" transform="rotate(-35 366 118)" fill="#0b0314" stroke="#ff33b4" stroke-width="3" />
+      <ellipse cx="366" cy="118" rx="22" ry="15" transform="rotate(-35 366 118)" fill="#ff0066" filter="url(#plasma-glow)" />
+      <ellipse cx="366" cy="118" rx="14" ry="9" transform="rotate(-35 366 118)" fill="#ffffff" filter="url(#ultra-glow)" />
+    </g>
+  </g>
+
+  <!-- 5. FIRING EFFECT & PLASMA ARC TRAJECTORY -->
+  <g id="Plasma-Arc-And-Fire">
+    <!-- Curved Plasma Arc Trajectory Line -->
+    <path d="M 366,118 Q 420,80 445,40" fill="none" stroke="url(#plasma-arc-grad)" stroke-width="6" stroke-linecap="round" filter="url(#ultra-glow)" />
+    <path d="M 366,118 Q 420,80 445,40" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+
+    <!-- Secondary Lightning / Energy Sparks -->
+    <path d="M 350,100 Q 370,70 360,50 M 380,130 Q 410,120 430,100 M 340,130 Q 320,100 330,70" fill="none" stroke="#00ffff" stroke-width="2" filter="url(#plasma-glow)" />
+    <path d="M 370,105 Q 390,75 420,70" fill="none" stroke="#a6ff00" stroke-width="1.5" filter="url(#plasma-glow)" />
+
+    <!-- Explosive Muzzle Shockwave Rings -->
+    <ellipse cx="380" cy="108" rx="35" ry="50" transform="rotate(-55 380 108)" fill="none" stroke="url(#plasma-arc-grad)" stroke-width="4" opacity="0.8" filter="url(#plasma-glow)" />
+    <ellipse cx="400" cy="94" rx="25" ry="40" transform="rotate(-55 400 94)" fill="none" stroke="#ff00bb" stroke-width="2" opacity="0.6" filter="url(#ultra-glow)" />
+
+    <!-- Dynamic Chemical Smoke / Energy Blast Clouds -->
+    <circle cx="350" cy="85" r="16" fill="url(#muzzle-flare-grad)" opacity="0.7" filter="url(#plasma-glow)" />
+    <circle cx="395" cy="140" r="22" fill="url(#muzzle-flare-grad)" opacity="0.6" filter="url(#plasma-glow)" />
+    <circle cx="330" cy="130" r="18" fill="#6b084e" opacity="0.5" filter="url(#ultra-glow)" />
+  </g>
+
+  <!-- 6. EXPLOSIVE CHEMICAL SHELL / MORTAR ORDNANCE -->
+  <!-- Launched Projectile flying along the trajectory -->
+  <g id="Chemical-Mortar-Shell" transform="translate(45, -35)" filter="url(#drop-shadow)">
+    <g transform="rotate(25 365 110)">
+      <!-- Projectile Energy Trail -->
+      <path d="M 305,110 L 240,100 L 305,120 Z" fill="url(#plasma-arc-grad)" filter="url(#ultra-glow)" opacity="0.9" />
+      
+      <!-- Main Shell Body (Sleek Heavy Ordnance) -->
+      <!-- Rear Tail Fins -->
+      <path d="M 305,100 L 290,88 L 310,105 L 290,125 L 305,115 Z" fill="url(#gold-trim)" stroke="#1a0d00" stroke-width="1" />
+      <path d="M 298,93 L 318,103 L 318,113 L 298,121 Z" fill="url(#magenta-armor-main)" />
+
+      <!-- Glass Chemical Core Chamber -->
+      <rect x="318" y="98" width="38" height="20" rx="4" fill="url(#barrel-metal)" stroke="#d4af37" stroke-width="1.5" />
+      <!-- Glowing Toxic Chemical Liquid Inside -->
+      <rect x="320" y="100" width="34" height="16" rx="3" fill="url(#chem-goo-glow)" filter="url(#plasma-glow)" />
+      <!-- Chemical Liquid Bubble Details -->
+      <circle cx="330" cy="106" r="2.5" fill="#ffffff" opacity="0.9" />
+      <circle cx="342" cy="110" r="1.8" fill="#ffffff" opacity="0.8" />
+      <circle cx="348" cy="104" r="1.2" fill="#ffffff" opacity="0.9" />
+      <!-- Glass Reflection Overlay -->
+      <rect x="318" y="98" width="38" height="20" rx="4" fill="url(#chem-glass)" />
+
+      <!-- Ordnance Armor Nose Cone -->
+      <path d="M 356,97 C 370,97 395,105 402,108 C 395,111 370,119 356,119 Z" fill="url(#magenta-armor-light)" stroke="#ffd700" stroke-width="1.5" />
+      
+      <!-- Warhead Contact Fuse / Plasma Tip -->
+      <polygon points="402,106 415,108 402,110" fill="#00ffff" filter="url(#ultra-glow)" />
+      <circle cx="380" cy="108" r="3" fill="#a6ff00" filter="url(#plasma-glow)" />
+
+      <!-- Hazard Stripes on Shell Collar -->
+      <path d="M 356,98 L 360,118 M 362,98 L 366,118 M 368,98 L 372,118" stroke="#110d17" stroke-width="2" />
+    </g>
+  </g>
+
+  <!-- 7. FOREGROUND PARTICLES & GLOW HIGHLIGHTS -->
+  <g id="Foreground-Particles" filter="url(#ultra-glow)">
+    <!-- Floating Chemical & Plasma Embers -->
+    <circle cx="410" cy="140" r="3.5" fill="#a6ff00" />
+    <circle cx="390" cy="60" r="2.5" fill="#00ffff" />
+    <circle cx="440" cy="80" r="4" fill="#ff00cc" />
+    <circle cx="330" cy="90" r="2" fill="#ffffff" />
+    <circle cx="290" cy="120" r="3" fill="#a6ff00" />
+    <circle cx="450" cy="130" r="2.5" fill="#00ffff" />
+    <circle cx="210" cy="200" r="2" fill="#ff00cc" />
+
+    <!-- Rim Light Reflections on Turret Front -->
+    <path d="M 120,335 C 170,360 250,370 330,345" fill="none" stroke="rgba(255, 255, 255, 0.25)" stroke-width="2" stroke-linecap="round" />
+  </g>
+</svg>

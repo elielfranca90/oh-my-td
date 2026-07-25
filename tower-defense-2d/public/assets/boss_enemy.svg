@@ -1,0 +1,291 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Filters for Glows and Shadows -->
+    <filter id="glow-heavy" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="9" result="blur1" />
+      <feGaussianBlur stdDeviation="4" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="glow-core" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="drop-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#000000" flood-opacity="0.85" />
+    </filter>
+
+    <!-- Color Gradients -->
+    <radialGradient id="bg-aura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FF0033" stop-opacity="0.5" />
+      <stop offset="45%" stop-color="#80001A" stop-opacity="0.35" />
+      <stop offset="80%" stop-color="#2A0008" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="flame-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF1A40" />
+      <stop offset="50%" stop-color="#A3001C" />
+      <stop offset="100%" stop-color="#260006" />
+    </linearGradient>
+
+    <linearGradient id="flame-grad-bottom" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#FF003D" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#80001C" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="gold-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF7C2" />
+      <stop offset="25%" stop-color="#FFD034" />
+      <stop offset="55%" stop-color="#A87400" />
+      <stop offset="80%" stop-color="#E6B419" />
+      <stop offset="100%" stop-color="#FFF5C0" />
+    </linearGradient>
+
+    <linearGradient id="gold-grad-2" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#4A3000" />
+      <stop offset="40%" stop-color="#996B00" />
+      <stop offset="70%" stop-color="#FFD747" />
+      <stop offset="100%" stop-color="#FFF5C0" />
+    </linearGradient>
+
+    <linearGradient id="crimson-base" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B3001B" />
+      <stop offset="50%" stop-color="#5E000E" />
+      <stop offset="100%" stop-color="#210004" />
+    </linearGradient>
+
+    <linearGradient id="crimson-bright" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FF2A4B" />
+      <stop offset="45%" stop-color="#C70020" />
+      <stop offset="100%" stop-color="#54000B" />
+    </linearGradient>
+
+    <linearGradient id="obsidian-plate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3D2947" />
+      <stop offset="40%" stop-color="#1F1326" />
+      <stop offset="100%" stop-color="#09050C" />
+    </linearGradient>
+
+    <linearGradient id="ruby-front" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF99AB" />
+      <stop offset="30%" stop-color="#FF003C" />
+      <stop offset="70%" stop-color="#80001C" />
+      <stop offset="100%" stop-color="#2B0008" />
+    </linearGradient>
+
+    <linearGradient id="ruby-facet-top" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FF7A95" />
+      <stop offset="100%" stop-color="#E60035" />
+    </linearGradient>
+    <linearGradient id="ruby-facet-left" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#CC002E" />
+      <stop offset="100%" stop-color="#80001C" />
+    </linearGradient>
+    <linearGradient id="ruby-facet-right" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#990022" />
+      <stop offset="100%" stop-color="#4D000E" />
+    </linearGradient>
+    <linearGradient id="ruby-facet-bottom" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#660013" />
+      <stop offset="100%" stop-color="#260005" />
+    </linearGradient>
+
+    <radialGradient id="core-reactor-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="20%" stop-color="#FFEA75" />
+      <stop offset="45%" stop-color="#FF0055" />
+      <stop offset="75%" stop-color="#800020" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="eye-beam-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="30%" stop-color="#FFEA00" />
+      <stop offset="100%" stop-color="#FF0044" />
+    </linearGradient>
+
+    <radialGradient id="crimson-glow-orb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FF0044" stop-opacity="0.8" />
+      <stop offset="60%" stop-color="#B3001B" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Symmetrical Half-Boss Template (Right Side) -->
+    <g id="half-boss">
+      <!-- Outer Demonic Horn (Right) -->
+      <path d="M 280 165 C 330 160, 425 135, 468 100 C 495 70, 475 25, 425 12 C 448 38, 448 72, 418 105 C 388 135, 325 148, 275 155 Z" fill="url(#crimson-base)" filter="url(#drop-shadow)" />
+      <path d="M 280 165 C 330 160, 425 135, 468 100 C 495 70, 475 25, 425 12 C 435 25, 435 50, 415 80 C 375 120, 320 135, 280 150 Z" fill="url(#crimson-bright)" />
+      <!-- Horn Gold Bands & Ribs -->
+      <path d="M 325 152 L 335 140 L 348 142 L 336 156 Z" fill="url(#gold-grad-1)" />
+      <path d="M 380 133 L 392 118 L 406 122 L 392 138 Z" fill="url(#gold-grad-1)" />
+      <path d="M 432 90 L 446 75 L 456 82 L 442 98 Z" fill="url(#gold-grad-1)" />
+
+      <!-- Inner Horn (Right) -->
+      <path d="M 268 135 C 305 110, 335 60, 330 22 C 314 42, 294 72, 258 112 Z" fill="url(#obsidian-plate)" />
+      <path d="M 268 135 C 305 110, 335 60, 330 22 C 324 28, 298 68, 262 118 Z" fill="url(#gold-grad-1)" />
+
+      <!-- Crown Side Crest / Wing -->
+      <path d="M 256 125 L 305 105 L 345 75 L 325 115 L 275 145 Z" fill="url(#gold-grad-1)" filter="url(#drop-shadow)" />
+      <path d="M 270 125 L 310 102 L 330 85 L 315 110 Z" fill="url(#crimson-bright)" />
+
+      <!-- Massive Warlord Shoulder Pauldron -->
+      <!-- Underplate -->
+      <path d="M 310 210 L 450 190 L 490 230 L 470 300 L 370 330 Z" fill="url(#obsidian-plate)" />
+      <!-- Main Crimson Armor Shell -->
+      <path d="M 320 220 L 460 205 L 495 245 L 455 315 L 360 300 Z" fill="url(#crimson-base)" filter="url(#drop-shadow)" />
+      <path d="M 320 220 L 460 205 L 475 220 L 350 235 Z" fill="url(#crimson-bright)" />
+      <!-- Pauldron Spikes (Gold) -->
+      <path d="M 440 200 L 502 180 L 475 220 Z" fill="url(#gold-grad-1)" />
+      <path d="M 465 225 L 510 240 L 475 260 Z" fill="url(#gold-grad-1)" />
+      <path d="M 455 265 L 495 295 L 445 305 Z" fill="url(#gold-grad-1)" />
+      <!-- Shoulder Gem Mount & Faceted Ruby -->
+      <path d="M 390 240 L 425 240 L 440 265 L 425 290 L 390 290 L 375 265 Z" fill="url(#gold-grad-2)" />
+      <path d="M 396 246 L 419 246 L 430 265 L 419 284 L 396 284 L 385 265 Z" fill="url(#ruby-front)" />
+      <path d="M 396 246 L 419 246 L 407 265 L 390 265 Z" fill="#FF99AB" opacity="0.6" />
+
+      <!-- Skull Faceplate (Right Half) -->
+      <!-- Temple & Brow Armor -->
+      <path d="M 256 175 L 305 182 L 315 210 L 290 245 L 256 255 Z" fill="url(#obsidian-plate)" />
+      <path d="M 285 215 L 325 225 L 310 260 L 275 252 Z" fill="url(#crimson-bright)" />
+      <path d="M 256 175 L 308 183 L 300 193 L 256 186 Z" fill="url(#gold-grad-1)" />
+
+      <!-- Glowing Visor / Eye Sockets -->
+      <!-- Upper Main Eye -->
+      <path d="M 264 200 L 296 206 L 290 214 L 262 208 Z" fill="url(#eye-beam-grad)" filter="url(#glow-core)" />
+      <!-- Lower Secondary Eye -->
+      <path d="M 268 218 L 294 222 L 288 228 L 266 224 Z" fill="url(#eye-beam-grad)" filter="url(#glow-core)" />
+
+      <!-- Jaw & Fangs -->
+      <path d="M 256 260 L 295 265 L 285 305 L 256 312 Z" fill="url(#obsidian-plate)" />
+      <path d="M 285 265 L 300 270 L 290 300 L 280 295 Z" fill="url(#gold-grad-1)" />
+      <!-- Jaw Glowing Energy Vent Slat -->
+      <path d="M 260 275 L 280 278 L 278 284 L 260 281 Z" fill="#FF0055" filter="url(#glow-core)" />
+      <path d="M 260 287 L 276 290 L 274 295 L 260 292 Z" fill="#FF0055" filter="url(#glow-core)" />
+
+      <!-- Glowing Core Reactor Housing & Turbine (Right Side) -->
+      <!-- Outer Hex Frame -->
+      <path d="M 335 295 L 374 317 L 374 363 L 335 385 L 296 363 L 296 317 Z" fill="url(#gold-grad-1)" filter="url(#drop-shadow)" />
+      <circle cx="335" cy="340" r="34" fill="url(#obsidian-plate)" stroke="url(#gold-grad-2)" stroke-width="2" />
+      <!-- Turbine Vents -->
+      <path d="M 335 340 L 335 310 L 343 313 Z" fill="url(#gold-grad-1)" />
+      <path d="M 335 340 L 361 325 L 365 333 Z" fill="url(#gold-grad-1)" />
+      <path d="M 335 340 L 361 355 L 355 363 Z" fill="url(#gold-grad-1)" />
+      <path d="M 335 340 L 335 370 L 327 367 Z" fill="url(#gold-grad-1)" />
+      <path d="M 335 340 L 309 355 L 305 347 Z" fill="url(#gold-grad-1)" />
+      <path d="M 335 340 L 309 325 L 315 317 Z" fill="url(#gold-grad-1)" />
+      <!-- Core Energy Elements -->
+      <circle cx="335" cy="340" r="22" fill="url(#core-reactor-glow)" filter="url(#glow-heavy)" />
+      <circle cx="335" cy="340" r="10" fill="#FFFFFF" filter="url(#glow-core)" />
+      <circle cx="335" cy="340" r="16" fill="none" stroke="#FFEA00" stroke-width="1.5" stroke-dasharray="5 3" />
+      <!-- Energy Conduit Cables -->
+      <path d="M 360 315 Q 390 290 410 280" stroke="url(#gold-grad-1)" stroke-width="5" fill="none" />
+      <path d="M 360 315 Q 390 290 410 280" stroke="#FF0044" stroke-width="2" fill="none" filter="url(#glow-core)" />
+      <path d="M 335 375 Q 330 420 300 450" stroke="url(#gold-grad-2)" stroke-width="4" fill="none" />
+
+      <!-- Warlord Torso & Segmented Abdominal Armor (Right Half) -->
+      <path d="M 256 312 L 295 320 L 285 375 L 256 385 Z" fill="url(#crimson-base)" />
+      <path d="M 256 312 L 295 320 L 288 332 L 256 325 Z" fill="url(#crimson-bright)" />
+      <path d="M 256 390 L 290 398 L 280 425 L 256 420 Z" fill="url(#crimson-base)" />
+      <path d="M 256 424 L 282 430 L 272 455 L 256 450 Z" fill="url(#crimson-base)" />
+      <path d="M 256 454 L 298 462 L 282 498 L 256 488 Z" fill="url(#obsidian-plate)" />
+      <!-- Flaring Hip Tasset Blade -->
+      <path d="M 285 375 L 365 410 L 340 465 L 275 430 Z" fill="url(#crimson-bright)" filter="url(#drop-shadow)" />
+      <path d="M 365 410 L 375 415 L 348 472 L 340 465 Z" fill="url(#gold-grad-1)" />
+    </g>
+  </defs>
+
+  <!-- ================= BACKGROUND LAYER: ENERGY AURA & FLAMES ================= -->
+  <ellipse cx="256" cy="250" rx="220" ry="200" fill="url(#bg-aura)" filter="url(#glow-heavy)" />
+
+  <!-- Fiery Energy Wings / Tendrils (Background) -->
+  <g filter="url(#glow-heavy)" opacity="0.8">
+    <!-- Left Tendrils -->
+    <path d="M 256 220 C 180 160, 100 80, 30 25 C 65 90, 115 160, 170 210 C 120 180, 50 170, 10 155 C 50 205, 120 245, 185 255 Z" fill="url(#flame-grad-1)" />
+    <!-- Right Tendrils -->
+    <path d="M 256 220 C 332 160, 412 80, 482 25 C 447 90, 397 160, 342 210 C 392 180, 462 170, 502 155 C 462 205, 392 245, 327 255 Z" fill="url(#flame-grad-1)" />
+  </g>
+
+  <!-- ================= MAIN BOSS SPRITE (SYMMETRICAL DUAL ASSEMBLY) ================= -->
+  <!-- Left Side (Mirrored) -->
+  <use href="#half-boss" transform="translate(512, 0) scale(-1, 1)" />
+
+  <!-- Right Side -->
+  <use href="#half-boss" />
+
+  <!-- ================= CENTRAL OVERLAY ELEMENTS (NON-MIRRORED CENTERPIECES) ================= -->
+
+  <!-- 1. Giant Ruby & Gold Crown Spire (Center Peak) -->
+  <g filter="url(#drop-shadow)">
+    <!-- Towering Gold Frame -->
+    <path d="M 256 15 L 282 55 L 272 120 L 256 130 L 240 120 L 230 55 Z" fill="url(#gold-grad-1)" />
+    <path d="M 256 25 L 268 55 L 256 75 L 244 55 Z" fill="url(#gold-grad-2)" />
+  </g>
+
+  <!-- Giant Faceted Crown Ruby -->
+  <g>
+    <!-- Deep Red Backing Glow -->
+    <circle cx="256" cy="80" r="32" fill="url(#crimson-glow-orb)" filter="url(#glow-heavy)" />
+    <!-- Outer Gem Contour -->
+    <path d="M 256 42 L 276 68 L 276 102 L 256 120 L 236 102 L 236 68 Z" fill="#2B0008" />
+    <!-- Facet Geometry -->
+    <path d="M 256 42 L 276 68 L 236 68 Z" fill="url(#ruby-facet-top)" />
+    <path d="M 236 68 L 256 68 L 256 102 L 236 102 Z" fill="url(#ruby-facet-left)" />
+    <path d="M 256 68 L 276 68 L 276 102 L 256 102 Z" fill="url(#ruby-facet-right)" />
+    <path d="M 236 102 L 276 102 L 256 120 Z" fill="url(#ruby-facet-bottom)" />
+    <!-- Specular Diamond Highlight -->
+    <path d="M 256 42 L 268 68 L 256 82 L 244 68 Z" fill="#FFFFFF" opacity="0.65" />
+  </g>
+
+  <!-- 2. Forehead Rune & Third Eye Crest -->
+  <path d="M 256 150 L 268 165 L 256 180 L 244 165 Z" fill="url(#gold-grad-1)" />
+  <path d="M 256 155 L 263 165 L 256 175 L 249 165 Z" fill="#FFEA00" filter="url(#glow-core)" />
+
+  <!-- 3. Skull Nose Ridge Center Line -->
+  <path d="M 256 186 L 261 215 L 256 245 L 251 215 Z" fill="url(#gold-grad-2)" />
+
+  <!-- 4. Dual Reactor Inter-Core Energy Arc (Chest Energy Beam) -->
+  <g filter="url(#glow-heavy)">
+    <!-- Outer Red Plasma Arc -->
+    <path d="M 177 340 Q 256 375 335 340" fill="none" stroke="#FF0055" stroke-width="10" opacity="0.75" />
+    <!-- Mid Gold Arc Beam -->
+    <path d="M 177 340 Q 256 375 335 340" fill="none" stroke="url(#gold-grad-1)" stroke-width="5" />
+    <!-- Inner White-Hot Center Lightning Core -->
+    <path d="M 177 340 Q 256 375 335 340" fill="none" stroke="#FFFFFF" stroke-width="2.5" />
+    <!-- Dynamic Lightning Energy Bolts -->
+    <path d="M 205 348 Q 220 332 235 352" fill="none" stroke="#FFFF99" stroke-width="1.5" />
+    <path d="M 307 348 Q 292 332 277 352" fill="none" stroke="#FFFF99" stroke-width="1.5" />
+  </g>
+
+  <!-- 5. Central Sternum Emblem & Spine Line -->
+  <path d="M 256 312 L 261 385 L 256 390 L 251 385 Z" fill="url(#gold-grad-1)" />
+  <line x1="256" y1="390" x2="256" y2="488" stroke="#FFD700" stroke-width="2" opacity="0.85" />
+
+  <!-- ================= FOREGROUND EFFECTS: RISING FLAMES & SPARKS ================= -->
+  <!-- Bottom Ambient Energy Flames -->
+  <path d="M 0 512 C 50 440, 110 410, 165 455 C 205 485, 240 435, 256 415 C 272 435, 307 485, 347 455 C 402 410, 462 440, 512 512 Z" fill="url(#flame-grad-bottom)" filter="url(#glow-heavy)" />
+
+  <!-- Floating Energy Embers / Sparks -->
+  <g filter="url(#glow-core)">
+    <circle cx="210" cy="50" r="2.5" fill="#FFEA00" />
+    <circle cx="302" cy="40" r="3.5" fill="#FF0055" />
+    <circle cx="145" cy="85" r="2" fill="#FFD700" />
+    <circle cx="367" cy="80" r="3" fill="#FF0044" />
+    <circle cx="85" cy="145" r="2.5" fill="#FFEA00" />
+    <circle cx="427" cy="135" r="3.5" fill="#FFD700" />
+    <circle cx="55" cy="235" r="3" fill="#FF0055" />
+    <circle cx="457" cy="245" r="2" fill="#FFEA00" />
+    <circle cx="115" cy="375" r="3.5" fill="#FF0044" />
+    <circle cx="397" cy="385" r="2.5" fill="#FFEA00" />
+    <circle cx="256" cy="360" r="4.5" fill="#FFFFFF" />
+  </g>
+</svg>

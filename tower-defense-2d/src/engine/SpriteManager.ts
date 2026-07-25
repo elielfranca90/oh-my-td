@@ -32,10 +32,21 @@ export class SpriteManager {
   private loadGeneratedAssets() {
     if (typeof window === 'undefined') return;
     const assets = [
+      // Enemies
+      { key: 'STANDARD', src: '/assets/standard_enemy.svg' },
       { key: 'RUNNER', src: '/assets/runner_sprite.svg' },
       { key: 'TANK', src: '/assets/tank_sprite.svg' },
+      { key: 'SHIELDED', src: '/assets/shielded_enemy.svg' },
+      { key: 'BOSS', src: '/assets/boss_enemy.svg' },
+      { key: 'SPORE_SPRINTER', src: '/assets/spore_sprinter.svg' },
+      { key: 'MOSS_GIANT', src: '/assets/moss_giant.svg' },
+      { key: 'BLACK_MEGA_BOSS', src: '/assets/mega_boss_avatar.svg' },
+      // Towers
+      { key: 'BASIC', src: '/assets/basic_tower_icon.svg' },
+      { key: 'CANNON', src: '/assets/cannon_tower_icon.svg' },
+      { key: 'FROST', src: '/assets/frost_tower_icon.svg' },
+      { key: 'ARTILLERY', src: '/assets/artillery_tower_icon.svg' },
       { key: 'SOLAR_PRISM', src: '/assets/solar_prism_icon.svg' },
-      { key: 'MEGA_BOSS_AVATAR', src: '/assets/mega_boss_avatar.svg' },
     ];
 
     for (const a of assets) {
