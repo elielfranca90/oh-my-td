@@ -69,8 +69,11 @@ export class Game2D {
     this.gameState = new GameState(this.talentManager, this.currentSavedChallengeMode);
     this.waveManager = new WaveManager();
     if (this.currentSavedChallengeMode === 'MORTE_CERTA') {
+      this.waveManager.isMorteCerta = true;
       this.waveManager.setEndlessMode(true);
       this.waveManager.setAutoMode(true);
+    } else {
+      this.waveManager.isMorteCerta = false;
     }
     this.mapManager = new MapManager2D(this.currentSavedMapId);
     this.fxManager = new FXManager();

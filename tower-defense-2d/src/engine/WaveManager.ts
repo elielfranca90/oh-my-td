@@ -128,7 +128,7 @@ export class WaveManager {
         { type: 'MOSS_GIANT', delay: 1600 },
         { type: 'BOSS', delay: 2000 },
         { type: 'RUNNER', delay: 400 },
-        { type: 'BLACK_MEGA_BOSS', delay: 3000 },
+        { type: 'BOSS', delay: 3000 },
         { type: 'RUNNER', delay: 400 },
         { type: 'TANK', delay: 800 },
       ],
@@ -142,7 +142,7 @@ export class WaveManager {
   public isAutoMode = false;
   public isEndlessMode = false;
   public autoCountdownMs = 5000;
-
+  public isMorteCerta = false;
   private spawnQueue: { type: EnemyType; delay: number }[] = [];
   private timer = 0;
 
@@ -195,10 +195,9 @@ export class WaveManager {
     for (let b = 0; b < bossCount; b++) {
       enemies.push({ type: 'BOSS', delay: 1800 });
     }
-    if (waveNum % 10 === 0) {
+    if (waveNum % 10 === 0 && this.isMorteCerta) {
       enemies.push({ type: 'BLACK_MEGA_BOSS', delay: 3000 });
     }
-
     return {
       waveNumber: waveNum,
       enemies,
@@ -228,6 +227,13 @@ export class WaveManager {
       if (!enemy) return null;
 
       const currentWaveNum = this.currentWaveIndex + 1;
+      let spawnType = enemy.type;
+      if (spawnType === 'BLACK_MEGA_BOSS' && !this.isMorteCerta) {
+        spawnType = 'BOSS';
+      } else if (currentWaveNum === 10 && this.isMorteCerta && enemy.type === 'BOSS') {
+        spawnType = 'BLACK_MEGA_BOSS';
+      }
+
       let hpMultiplier = 1.0;
       const campaignHpScales: Record<number, number> = {
         1: 1.0,
@@ -241,13 +247,12 @@ export class WaveManager {
         9: 3.7,
         10: 4.5,
       };
-
       if (currentWaveNum <= 10) {
         hpMultiplier = campaignHpScales[currentWaveNum] || 1.0;
       } else {
         hpMultiplier = Number((4.5 * Math.pow(1.18, currentWaveNum - 10)).toFixed(2));
       }
-      return { type: enemy.type, hpMultiplier };
+      return { type: spawnType, hpMultiplier };
     }
 
     return null;
