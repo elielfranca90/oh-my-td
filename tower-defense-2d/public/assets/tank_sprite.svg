@@ -1,6 +1,380 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-        <rect width="512" height="512" rx="64" fill="#181824"/>
-        <circle cx="256" cy="256" r="160" fill="#40c4ff" opacity="0.3"/>
-        <circle cx="256" cy="256" r="120" fill="#29b6f6"/>
-        <text x="256" y="275" font-size="72" font-weight="bold" fill="#ffffff" text-anchor="middle">🎮</text>
-      </svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background & Aura Glows -->
+    <radialGradient id="bgAura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#9d26ff" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#00f0ff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#0b0714" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#00f0ff"/>
+      <stop offset="55%" stop-color="#b000ff"/>
+      <stop offset="85%" stop-color="#4e0078"/>
+      <stop offset="100%" stop-color="#4e0078" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="eyeGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#00f0ff"/>
+      <stop offset="100%" stop-color="#0051ff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Metallic Armor Gradients -->
+    <!-- Primary Heavy Purple Armor -->
+    <linearGradient id="purpleArmor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#69488e"/>
+      <stop offset="30%" stop-color="#472b68"/>
+      <stop offset="70%" stop-color="#26143b"/>
+      <stop offset="100%" stop-color="#12081d"/>
+    </linearGradient>
+    
+    <linearGradient id="purpleArmorLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a478d4"/>
+      <stop offset="50%" stop-color="#673ab7"/>
+      <stop offset="100%" stop-color="#311b92"/>
+    </linearGradient>
+
+    <!-- Dark Iron / Obsidian Sub-Armor -->
+    <linearGradient id="darkIron" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#363d45"/>
+      <stop offset="40%" stop-color="#1e2228"/>
+      <stop offset="80%" stop-color="#0f1115"/>
+      <stop offset="100%" stop-color="#050507"/>
+    </linearGradient>
+
+    <!-- Gold / Brass Runic Trim -->
+    <linearGradient id="goldTrim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe89c"/>
+      <stop offset="35%" stop-color="#e6b437"/>
+      <stop offset="75%" stop-color="#996c14"/>
+      <stop offset="100%" stop-color="#543801"/>
+    </linearGradient>
+
+    <!-- Steel Joint / Hydraulics -->
+    <linearGradient id="steel" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2a323d"/>
+      <stop offset="50%" stop-color="#7e8d9c"/>
+      <stop offset="100%" stop-color="#191e24"/>
+    </linearGradient>
+
+    <!-- Edge Specular Highlight -->
+    <linearGradient id="specular" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Arcane Energy Stream Gradient -->
+    <linearGradient id="energyBeam" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="50%" stop-color="#d900ff"/>
+      <stop offset="100%" stop-color="#00f0ff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Filters for Intense Arcane Glows -->
+    <filter id="glowFilter" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur1"/>
+      <feGaussianBlur stdDeviation="15" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="intenseGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur1"/>
+      <feGaussianBlur stdDeviation="8" result="blur2"/>
+      <feGaussianBlur stdDeviation="20" result="blur3"/>
+      <feMerge>
+        <feMergeNode in="blur3"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <!-- ================= BACKGROUND AURA & SHADOW ================= -->
+  <g id="Background-Effects">
+    <!-- Ground Shadow -->
+    <ellipse cx="256" cy="460" rx="180" ry="30" fill="#000000" opacity="0.85"/>
+    <ellipse cx="256" cy="460" rx="210" ry="40" fill="#4e0078" opacity="0.3" filter="url(#glowFilter)"/>
+    
+    <!-- Outer Arcane Energy Aura -->
+    <circle cx="256" cy="240" r="210" fill="url(#bgAura)"/>
+  </g>
+
+  <!-- ================= BACK LAYER: SPINES & REAR ARMOR ================= -->
+  <g id="Back-Armor" filter="url(#dropShadow)">
+    <!-- Back Spine Spikes -->
+    <path d="M 200 130 L 160 60 L 215 110 Z" fill="url(#darkIron)" stroke="#e6b437" stroke-width="1.5"/>
+    <path d="M 312 130 L 352 60 L 297 110 Z" fill="url(#darkIron)" stroke="#e6b437" stroke-width="1.5"/>
+    <path d="M 220 100 L 256 30 L 292 100 Z" fill="url(#purpleArmor)" stroke="url(#goldTrim)" stroke-width="2"/>
+    
+    <!-- Rear Power Steam Vents -->
+    <rect x="185" y="120" width="16" height="40" rx="4" fill="url(#darkIron)"/>
+    <rect x="311" y="120" width="16" height="40" rx="4" fill="url(#darkIron)"/>
+    <!-- Vent Energy Glow -->
+    <line x1="193" y1="125" x2="193" y2="155" stroke="#00f0ff" stroke-width="3" filter="url(#glowFilter)"/>
+    <line x1="319" y1="125" x2="319" y2="155" stroke="#00f0ff" stroke-width="3" filter="url(#glowFilter)"/>
+  </g>
+
+  <!-- ================= LEGS & LOWER CHASSIS ================= -->
+  <g id="Legs-And-Base" filter="url(#dropShadow)">
+    <!-- Hydraulics / Inner Joints -->
+    <rect x="155" y="360" width="35" height="60" fill="url(#steel)"/>
+    <rect x="322" y="360" width="35" height="60" fill="url(#steel)"/>
+    <line x1="172" y1="360" x2="172" y2="420" stroke="#111" stroke-width="4"/>
+    <line x1="339" y1="360" x2="339" y2="420" stroke="#111" stroke-width="4"/>
+
+    <!-- Left Leg Heavy Treads/Pillars -->
+    <path d="M 120 350 L 195 340 L 210 440 L 175 470 L 110 450 Z" fill="url(#purpleArmor)"/>
+    <path d="M 120 350 L 195 340 L 185 375 L 125 385 Z" fill="url(#purpleArmorLight)"/>
+    <!-- Right Leg Heavy Treads/Pillars -->
+    <path d="M 392 350 L 317 340 L 302 440 L 337 470 L 402 450 Z" fill="url(#purpleArmor)"/>
+    <path d="M 392 350 L 317 340 L 327 375 L 387 385 Z" fill="url(#purpleArmorLight)"/>
+
+    <!-- Feet Anchors -->
+    <path d="M 110 450 L 175 470 L 165 485 L 90 465 Z" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="1.5"/>
+    <path d="M 402 450 L 337 470 L 347 485 L 422 465 Z" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="1.5"/>
+
+    <!-- Leg Runic Lines -->
+    <path d="M 145 385 L 160 445" stroke="#b000ff" stroke-width="3" fill="none" filter="url(#glowFilter)"/>
+    <path d="M 367 385 L 352 445" stroke="#b000ff" stroke-width="3" fill="none" filter="url(#glowFilter)"/>
+
+    <!-- Knee Guards -->
+    <polygon points="135,330 190,320 200,360 145,370" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="2"/>
+    <polygon points="377,330 322,320 312,360 367,370" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="2"/>
+    <circle cx="167" cy="345" r="5" fill="#00f0ff" filter="url(#glowFilter)"/>
+    <circle cx="345" cy="345" r="5" fill="#00f0ff" filter="url(#glowFilter)"/>
+  </g>
+
+  <!-- ================= PELVIS & TASSETS ================= -->
+  <g id="Pelvis-Armor" filter="url(#dropShadow)">
+    <path d="M 200 300 L 256 320 L 312 300 L 330 350 L 256 390 L 182 350 Z" fill="url(#darkIron)"/>
+    
+    <!-- Central Fauld / Tasset (Crotch Armor Plate) -->
+    <path d="M 225 315 L 287 315 L 300 375 L 256 415 L 212 375 Z" fill="url(#purpleArmor)"/>
+    <path d="M 225 315 L 287 315 L 280 330 L 232 330 Z" fill="url(#purpleArmorLight)"/>
+    <!-- Gold Trim & Center Gem -->
+    <path d="M 225 315 L 287 315 L 300 375 L 256 415 L 212 375 Z" fill="none" stroke="url(#goldTrim)" stroke-width="2.5"/>
+    <polygon points="256,340 270,360 256,380 242,360" fill="#00f0ff" filter="url(#intenseGlow)"/>
+  </g>
+
+  <!-- ================= TORSO & ARCANE RUNE CORE ================= -->
+  <g id="Torso-Base">
+    <!-- Main Mechanical Chest Cavity -->
+    <path d="M 160 170 L 352 170 L 370 300 L 256 340 L 142 300 Z" fill="url(#darkIron)" stroke="#111" stroke-width="3" filter="url(#dropShadow)"/>
+
+    <!-- Inner Core Housing (Dark Void) -->
+    <circle cx="256" cy="240" r="68" fill="#08030f" stroke="url(#goldTrim)" stroke-width="3"/>
+    <circle cx="256" cy="240" r="58" fill="#120224"/>
+
+    <!-- Arcane Rune Energy Core (Layered Glowing Effects) -->
+    <!-- Rotated Runic Octagram Star -->
+    <g stroke="url(#energyBeam)" stroke-width="1.5" fill="none" opacity="0.8" filter="url(#glowFilter)">
+      <polygon points="256,180 273,223 316,223 281,249 295,292 256,265 217,292 231,249 196,223 239,223"/>
+      <circle cx="256" cy="240" r="48" stroke-dasharray="6,4"/>
+      <circle cx="256" cy="240" r="54" stroke-dasharray="12,8"/>
+    </g>
+
+    <!-- Main Core Crystal / Sphere Glow -->
+    <circle cx="256" cy="240" r="35" fill="url(#coreGlow)" filter="url(#intenseGlow)"/>
+    <circle cx="256" cy="240" r="16" fill="#ffffff" filter="url(#intenseGlow)"/>
+
+    <!-- Concentric Arcane Ring Framing -->
+    <path d="M 256 178 A 62 62 0 0 1 318 240" fill="none" stroke="url(#goldTrim)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 256 302 A 62 62 0 0 1 194 240" fill="none" stroke="url(#goldTrim)" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- ================= CHEST ARMOR PLATES (OVERLAPPING CORE) ================= -->
+  <g id="Chest-Plating" filter="url(#dropShadow)">
+    <!-- Left Heavy Breastplate Collar -->
+    <path d="M 165 160 L 240 160 L 220 225 L 150 210 Z" fill="url(#purpleArmor)"/>
+    <path d="M 165 160 L 240 160 L 235 175 L 160 175 Z" fill="url(#purpleArmorLight)"/>
+    <path d="M 165 160 L 240 160 L 220 225 L 150 210 Z" fill="none" stroke="url(#goldTrim)" stroke-width="2"/>
+
+    <!-- Right Heavy Breastplate Collar -->
+    <path d="M 347 160 L 272 160 L 292 225 L 362 210 Z" fill="url(#purpleArmor)"/>
+    <path d="M 347 160 L 272 160 L 277 175 L 352 175 Z" fill="url(#purpleArmorLight)"/>
+    <path d="M 347 160 L 272 160 L 292 225 L 362 210 Z" fill="none" stroke="url(#goldTrim)" stroke-width="2"/>
+
+    <!-- Lower Chest Framing Claws (Holding the Core) -->
+    <path d="M 150 225 L 205 235 L 220 280 L 170 305 L 140 260 Z" fill="url(#purpleArmor)"/>
+    <path d="M 150 225 L 205 235 L 195 248 L 145 240 Z" fill="url(#purpleArmorLight)"/>
+    <path d="M 150 225 L 205 235 L 220 280 L 170 305 L 140 260 Z" fill="none" stroke="url(#goldTrim)" stroke-width="2"/>
+
+    <path d="M 362 225 L 307 235 L 292 280 L 342 305 L 372 260 Z" fill="url(#purpleArmor)"/>
+    <path d="M 362 225 L 307 235 L 317 248 L 367 240 Z" fill="url(#purpleArmorLight)"/>
+    <path d="M 362 225 L 307 235 L 292 280 L 342 305 L 372 260 Z" fill="none" stroke="url(#goldTrim)" stroke-width="2"/>
+
+    <!-- Glowing Inlaid Chest Runes -->
+    <path d="M 175 190 L 210 195 L 195 240" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round" filter="url(#glowFilter)"/>
+    <path d="M 337 190 L 302 195 L 317 240" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round" filter="url(#glowFilter)"/>
+  </g>
+
+  <!-- ================= HEAD / HELMET ================= -->
+  <g id="Head-And-Collar" filter="url(#dropShadow)">
+    <!-- High Neck Guard / Collar -->
+    <path d="M 200 150 Q 256 170 312 150 L 325 115 Q 256 130 187 115 Z" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="2"/>
+    
+    <!-- Armored Head / Mask -->
+    <path d="M 226 120 L 256 85 L 286 120 L 276 155 L 256 163 L 236 155 Z" fill="url(#purpleArmor)"/>
+    <!-- Brow & Face Plating -->
+    <polygon points="236,120 256,98 276,120 256,128" fill="url(#purpleArmorLight)"/>
+    <path d="M 226 120 L 256 85 L 286 120 L 276 155 L 256 163 L 236 155 Z" fill="none" stroke="url(#goldTrim)" stroke-width="2"/>
+
+    <!-- Visor Slit & Glowing Eyes -->
+    <path d="M 234 126 L 256 132 L 278 126 L 270 134 L 256 138 L 242 134 Z" fill="#050b14"/>
+    <polygon points="238,128 256,133 274,128 256,136" fill="url(#eyeGlow)" filter="url(#intenseGlow)"/>
+    <polygon points="244,130 256,133 268,130 256,134" fill="#ffffff" filter="url(#glowFilter)"/>
+
+    <!-- Central Head Crest / Horn -->
+    <path d="M 250 90 L 256 50 L 262 90 L 256 95 Z" fill="url(#goldTrim)" stroke="#ffe89c" stroke-width="1"/>
+    <!-- Side Horns -->
+    <path d="M 230 115 C 210 100 200 80 195 65 C 205 75 215 85 228 98 Z" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="1.5"/>
+    <path d="M 282 115 C 302 100 312 80 317 65 C 307 75 297 85 284 98 Z" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="1.5"/>
+  </g>
+
+  <!-- ================= PAULDRONS (MASSIVE SHOULDER ARMOR) ================= -->
+  <!-- LEFT PAULDRON -->
+  <g id="Left-Pauldron" filter="url(#dropShadow)">
+    <!-- Base Layer Shield Plate -->
+    <path d="M 170 140 L 110 80 L 40 120 L 60 210 L 155 210 Z" fill="url(#purpleArmor)"/>
+    <!-- Top Highlight Plate -->
+    <path d="M 170 140 L 110 80 L 40 120 L 75 140 L 120 110 Z" fill="url(#purpleArmorLight)"/>
+    <!-- Outer Gold Rim -->
+    <path d="M 170 140 L 110 80 L 40 120 L 60 210 L 155 210 Z" fill="none" stroke="url(#goldTrim)" stroke-width="3"/>
+    
+    <!-- Layered Sub-Plates (Armored Scales) -->
+    <path d="M 50 170 L 140 180 L 150 225 L 65 220 Z" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="1.5"/>
+    <path d="M 60 205 L 135 210 L 142 245 L 72 240 Z" fill="url(#purpleArmor)" stroke="url(#goldTrim)" stroke-width="1.5"/>
+
+    <!-- Giant Shoulder Blade/Spike -->
+    <path d="M 110 80 L 65 20 L 40 120 Z" fill="url(#darkIron)"/>
+    <path d="M 110 80 L 65 20 L 80 75 Z" fill="url(#purpleArmorLight)"/>
+    <path d="M 110 80 L 65 20 L 40 120 Z" fill="none" stroke="url(#goldTrim)" stroke-width="2"/>
+
+    <!-- Runic Engraving on Shoulder -->
+    <path d="M 75 140 Q 105 150 125 185" fill="none" stroke="#b000ff" stroke-width="3.5" stroke-linecap="round" filter="url(#glowFilter)"/>
+    <circle cx="75" cy="140" r="4" fill="#00f0ff" filter="url(#glowFilter)"/>
+  </g>
+
+  <!-- RIGHT PAULDRON -->
+  <g id="Right-Pauldron" filter="url(#dropShadow)">
+    <!-- Base Layer Shield Plate -->
+    <path d="M 342 140 L 402 80 L 472 120 L 452 210 L 357 210 Z" fill="url(#purpleArmor)"/>
+    <!-- Top Highlight Plate -->
+    <path d="M 342 140 L 402 80 L 472 120 L 437 140 L 392 110 Z" fill="url(#purpleArmorLight)"/>
+    <!-- Outer Gold Rim -->
+    <path d="M 342 140 L 402 80 L 472 120 L 452 210 L 357 210 Z" fill="none" stroke="url(#goldTrim)" stroke-width="3"/>
+    
+    <!-- Layered Sub-Plates (Armored Scales) -->
+    <path d="M 462 170 L 372 180 L 362 225 L 447 220 Z" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="1.5"/>
+    <path d="M 452 205 L 377 210 L 370 245 L 440 240 Z" fill="url(#purpleArmor)" stroke="url(#goldTrim)" stroke-width="1.5"/>
+
+    <!-- Giant Shoulder Blade/Spike -->
+    <path d="M 402 80 L 447 20 L 472 120 Z" fill="url(#darkIron)"/>
+    <path d="M 402 80 L 447 20 L 432 75 Z" fill="url(#purpleArmorLight)"/>
+    <path d="M 402 80 L 447 20 L 472 120 Z" fill="none" stroke="url(#goldTrim)" stroke-width="2"/>
+
+    <!-- Runic Engraving on Shoulder -->
+    <path d="M 437 140 Q 407 150 387 185" fill="none" stroke="#b000ff" stroke-width="3.5" stroke-linecap="round" filter="url(#glowFilter)"/>
+    <circle cx="437" cy="140" r="4" fill="#00f0ff" filter="url(#glowFilter)"/>
+  </g>
+
+  <!-- ================= FOREARMS & HEAVY TANK TOWER SHIELDS ================= -->
+  <!-- LEFT HEAVY SHIELD GAUNTLET -->
+  <g id="Left-Shield-Gauntlet" filter="url(#dropShadow)">
+    <!-- Arm Joint Mechanics -->
+    <circle cx="120" cy="250" r="25" fill="url(#darkIron)" stroke="#111" stroke-width="2"/>
+    <circle cx="120" cy="250" r="12" fill="url(#steel)"/>
+
+    <!-- Main Tower Shield Slab -->
+    <path d="M 30 180 L 130 200 L 145 390 L 85 450 L 20 410 Z" fill="url(#purpleArmor)"/>
+    <!-- Shield Bevel Cut (Top/Left Light reflection) -->
+    <path d="M 30 180 L 130 200 L 115 230 L 40 215 Z" fill="url(#purpleArmorLight)"/>
+    <path d="M 30 180 L 40 370 L 20 410 Z" fill="#12081d"/>
+
+    <!-- Reinforced Outer Frame & Spikes -->
+    <path d="M 30 180 L 130 200 L 145 390 L 85 450 L 20 410 Z" fill="none" stroke="url(#goldTrim)" stroke-width="3.5"/>
+    
+    <!-- Shield Bottom Ramming Spike -->
+    <path d="M 85 450 L 70 490 L 115 440 Z" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="1.5"/>
+
+    <!-- Central Shield Boss & Rune Core -->
+    <polygon points="85,260 120,300 85,340 50,300" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="2.5"/>
+    <polygon points="85,275 105,300 85,325 65,300" fill="#08030f"/>
+    <circle cx="85" cy="300" r="12" fill="#00f0ff" filter="url(#intenseGlow)"/>
+    <circle cx="85" cy="300" r="5" fill="#ffffff"/>
+
+    <!-- Heavy Plating Rivets -->
+    <circle cx="45" cy="200" r="3" fill="url(#goldTrim)"/>
+    <circle cx="115" cy="215" r="3" fill="url(#goldTrim)"/>
+    <circle cx="35" cy="395" r="3" fill="url(#goldTrim)"/>
+    <circle cx="130" cy="380" r="3" fill="url(#goldTrim)"/>
+
+    <!-- Glowing Energy Vents on Shield -->
+    <line x1="45" y1="240" x2="45" y2="360" stroke="#b000ff" stroke-width="3.5" stroke-linecap="round" filter="url(#glowFilter)"/>
+    <line x1="125" y1="250" x2="125" y2="350" stroke="#b000ff" stroke-width="3.5" stroke-linecap="round" filter="url(#glowFilter)"/>
+  </g>
+
+  <!-- RIGHT HEAVY SHIELD GAUNTLET -->
+  <g id="Right-Shield-Gauntlet" filter="url(#dropShadow)">
+    <!-- Arm Joint Mechanics -->
+    <circle cx="392" cy="250" r="25" fill="url(#darkIron)" stroke="#111" stroke-width="2"/>
+    <circle cx="392" cy="250" r="12" fill="url(#steel)"/>
+
+    <!-- Main Tower Shield Slab -->
+    <path d="M 482 180 L 382 200 L 367 390 L 427 450 L 492 410 Z" fill="url(#purpleArmor)"/>
+    <!-- Shield Bevel Cut -->
+    <path d="M 482 180 L 382 200 L 397 230 L 472 215 Z" fill="url(#purpleArmorLight)"/>
+    <path d="M 482 180 L 472 370 L 492 410 Z" fill="#12081d"/>
+
+    <!-- Reinforced Outer Frame & Spikes -->
+    <path d="M 482 180 L 382 200 L 367 390 L 427 450 L 492 410 Z" fill="none" stroke="url(#goldTrim)" stroke-width="3.5"/>
+
+    <!-- Shield Bottom Ramming Spike -->
+    <path d="M 427 450 L 442 490 L 397 440 Z" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="1.5"/>
+
+    <!-- Central Shield Boss & Rune Core -->
+    <polygon points="427,260 392,300 427,340 462,300" fill="url(#darkIron)" stroke="url(#goldTrim)" stroke-width="2.5"/>
+    <polygon points="427,275 407,300 427,325 447,300" fill="#08030f"/>
+    <circle cx="427" cy="300" r="12" fill="#00f0ff" filter="url(#intenseGlow)"/>
+    <circle cx="427" cy="300" r="5" fill="#ffffff"/>
+
+    <!-- Heavy Plating Rivets -->
+    <circle cx="467" cy="200" r="3" fill="url(#goldTrim)"/>
+    <circle cx="397" cy="215" r="3" fill="url(#goldTrim)"/>
+    <circle cx="477" cy="395" r="3" fill="url(#goldTrim)"/>
+    <circle cx="382" cy="380" r="3" fill="url(#goldTrim)"/>
+
+    <!-- Glowing Energy Vents on Shield -->
+    <line x1="467" y1="240" x2="467" y2="360" stroke="#b000ff" stroke-width="3.5" stroke-linecap="round" filter="url(#glowFilter)"/>
+    <line x1="387" y1="250" x2="387" y2="350" stroke="#b000ff" stroke-width="3.5" stroke-linecap="round" filter="url(#glowFilter)"/>
+  </g>
+
+  <!-- ================= FOREGROUND HIGHLIGHTS & FLOATING ARCANE PARTICLES ================= -->
+  <g id="Foreground-Particles" filter="url(#intenseGlow)">
+    <!-- Floating Rune Energy Sparks -->
+    <circle cx="210" cy="140" r="2.5" fill="#00f0ff"/>
+    <circle cx="302" cy="130" r="2" fill="#d900ff"/>
+    <circle cx="160" cy="280" r="3" fill="#00f0ff"/>
+    <circle cx="355" cy="270" r="1.5" fill="#ffffff"/>
+    <circle cx="240" cy="380" r="2" fill="#d900ff"/>
+    <circle cx="275" cy="420" r="2.5" fill="#00f0ff"/>
+    <circle cx="90" cy="220" r="2" fill="#00f0ff"/>
+    <circle cx="420" cy="220" r="3" fill="#d900ff"/>
+
+    <!-- Diamond Arcane Floating Crystals -->
+    <polygon points="256,15 260,22 256,29 252,22" fill="#00f0ff"/>
+    <polygon points="130,50 134,55 130,60 126,55" fill="#d900ff"/>
+    <polygon points="382,50 386,55 382,60 378,55" fill="#00f0ff"/>
+  </g>
+</svg>

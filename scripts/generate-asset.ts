@@ -43,9 +43,66 @@ async function main() {
 
   let svgContent = '';
   if (style === 'boss') {
-    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 512 512"><defs><radialGradient id="aura" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ea80fc" stop-opacity="0.8"/><stop offset="100%" stop-color="#4a148c" stop-opacity="0"/></radialGradient></defs><circle cx="256" cy="256" r="230" fill="url(#aura)"/><circle cx="256" cy="256" r="180" fill="#11111a" stroke="#e040fb" stroke-width="12"/><circle cx="190" cy="210" r="24" fill="#ff1744"/><circle cx="322" cy="210" r="24" fill="#ff1744"/><path d="M180 320 Q256 380 332 320" fill="none" stroke="#ff1744" stroke-width="10"/></svg>`;
+    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 512 512">
+        <defs>
+          <radialGradient id="aura" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#d500f9" stop-opacity="0.9"/>
+            <stop offset="60%" stop-color="#4a148c" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="armor" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#2a0845"/>
+            <stop offset="100%" stop-color="#6441a5"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="6" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+          </filter>
+        </defs>
+        <rect width="512" height="512" fill="#0b0c10" rx="32"/>
+        <circle cx="256" cy="256" r="230" fill="url(#aura)"/>
+        <!-- Demonic Armor Crown -->
+        <path d="M120 200 L180 120 L256 180 L332 120 L392 200 L350 280 L160 280 Z" fill="url(#armor)" stroke="#e040fb" stroke-width="4"/>
+        <!-- Face Core -->
+        <polygon points="180,240 256,360 332,240 256,220" fill="#11111a" stroke="#d500f9" stroke-width="6"/>
+        <!-- Eyes -->
+        <ellipse cx="210" cy="250" rx="20" ry="10" fill="#ff1744" filter="url(#glow)"/>
+        <ellipse cx="302" cy="250" rx="20" ry="10" fill="#ff1744" filter="url(#glow)"/>
+        <polygon points="210,250 220,252 205,255" fill="#ffffff"/>
+        <polygon points="302,250 312,252 297,255" fill="#ffffff"/>
+      </svg>`;
+  } else if (style === 'icon') {
+    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 512 512">
+        <defs>
+          <linearGradient id="iconBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffb74d"/>
+            <stop offset="100%" stop-color="#f57c00"/>
+          </linearGradient>
+          <filter id="shadow">
+            <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.6"/>
+          </filter>
+        </defs>
+        <rect width="512" height="512" rx="96" fill="#12131c"/>
+        <rect x="32" y="32" width="448" height="448" rx="80" fill="url(#iconBg)" stroke="#ffe082" stroke-width="8"/>
+        <circle cx="256" cy="256" r="140" fill="#ffffff" opacity="0.2"/>
+        <!-- Crystal Prism Icon -->
+        <polygon points="256,110 370,256 256,402 142,256" fill="#fff59d" filter="url(#shadow)" stroke="#fff" stroke-width="6"/>
+        <polygon points="256,110 256,402 370,256" fill="#ffe082"/>
+      </svg>`;
   } else {
-    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 512 512"><rect width="512" height="512" rx="64" fill="#181824"/><circle cx="256" cy="256" r="160" fill="#40c4ff" opacity="0.3"/><circle cx="256" cy="256" r="120" fill="#29b6f6"/><text x="256" y="275" font-size="72" font-weight="bold" fill="#ffffff" text-anchor="middle">🎮</text></svg>`;
+    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 512 512">
+        <defs>
+          <radialGradient id="spriteGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#29b6f6" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#0288d1" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="512" height="512" rx="32" fill="#0d1117"/>
+        <circle cx="256" cy="256" r="180" fill="url(#spriteGlow)"/>
+        <!-- Aerodynamic Bio Sprite -->
+        <path d="M256 90 L360 220 L310 380 L256 320 L202 380 L152 220 Z" fill="#0288d1" stroke="#81d4fa" stroke-width="8"/>
+        <circle cx="256" cy="220" r="40" fill="#e0f7fa"/>
+      </svg>`;
   }
 
   fs.writeFileSync(outputPath, svgContent);
