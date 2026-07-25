@@ -17,7 +17,7 @@ describe('Challenge Mode Mechanics Tests', () => {
     const normalState = new GameState(undefined, 'NORMAL');
     const hardcoreState = new GameState(undefined, 'HARDCORE');
 
-    expect(normalState.baseHp).toBe(20);
+    expect(normalState.baseHp).toBe(10);
     expect(hardcoreState.baseHp).toBe(1);
     expect(hardcoreState.maxBaseHp).toBe(1);
   });

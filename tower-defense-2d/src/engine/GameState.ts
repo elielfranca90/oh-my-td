@@ -24,8 +24,8 @@ export class GameState {
       this.maxBaseHp = 1;
       this.baseHp = 1;
     } else {
-      this.maxBaseHp = 20 + hpBonus;
-      this.baseHp = 20 + hpBonus;
+      this.maxBaseHp = 10 + hpBonus;
+      this.baseHp = 10 + hpBonus;
     }
   }
 
