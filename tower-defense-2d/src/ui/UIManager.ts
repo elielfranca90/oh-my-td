@@ -112,27 +112,27 @@ export class UIManager {
               <span class="toolbar-label">🏗️ TORRES:</span>
               <div class="toolbar-items-row">
                 <button id="card-basic" class="toolbar-card active" data-type="BASIC" title="Torre Básica (50g)">
-                  <span class="dot basic"></span>
+                  <img class="tower-card-icon" src="/assets/basic_tower_icon.svg" alt="Básica" />
                   <span class="name">Básica</span>
                   <span class="cost">🪙 50g</span>
                 </button>
                 <button id="card-frost" class="toolbar-card" data-type="FROST" title="Torre de Gelo (70g)">
-                  <span class="dot frost"></span>
+                  <img class="tower-card-icon" src="/assets/frost_tower_icon.svg" alt="Gelo" />
                   <span class="name">Gelo</span>
                   <span class="cost">🪙 70g</span>
                 </button>
                 <button id="card-solar" class="toolbar-card" data-type="SOLAR_PRISM" title="Prisma Solar (100g)">
-                  <span class="dot solar"></span>
+                  <img class="tower-card-icon" src="/assets/solar_prism_icon.svg" alt="Prisma" />
                   <span class="name">Prisma</span>
                   <span class="cost">🪙 100g</span>
                 </button>
                 <button id="card-cannon" class="toolbar-card" data-type="CANNON" title="Canhão (105g)">
-                  <span class="dot cannon"></span>
+                  <img class="tower-card-icon" src="/assets/cannon_tower_icon.svg" alt="Canhão" />
                   <span class="name">Canhão</span>
                   <span class="cost">🪙 105g</span>
                 </button>
                 <button id="card-artillery" class="toolbar-card" data-type="ARTILLERY" title="Artilharia (110g)">
-                  <span class="dot artillery"></span>
+                  <img class="tower-card-icon" src="/assets/artillery_tower_icon.svg" alt="Artilharia" />
                   <span class="name">Artilharia</span>
                   <span class="cost">🪙 110g</span>
                 </button>

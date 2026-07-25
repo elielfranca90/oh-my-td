@@ -1,283 +1,283 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Glow Filters -->
-    <filter id="ultra-glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="6" result="blur1" />
-      <feGaussianBlur stdDeviation="15" result="blur2" />
-      <feGaussianBlur stdDeviation="30" result="blur3" />
+    <!-- Background & Motion Glow Filters -->
+    <filter id="super-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur1" />
+      <feGaussianBlur stdDeviation="6" result="blur2" />
       <feMerge>
-        <feMergeNode in="blur3" />
-        <feMergeNode in="blur2" />
         <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
 
-    <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="4" result="blur" />
+    <filter id="high-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
       <feMerge>
         <feMergeNode in="blur" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
 
-    <filter id="plasma-blur" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="8" result="blur" />
+    <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="-8" dy="12" stdDeviation="8" flood-color="#000000" flood-opacity="0.6"/>
     </filter>
 
-    <!-- Metallic Dark Gold Gradients -->
-    <linearGradient id="gold-bright" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFF2A3" />
-      <stop offset="30%" stop-color="#F1A80A" />
-      <stop offset="70%" stop-color="#995D00" />
-      <stop offset="100%" stop-color="#4A2E00" />
+    <!-- Gradients -->
+    <!-- Gold Armor Master Gradient -->
+    <linearGradient id="gold-armor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFEA75" />
+      <stop offset="25%" stop-color="#EA9F00" />
+      <stop offset="60%" stop-color="#A65F00" />
+      <stop offset="90%" stop-color="#572B00" />
+      <stop offset="100%" stop-color="#2C1200" />
     </linearGradient>
 
-    <linearGradient id="gold-dark" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#BA8010" />
-      <stop offset="50%" stop-color="#664200" />
-      <stop offset="100%" stop-color="#291A00" />
+    <linearGradient id="gold-armor-light" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#B87300" />
+      <stop offset="50%" stop-color="#FFC83B" />
+      <stop offset="100%" stop-color="#FFF5C2" />
     </linearGradient>
 
-    <!-- Vibrant Orange Energy Gradients -->
-    <linearGradient id="orange-energy" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FFD500" />
-      <stop offset="40%" stop-color="#FF5500" />
-      <stop offset="90%" stop-color="#FF0044" />
-      <stop offset="100%" stop-color="#B30000" stop-opacity="0" />
+    <!-- Sleek Neon Orange Gradient -->
+    <linearGradient id="neon-orange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF066" />
+      <stop offset="30%" stop-color="#FF6600" />
+      <stop offset="75%" stop-color="#CC0000" />
+      <stop offset="100%" stop-color="#660000" />
     </linearGradient>
 
-    <linearGradient id="orange-energy-reverse" x1="100%" y1="0%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#FFF2A3" />
-      <stop offset="30%" stop-color="#FF7700" />
-      <stop offset="75%" stop-color="#DD1100" />
-      <stop offset="100%" stop-color="#550000" stop-opacity="0" />
-    </linearGradient>
-
-    <radialGradient id="core-sun" cx="50%" cy="50%" r="50%">
+    <!-- Hot Energy Core Gradient -->
+    <radialGradient id="energy-core" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="25%" stop-color="#FFEA66" />
+      <stop offset="25%" stop-color="#FFFF55" />
       <stop offset="60%" stop-color="#FF5500" />
-      <stop offset="100%" stop-color="#990000" stop-opacity="0" />
+      <stop offset="100%" stop-color="#AA0000" stop-opacity="0" />
     </radialGradient>
 
-    <!-- Dark Bio-Armor Gradients -->
-    <linearGradient id="obsidian-body" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2D2536" />
-      <stop offset="50%" stop-color="#17121D" />
-      <stop offset="100%" stop-color="#09060C" />
+    <!-- Dark Carbon Metal Chassis -->
+    <linearGradient id="dark-chassis" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2A323D" />
+      <stop offset="50%" stop-color="#151921" />
+      <stop offset="100%" stop-color="#080A0D" />
     </linearGradient>
 
-    <linearGradient id="obsidian-highlight" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#5E4C6E" />
-      <stop offset="40%" stop-color="#211928" />
-      <stop offset="100%" stop-color="#0D0912" />
+    <linearGradient id="metal-edge" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8A9BA8" />
+      <stop offset="50%" stop-color="#434F5D" />
+      <stop offset="100%" stop-color="#1A2129" />
     </linearGradient>
 
-    <!-- Motion Trail Gradients -->
-    <linearGradient id="trail-line" x1="100%" y1="0%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#FFBB00" stop-opacity="0.8" />
-      <stop offset="50%" stop-color="#FF3300" stop-opacity="0.4" />
-      <stop offset="100%" stop-color="#880000" stop-opacity="0" />
+    <!-- Speed Ribbon Trails -->
+    <linearGradient id="trail-1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF3300" stop-opacity="0" />
+      <stop offset="70%" stop-color="#FF9900" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#FFFFCC" stop-opacity="0.95" />
     </linearGradient>
 
-    <linearGradient id="blade-beam" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="30%" stop-color="#FFCC00" />
-      <stop offset="70%" stop-color="#FF4400" />
-      <stop offset="100%" stop-color="#990000" stop-opacity="0" />
+    <linearGradient id="trail-2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E60000" stop-opacity="0" />
+      <stop offset="50%" stop-color="#FF5500" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#FFCC00" stop-opacity="0.8" />
+    </linearGradient>
+
+    <linearGradient id="blade-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFCC00" />
+      <stop offset="50%" stop-color="#FF3300" />
+      <stop offset="100%" stop-color="#880000" />
     </linearGradient>
   </defs>
 
-  <!-- BACKGROUND MOTION TRAILS & AFTER-IMAGES -->
-  <g id="motion-effects">
-    <!-- Speed Distortion Streams -->
-    <path d="M-20 360 C 100 350, 180 380, 280 370 C 220 395, 100 400, -20 380 Z" fill="url(#trail-line)" opacity="0.7" />
-    <path d="M 10 220 C 130 200, 240 230, 320 200 C 240 235, 120 230, 10 250 Z" fill="url(#trail-line)" opacity="0.5" />
-    <path d="M -50 140 C 80 130, 200 170, 300 130 C 200 175, 70 170, -50 150 Z" fill="url(#trail-line)" opacity="0.6" opacity="0.3" />
+  <!-- BACKGROUND MOTION TRAILS & AFTERBURNER EFFETS -->
+  <g id="motion-trails" filter="url(#super-glow)">
+    <!-- Speed streaks sweeping from top-left to center-right -->
+    <path d="M -20,-10 C 100,60 180,120 250,210 C 200,190 120,130 -20,-10 Z" fill="url(#trail-2)" />
+    <path d="M 20,-30 C 140,50 240,140 310,240 C 250,210 160,140 20,-30 Z" fill="url(#trail-1)" />
+    <path d="M 50,40 L 220,180 L 190,190 L 30,40 Z" fill="url(#trail-1)" opacity="0.5" />
+    <path d="M 10,90 Q 150,170 230,260 Q 140,190 10,90 Z" fill="url(#trail-2)" />
     
-    <!-- Kinetic Energy Ribbons -->
-    <path d="M 350 170 Q 200 190 40 130 Q 180 220 310 230 Z" fill="url(#orange-energy-reverse)" opacity="0.8" filter="url(#soft-glow)" />
-    <path d="M 280 290 Q 150 330 0 310 Q 140 370 260 360 Z" fill="url(#orange-energy-reverse)" opacity="0.8" filter="url(#soft-glow)" />
-
-    <!-- Plasma Sparks & Particles -->
-    <g fill="#FFCC00" filter="url(#soft-glow)">
-      <circle cx="180" cy="160" r="3" />
-      <circle cx="120" cy="180" r="4.5" />
-      <circle cx="220" cy="140" r="2" />
-      <circle cx="90"  cy="280" r="3.5" />
-      <circle cx="150" cy="320" r="2" />
-      <circle cx="40"  cy="340" r="5" />
-      <circle cx="200" cy="390" r="3" />
-      <polygon points="130,220 145,215 135,225" />
-      <polygon points="70,300 90,295 78,308" />
-      <polygon points="210,120 230,118 218,128" />
-    </g>
-
-    <!-- Ground Speed Flare / Dust Arc -->
-    <path d="M 220 440 Q 310 430 420 450 Q 330 465 200 460 Z" fill="url(#orange-energy)" opacity="0.5" filter="url(#plasma-blur)" />
-    <path d="M 280 442 L 390 448 L 320 454 Z" fill="#FFEA66" filter="url(#soft-glow)" />
+    <!-- Heavy thrust streaks behind main torso -->
+    <path d="M 80,120 C 160,180 210,230 260,260 C 220,240 150,190 60,110 Z" fill="url(#neon-orange)" opacity="0.7" />
+    <path d="M 30,160 C 120,200 190,260 230,310 C 180,270 110,220 20,150 Z" fill="url(#trail-1)" />
+    
+    <!-- Sharp motion lines -->
+    <line x1="20" y1="40" x2="260" y2="240" stroke="#FFCC00" stroke-width="3" opacity="0.6" stroke-dasharray="80 20 40 10" />
+    <line x1="60" y1="20" x2="300" y2="220" stroke="#FF5500" stroke-width="2" opacity="0.8" stroke-dasharray="50 15 30 15" />
+    <line x1="10" y1="100" x2="220" y2="280" stroke="#FFAA00" stroke-width="1.5" opacity="0.5" stroke-dasharray="100 30" />
+    <line x1="90" y1="10" x2="340" y2="210" stroke="#FFFFFF" stroke-width="2" opacity="0.7" stroke-dasharray="40 40" />
   </g>
 
-  <!-- MAIN CHARACTER: RUNNER FAST ENEMY -->
-  <g id="runner-sprite">
+  <!-- GROUND SHADOW & ENERGY REFLECTION -->
+  <g id="ground-effects">
+    <ellipse cx="290" cy="410" rx="130" ry="35" fill="#000000" opacity="0.55" filter="url(#super-glow)" transform="rotate(-10 290 410)" />
+    <!-- Radiant energy footprint glow -->
+    <ellipse cx="320" cy="415" rx="80" ry="18" fill="url(#energy-core)" opacity="0.7" filter="url(#high-glow)" />
+  </g>
 
-    <!-- 1. BACK LIMBS (LEFT SIDE - IN SHADOW) -->
-    <g id="back-arm">
-      <!-- Back Arm Upper -->
-      <path d="M 270 200 L 190 170 L 175 190 L 250 220 Z" fill="url(#obsidian-body)" />
-      <!-- Back Arm Forearm & Blade -->
-      <path d="M 190 170 L 100 130 L 130 120 L 205 160 Z" fill="url(#gold-dark)" />
-      <path d="M 120 135 L 30 90 L 90 120 Z" fill="url(#blade-beam)" filter="url(#soft-glow)" />
+  <!-- MAIN SPRITE CONTAINER (Angled Isometric Runner Pose) -->
+  <g id="runner-sprite" filter="url(#drop-shadow)">
+
+    <!-- LAYER 1: REAR LEFT LIMB & SWORD-WING (Pushed Back) -->
+    <g id="rear-left-limb">
+      <!-- Rear Upper Thigh -->
+      <path d="M 210,230 L 140,160 L 110,185 L 175,260 Z" fill="url(#dark-chassis)" stroke="#3A4659" stroke-width="1.5" />
+      <path d="M 200,235 L 145,170 L 130,185 L 175,250 Z" fill="url(#gold-armor)" />
+      
+      <!-- Rear Shin Blade -->
+      <path d="M 125,175 L 40,100 L 75,135 L 145,215 Z" fill="url(#dark-chassis)" />
+      <path d="M 40,100 L 20,80 L 60,115 L 125,175 Z" fill="url(#neon-orange)" filter="url(#high-glow)" />
+      
+      <!-- Rear Stabilizer Scythe / Back Winglet -->
+      <path d="M 220,205 L 140,100 L 170,125 L 240,210 Z" fill="url(#gold-armor-light)" />
+      <path d="M 140,100 L 100,50 L 135,90 L 170,125 Z" fill="url(#blade-glow)" filter="url(#high-glow)" />
     </g>
 
-    <g id="back-leg">
-      <!-- Back Thigh -->
-      <path d="M 210 270 L 120 295 L 105 265 L 190 240 Z" fill="url(#obsidian-body)" />
-      <path d="M 195 248 L 125 288 L 135 260 Z" fill="url(#gold-dark)" />
-      <!-- Back Calf / Shin Armor -->
-      <path d="M 120 295 L 45 325 L 60 345 L 110 325 Z" fill="url(#obsidian-body)" />
-      <path d="M 50 328 L -10 345 L 35 348 Z" fill="url(#orange-energy)" filter="url(#soft-glow)" />
-      <!-- Joint Energy Core -->
-      <circle cx="120" cy="295" r="7" fill="url(#orange-energy)" filter="url(#soft-glow)" />
+    <!-- LAYER 2: BACK DORSAL SPINES & THRUSTERS -->
+    <g id="dorsal-thrusters">
+      <!-- Aerodynamic Bio-Spines extending along the back -->
+      <!-- Spine 1 (Tail End) -->
+      <path d="M 190,240 L 130,195 L 165,225 Z" fill="url(#gold-armor)" stroke="#FFCC00" stroke-width="0.5" />
+      <!-- Spine 2 -->
+      <path d="M 220,220 L 150,165 L 190,200 Z" fill="url(#gold-armor)" stroke="#FFCC00" stroke-width="0.5" />
+      <!-- Spine 3 -->
+      <path d="M 250,195 L 175,135 L 220,175 Z" fill="url(#gold-armor-light)" stroke="#FFF" stroke-width="0.75" />
+      <!-- Spine 4 (Neck Base) -->
+      <path d="M 285,170 L 205,105 L 255,150 Z" fill="url(#gold-armor-light)" stroke="#FFF" stroke-width="1" />
+
+      <!-- Glowing Plasma Exhaust Vents between Spines -->
+      <polygon points="205,230 185,215 195,235" fill="#FFFFFF" filter="url(#high-glow)" />
+      <polygon points="235,205 210,185 225,210" fill="#FFCC00" filter="url(#high-glow)" />
+      <polygon points="265,180 240,160 255,185" fill="#FF5500" filter="url(#high-glow)" />
     </g>
 
-    <!-- 2. MAIN TORSO AND SPINE INNER STRUCTURE -->
-    <g id="torso-base">
-      <!-- Abdominal Bio-Mesh -->
-      <path d="M 220 250 C 240 230, 270 220, 310 215 C 300 250, 270 280, 235 285 Z" fill="url(#obsidian-body)" />
-      <!-- Inner Glowing Ribs / Energy Vents -->
-      <path d="M 245 255 Q 275 235 305 230" stroke="#FF5500" stroke-width="4" fill="none" filter="url(#soft-glow)" />
-      <path d="M 240 268 Q 265 250 290 248" stroke="#FF7700" stroke-width="3.5" fill="none" filter="url(#soft-glow)" />
-      <path d="M 235 278 Q 255 265 275 263" stroke="#FFAA00" stroke-width="3" fill="none" filter="url(#soft-glow)" />
+    <!-- LAYER 3: MAIN TORSO & CHASSIS -->
+    <g id="torso-core">
+      <!-- Inner Dark Carbon Frame -->
+      <path d="M 230,275 C 210,240 240,190 280,175 C 320,165 350,195 340,240 C 330,270 270,300 230,275 Z" fill="url(#dark-chassis)" />
+      
+      <!-- Energy Ribs / Power Core Lines -->
+      <path d="M 260,250 Q 280,230 310,235" stroke="url(#neon-orange)" stroke-width="4" fill="none" filter="url(#high-glow)" />
+      <path d="M 250,265 Q 275,245 300,250" stroke="url(#neon-orange)" stroke-width="3" fill="none" filter="url(#high-glow)" />
+      <path d="M 275,235 Q 295,215 320,220" stroke="#FFCC00" stroke-width="3" fill="none" filter="url(#high-glow)" />
 
-      <!-- Energetic Spine Nodes -->
-      <path d="M 200 245 Q 220 235 240 230" stroke="#FFD500" stroke-width="5" stroke-linecap="round" filter="url(#ultra-glow)" />
+      <!-- Main Body Armor Plates (Abdomen & Chest Carapace) -->
+      <!-- Lower Abdomen Plate -->
+      <path d="M 225,260 L 260,285 L 290,275 L 270,245 L 235,245 Z" fill="url(#gold-armor)" stroke="#1A0A00" stroke-width="1" />
+      <path d="M 260,285 L 290,275 L 275,255 L 250,265 Z" fill="url(#gold-armor-light)" />
+
+      <!-- Center Chest Plate (Aerodynamic V-shape) -->
+      <path d="M 270,235 L 340,215 L 360,245 L 310,280 L 270,250 Z" fill="url(#gold-armor)" stroke="#FFCC00" stroke-width="0.5" />
+      <path d="M 300,227 L 340,215 L 360,245 L 320,265 Z" fill="url(#neon-orange)" />
+      
+      <!-- Highlight Specular Cuts -->
+      <path d="M 280,235 L 335,218 L 325,230 L 285,242 Z" fill="#FFFFFF" opacity="0.6" />
     </g>
 
-    <!-- 3. FRONT LEG (RIGHT LEG - DYNAMIC SPRINTING) -->
-    <g id="front-leg">
-      <!-- Hip Joint Armor -->
-      <path d="M 240 250 C 265 240, 285 260, 270 285 C 245 295, 230 275, 240 250 Z" fill="url(#gold-dark)" />
-      <circle cx="255" cy="268" r="9" fill="url(#obsidian-body)" />
-      <circle cx="255" cy="268" r="5" fill="#FF5500" filter="url(#soft-glow)" />
+    <!-- LAYER 4: REAR RIGHT LEG (Planted Forward / Pouncing) -->
+    <g id="front-right-leg">
+      <!-- Hip / Thigh Joint (Bio-Mechanical Orb) -->
+      <circle cx="310" cy="265" r="16" fill="url(#dark-chassis)" stroke="#FF9900" stroke-width="1.5" />
+      <circle cx="310" cy="265" r="8" fill="url(#neon-orange)" filter="url(#high-glow)" />
 
-      <!-- Main Thigh Muscle/Armor -->
-      <path d="M 260 275 L 345 325 L 325 350 L 240 290 Z" fill="url(#obsidian-highlight)" />
-      <!-- Thigh Gold Plate -->
-      <path d="M 270 270 L 355 320 L 335 335 L 265 285 Z" fill="url(#gold-bright)" />
-      <path d="M 290 287 L 348 320 L 340 326 L 285 293 Z" fill="#FFFFFF" opacity="0.6" />
+      <!-- Main Forward Thigh Armor Plate -->
+      <path d="M 315,265 L 375,305 L 350,335 L 290,285 Z" fill="url(#gold-armor)" stroke="#3A1A00" stroke-width="1" />
+      <path d="M 325,270 L 375,305 L 365,320 L 310,285 Z" fill="url(#gold-armor-light)" />
+      <!-- Sharp Knee Armor Blade -->
+      <path d="M 375,305 L 420,320 L 370,335 Z" fill="url(#neon-orange)" filter="url(#high-glow)" />
 
-      <!-- Knee Guard & Thruster -->
-      <path d="M 345 315 L 385 335 L 340 360 Z" fill="url(#gold-bright)" />
-      <path d="M 350 325 L 395 340 L 360 348 Z" fill="url(#orange-energy)" filter="url(#soft-glow)" />
+      <!-- Shin (Slanted sharply back-down) -->
+      <path d="M 355,330 L 385,410 L 360,420 L 335,340 Z" fill="url(#dark-chassis)" stroke="#566575" stroke-width="1" />
+      <!-- Shin Guard Armor Plate -->
+      <path d="M 360,335 L 390,405 L 375,415 L 345,345 Z" fill="url(#gold-armor)" />
+      <path d="M 375,350 L 388,400 L 380,408 L 365,355 Z" fill="#FFCC00" />
 
-      <!-- Shin / Calf Armor (Thrusting Down Forward) -->
-      <path d="M 335 350 L 310 440 L 290 430 L 320 355 Z" fill="url(#obsidian-body)" />
-      <path d="M 330 355 L 315 445 L 332 410 L 340 365 Z" fill="url(#gold-bright)" />
-
-      <!-- Glowing Calf Vent Strip -->
-      <path d="M 325 365 L 308 430" stroke="#FF3300" stroke-width="4" filter="url(#ultra-glow)" />
-      <path d="M 325 365 L 308 430" stroke="#FFEE00" stroke-width="1.5" />
-
-      <!-- Ankle & Sharp Cyber Foot -->
-      <path d="M 310 440 L 350 455 L 340 465 L 285 445 Z" fill="url(#obsidian-highlight)" />
-      <!-- Talon / Toe Blade -->
-      <path d="M 335 448 L 385 468 L 330 465 Z" fill="url(#gold-bright)" />
-      <path d="M 345 455 L 410 472 L 360 468 Z" fill="url(#blade-beam)" filter="url(#soft-glow)" />
+      <!-- Digigrade Talon / Ground Digging Bio-Blade Foot -->
+      <path d="M 385,410 L 435,445 L 390,430 L 365,420 Z" fill="url(#dark-chassis)" />
+      <path d="M 385,410 L 445,440 L 410,445 Z" fill="url(#neon-orange)" filter="url(#high-glow)" />
+      <path d="M 435,445 L 460,450 L 420,435 Z" fill="#FFFFFF" filter="url(#high-glow)" />
     </g>
 
-    <!-- 4. MAIN BODY CARAPACE & CHEST ARMOR -->
-    <g id="chest-carapace">
-      <!-- Main Upper Torso Block -->
-      <path d="M 260 220 C 290 190, 340 185, 365 210 C 340 240, 290 260, 260 220 Z" fill="url(#obsidian-body)" />
+    <!-- LAYER 5: SHOULDER & FOREARM BLADES (Primary Dynamic Attack/Sprint Feature) -->
+    <g id="front-arm-blades">
+      <!-- Main Right Shoulder Pauldron -->
+      <path d="M 320,200 L 380,185 L 405,225 L 365,245 L 325,220 Z" fill="url(#dark-chassis)" stroke="#8A9BA8" stroke-width="1" />
+      <path d="M 330,198 L 380,185 L 400,220 L 355,235 Z" fill="url(#gold-armor)" />
+      <path d="M 350,193 L 380,185 L 395,210 L 365,218 Z" fill="#FFFFFF" opacity="0.8" />
 
-      <!-- Layered Aerodynamic Gold Breastplate -->
-      <path d="M 285 215 C 315 180, 360 175, 385 200 C 365 220, 335 240, 285 215 Z" fill="url(#gold-bright)" />
-      <path d="M 300 210 C 325 185, 360 180, 375 200 C 355 215, 335 225, 300 210 Z" fill="url(#gold-dark)" />
+      <!-- Massive Aerodynamic Arm Blade (Extending Backwards/Outwards like a Jet Wing) -->
+      <!-- Blade Base Structural Mount -->
+      <path d="M 370,225 L 440,250 L 420,270 L 355,240 Z" fill="url(#dark-chassis)" />
+      <!-- Primary Gold Blade Body -->
+      <path d="M 390,232 L 490,275 L 460,305 L 375,250 Z" fill="url(#gold-armor)" stroke="#FFCC00" stroke-width="0.75" />
+      <path d="M 410,240 L 490,275 L 475,290 L 395,250 Z" fill="url(#gold-armor-light)" />
+      <!-- Razor Plasma Edge (Glows intensely) -->
+      <path d="M 425,245 L 510,280 L 460,305 Z" fill="url(#blade-glow)" filter="url(#super-glow)" />
+      <path d="M 450,255 L 505,280 L 470,298 Z" fill="#FFFFFF" filter="url(#high-glow)" />
 
-      <!-- Radiant Bio-Core Center (Chest Heart) -->
-      <ellipse cx="335" cy="210" rx="14" ry="8" transform="rotate(-20 335 210)" fill="url(#core-sun)" filter="url(#ultra-glow)" />
-      <ellipse cx="335" cy="210" rx="6" ry="3" transform="rotate(-20 335 210)" fill="#FFFFFF" />
-
-      <!-- Aerodynamic Collar / Neck Guard -->
-      <path d="M 320 180 L 365 145 L 380 175 L 345 195 Z" fill="url(#gold-bright)" />
-      <path d="M 340 165 L 385 135 L 375 170 Z" fill="url(#orange-energy)" filter="url(#soft-glow)" />
+      <!-- Energy Vents on Blade -->
+      <polygon points="400,245 420,242 415,252" fill="#FF5500" filter="url(#high-glow)" />
+      <polygon points="425,255 445,252 440,262" fill="#FFCC00" filter="url(#high-glow)" />
+      <polygon points="450,265 470,262 465,272" fill="#FFFFFF" filter="url(#high-glow)" />
     </g>
 
-    <!-- 5. FRONT ARM & WEAPON (RIGHT ARM - STRIKING/BALANCING) -->
-    <g id="front-arm">
-      <!-- Shoulder Armor Pad (Sleek Wing Shape) -->
-      <path d="M 290 195 C 310 150, 365 140, 395 165 C 365 185, 330 205, 290 195 Z" fill="url(#gold-bright)" />
-      <path d="M 315 175 C 335 150, 370 145, 390 160 C 370 175, 345 190, 315 175 Z" fill="url(#obsidian-body)" />
-      <path d="M 335 170 C 350 155, 375 150, 395 165 Z" stroke="#FF7700" stroke-width="3" fill="none" filter="url(#soft-glow)" />
-
-      <!-- Bicep / Elbow -->
-      <path d="M 350 190 L 415 225 L 395 245 L 340 205 Z" fill="url(#obsidian-highlight)" />
-
-      <!-- Forearm Gauntlet -->
-      <path d="M 405 215 L 475 240 L 445 265 L 390 235 Z" fill="url(#gold-bright)" />
-      <!-- Gauntlet Gold Segment Cut -->
-      <path d="M 415 220 L 485 242 L 465 252 L 405 232 Z" fill="url(#gold-dark)" />
-
-      <!-- Energy Wrist Blade / Claws -->
-      <path d="M 450 235 L 530 245 L 470 268 Z" fill="url(#blade-beam)" filter="url(#ultra-glow)" />
-      <path d="M 460 242 L 515 250 L 475 260 Z" fill="#FFFFFF" />
-      <path d="M 440 250 L 495 270 L 455 275 Z" fill="url(#orange-energy)" filter="url(#soft-glow)" />
-    </g>
-
-    <!-- 6. HEAD AND AERODYNAMIC HELMET (FOCUS POINT) -->
-    <g id="head-helmet">
+    <!-- LAYER 6: HEAD & AERODYNAMIC HELMET (Fast Arrow Silhouette) -->
+    <g id="runner-head">
       <!-- Neck Base -->
-      <path d="M 345 165 L 375 140 L 390 155 L 360 175 Z" fill="url(#obsidian-body)" />
+      <path d="M 330,185 L 365,165 L 385,185 L 350,205 Z" fill="url(#dark-chassis)" />
+      <path d="M 345,178 L 365,165 L 378,180 L 358,193 Z" fill="url(#neon-orange)" />
 
-      <!-- Main Helmet Crest (Swept Far Back) -->
-      <path d="M 340 155 C 310 110, 240 80, 180 75 C 250 90, 310 120, 365 145 Z" fill="url(#gold-bright)" />
-      <path d="M 320 135 C 270 100, 220 85, 160 80 C 220 92, 280 112, 335 138 Z" fill="url(#orange-energy)" filter="url(#soft-glow)" />
-      <path d="M 350 148 C 300 120, 240 105, 190 100 C 240 108, 290 122, 340 142 Z" fill="url(#obsidian-body)" />
+      <!-- Helmet Main Shell (Wedge Shape facing Down-Right) -->
+      <path d="M 350,165 L 425,145 L 445,180 L 385,200 Z" fill="url(#dark-chassis)" stroke="#4A5A6A" stroke-width="1" />
+      <path d="M 355,160 L 435,140 L 420,175 L 370,185 Z" fill="url(#gold-armor)" />
+      
+      <!-- Crown Crest (Top Aerodynamic Fin) -->
+      <path d="M 340,150 L 415,115 L 410,140 L 355,160 Z" fill="url(#gold-armor-light)" />
+      <path d="M 365,140 L 415,115 L 400,145 Z" fill="url(#neon-orange)" filter="url(#high-glow)" />
+      <path d="M 385,130 L 415,115 L 405,135 Z" fill="#FFFFFF" opacity="0.9" />
 
-      <!-- Crown Layered Fins -->
-      <path d="M 365 140 C 335 100, 280 75, 230 65 C 280 75, 330 95, 385 125 Z" fill="url(#gold-dark)" />
-      <path d="M 380 130 C 350 95, 310 75, 270 65 C 310 75, 355 90, 395 120 Z" fill="url(#gold-bright)" />
+      <!-- Jaw / Lower Mandible Armor -->
+      <path d="M 385,190 L 430,200 L 450,185 L 415,180 Z" fill="url(#dark-chassis)" />
+      <path d="M 400,192 L 435,200 L 445,188 L 415,183 Z" fill="url(#gold-armor)" />
 
-      <!-- Lower Jaw / Bio-Chasis Face -->
-      <path d="M 365 155 L 430 170 L 400 190 L 360 170 Z" fill="url(#obsidian-highlight)" />
-      <path d="M 380 160 L 440 172 L 415 185 L 375 170 Z" fill="url(#gold-dark)" />
-
-      <!-- Sleek Angular Face Plate -->
-      <path d="M 375 140 L 445 160 L 410 180 L 365 155 Z" fill="url(#obsidian-body)" />
-
-      <!-- HIGH ENERGY VISOR / EYES (VIBRANT GLOW) -->
-      <!-- Visor Background Glow Base -->
-      <path d="M 385 148 L 460 163 L 400 175 Z" fill="#FF0033" filter="url(#ultra-glow)" />
-      <!-- Main Visor Blade -->
-      <path d="M 388 147 L 475 165 L 405 174 Z" fill="url(#orange-energy)" filter="url(#soft-glow)" />
-      <!-- Inner Hot Visor Core -->
-      <path d="M 395 150 L 470 164 L 410 171 Z" fill="#FFFFFF" filter="url(#soft-glow)" />
-      <path d="M 410 153 L 465 163 L 420 168 Z" fill="#FFFFA6" />
-
-      <!-- Forehead Dynamic Crest Horn -->
-      <path d="M 380 135 L 435 115 L 410 145 Z" fill="url(#gold-bright)" />
-      <path d="M 390 133 L 450 110 L 420 140 Z" fill="url(#blade-beam)" filter="url(#soft-glow)" />
+      <!-- HYPER-GLOW VISOR (Sharp Aggressive Angled Eye Slit) -->
+      <!-- Outer Visor Socket -->
+      <path d="M 385,175 L 440,160 L 425,185 Z" fill="#000000" />
+      <!-- Glowing Visor Core -->
+      <path d="M 390,173 L 448,158 L 422,183 Z" fill="url(#energy-core)" filter="url(#super-glow)" />
+      <path d="M 405,170 L 452,157 L 425,180 Z" fill="#FFFFFF" filter="url(#high-glow)" />
+      <!-- Visor Trailing Energy Slash -->
+      <path d="M 445,158 L 480,145 L 435,170 Z" fill="url(#neon-orange)" filter="url(#high-glow)" opacity="0.8" />
     </g>
 
-    <!-- 7. FOREGROUND EXTRA EFFECTS & LIGHTNING ARCS -->
-    <g id="foreground-effects">
-      <!-- Energy Tendrils on Body -->
-      <path d="M 340 320 Q 380 300 370 260" stroke="#FFCC00" stroke-width="1.5" fill="none" filter="url(#soft-glow)" />
-      <path d="M 270 220 Q 300 170 350 160" stroke="#FF5500" stroke-width="2" fill="none" filter="url(#soft-glow)" />
-      <path d="M 400 230 Q 440 210 460 240" stroke="#FFE600" stroke-width="1.5" fill="none" filter="url(#soft-glow)" />
+    <!-- LAYER 7: FOREGROUND LIGHTING & SPEED PARTICLES -->
+    <g id="foreground-sparks" filter="url(#high-glow)">
+      <!-- Energy sparks fluttering off body -->
+      <circle cx="450" cy="130" r="3" fill="#FFFFFF" />
+      <circle cx="470" cy="150" r="1.5" fill="#FFCC00" />
+      <circle cx="430" cy="110" r="2" fill="#FF5500" />
+      
+      <circle cx="480" cy="230" r="2.5" fill="#FFFFFF" />
+      <circle cx="500" cy="260" r="4" fill="#FFCC00" />
+      <circle cx="512" cy="275" r="2" fill="#FF3300" />
+      <circle cx="440" cy="290" r="1.5" fill="#FFFFFF" />
 
-      <!-- Aerodynamic Wind Cut Lines (Front of Runner) -->
-      <path d="M 460 140 C 480 150, 500 170, 510 200" stroke="#FFAA00" stroke-width="2" stroke-dasharray="16 6 4 6" fill="none" opacity="0.8" filter="url(#soft-glow)" />
-      <path d="M 480 120 C 505 140, 515 170, 520 220" stroke="#FF3300" stroke-width="1.5" stroke-dasharray="20 10" fill="none" opacity="0.6" filter="url(#soft-glow)" />
-      <path d="M 430 270 C 460 285, 490 300, 505 330" stroke="#FFCC00" stroke-width="2" stroke-dasharray="12 8" fill="none" opacity="0.7" filter="url(#soft-glow)" />
-
-      <!-- High-Speed Lens Sparkles -->
-      <polygon points="465,163 475,160 468,166 478,168 467,168 465,175 463,168 455,167 462,165" fill="#FFFFFF" filter="url(#soft-glow)" />
-      <polygon points="520,245 530,240 523,248 535,250 522,251 520,260 517,251 508,249 516,247" fill="#FFEA66" filter="url(#ultra-glow)" />
-      <polygon points="380,466 390,463 384,470 395,472 383,473 381,482 378,473 369,471 377,469" fill="#FF5500" filter="url(#soft-glow)" />
+      <circle cx="360" cy="310" r="3" fill="#FF9900" />
+      <circle cx="420" cy="390" r="2" fill="#FFCC00" />
+      <circle cx="450" cy="430" r="3.5" fill="#FFFFFF" />
+      
+      <!-- Micro Speed Sharp Diamond Stars -->
+      <polygon points="280,130 284,134 280,138 276,134" fill="#FFFFFF" />
+      <polygon points="350,90 353,94 350,98 347,94" fill="#FFCC00" />
+      <polygon points="490,200 494,205 490,210 486,205" fill="#FFFFFF" />
     </g>
 
+    <!-- OVERLAY EDGE HIGHLIGHTS (Crisp Specular Rim Lighting) -->
+    <g id="rim-highlights" opacity="0.6">
+      <path d="M 355,160 L 435,140" stroke="#FFFFFF" stroke-width="1.5" fill="none" stroke-linecap="round" />
+      <path d="M 330,198 L 380,185" stroke="#FFFFFF" stroke-width="1.5" fill="none" stroke-linecap="round" />
+      <path d="M 390,232 L 490,275" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" filter="url(#high-glow)" />
+      <path d="M 325,270 L 375,305" stroke="#FFFFFF" stroke-width="1.5" fill="none" stroke-linecap="round" />
+      <path d="M 360,335 L 390,405" stroke="#FFCC00" stroke-width="1.5" fill="none" stroke-linecap="round" />
+    </g>
   </g>
 </svg>

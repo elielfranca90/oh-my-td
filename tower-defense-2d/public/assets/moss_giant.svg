@@ -1,0 +1,384 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Ambient Shadow -->
+    <radialGradient id="ground-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.7"/>
+      <stop offset="60%" stop-color="#000000" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Glowing Magic Filters -->
+    <filter id="glow-heavy" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur1"/>
+      <feGaussianBlur stdDeviation="3" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="glow-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="shadow-cast" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="6" stdDeviation="4" flood-color="#050B07" flood-opacity="0.8"/>
+    </filter>
+
+    <!-- Stone Gradients -->
+    <linearGradient id="granite-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A2129"/>
+      <stop offset="50%" stop-color="#2A3440"/>
+      <stop offset="100%" stop-color="#12171D"/>
+    </linearGradient>
+
+    <linearGradient id="granite-mid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4A5664"/>
+      <stop offset="50%" stop-color="#333D48"/>
+      <stop offset="100%" stop-color="#1F262E"/>
+    </linearGradient>
+
+    <linearGradient id="granite-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#728294"/>
+      <stop offset="50%" stop-color="#526070"/>
+      <stop offset="100%" stop-color="#343E4A"/>
+    </linearGradient>
+
+    <linearGradient id="granite-highlight" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#9EAFB8"/>
+      <stop offset="100%" stop-color="#4B5866"/>
+    </linearGradient>
+
+    <!-- Moss Gradients -->
+    <linearGradient id="moss-deep" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E3B14"/>
+      <stop offset="100%" stop-color="#0A1C08"/>
+    </linearGradient>
+
+    <linearGradient id="moss-mid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B7A2A"/>
+      <stop offset="50%" stop-color="#27541B"/>
+      <stop offset="100%" stop-color="#14300D"/>
+    </linearGradient>
+
+    <linearGradient id="moss-bright" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#76C442"/>
+      <stop offset="50%" stop-color="#4B9624"/>
+      <stop offset="100%" stop-color="#235210"/>
+    </linearGradient>
+
+    <linearGradient id="moss-top" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#A2E048"/>
+      <stop offset="60%" stop-color="#60B02C"/>
+      <stop offset="100%" stop-color="#336B19"/>
+    </linearGradient>
+
+    <!-- Energy & Vine Gradients -->
+    <linearGradient id="vine-energy" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#CCFF00"/>
+      <stop offset="30%" stop-color="#00FF66"/>
+      <stop offset="70%" stop-color="#009944"/>
+      <stop offset="100%" stop-color="#003311"/>
+    </linearGradient>
+
+    <radialGradient id="core-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E5FF80"/>
+      <stop offset="40%" stop-color="#00FF66"/>
+      <stop offset="75%" stop-color="#008833" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#002B0F" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="eye-glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="40%" stop-color="#66FF88"/>
+      <stop offset="100%" stop-color="#00CC44"/>
+    </linearGradient>
+
+    <!-- Bark / Root Gradient -->
+    <linearGradient id="root-wood" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2C1D11"/>
+      <stop offset="50%" stop-color="#4A3525"/>
+      <stop offset="100%" stop-color="#191009"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ground Shadow -->
+  <ellipse cx="256" cy="460" rx="190" ry="35" fill="url(#ground-shadow)"/>
+
+  <!-- Ambient Magical Spores / Floating Particles (Background) -->
+  <g filter="url(#glow-soft)" opacity="0.7">
+    <circle cx="120" cy="250" r="3" fill="#66FF88"/>
+    <circle cx="380" cy="280" r="4" fill="#B8FF44"/>
+    <circle cx="200" cy="180" r="2.5" fill="#CCFF66"/>
+    <circle cx="320" cy="130" r="3.5" fill="#66FF88"/>
+    <circle cx="90"  cy="340" r="2" fill="#99FF33"/>
+    <circle cx="420" cy="200" r="3" fill="#CCFF66"/>
+    <circle cx="150" cy="100" r="4" fill="#55FF77"/>
+  </g>
+
+  <!-- ==================== BACKGROUND LIMBS (LEFT SIDE) ==================== -->
+  <g id="back-left-leg" filter="url(#shadow-cast)">
+    <!-- Back Thigh/Leg Rock -->
+    <path d="M140 330 L180 340 L165 420 L115 410 Z" fill="url(#granite-dark)"/>
+    <path d="M115 410 L165 420 L150 450 L95 440 Z" fill="url(#granite-mid)"/>
+    <!-- Moss on Back Foot -->
+    <path d="M110 405 C130 400 150 405 165 415 L155 435 C135 430 115 430 100 435 Z" fill="url(#moss-deep)"/>
+  </g>
+
+  <g id="back-left-arm" filter="url(#shadow-cast)">
+    <!-- Rear Arm Boulder -->
+    <path d="M105 220 L155 210 L170 280 L120 290 Z" fill="url(#granite-dark)"/>
+    <path d="M90 285 L130 280 L145 350 L95 345 Z" fill="url(#granite-mid)"/>
+    <!-- Back Fist -->
+    <path d="M85 340 L115 335 L130 385 L90 395 Z" fill="url(#granite-dark)"/>
+    <!-- Glowing Vine Wrap (Back Arm) -->
+    <path d="M115 230 Q145 250 125 285 T110 340" stroke="url(#vine-energy)" stroke-width="4" fill="none" filter="url(#glow-soft)"/>
+  </g>
+
+
+  <!-- ==================== MAIN BODY / TORSO CORE ==================== -->
+  <g id="torso-base">
+    <!-- Deep Core Glow Fissure (Behind Chest Stones) -->
+    <path d="M210 200 Q256 180 300 200 Q320 270 300 340 Q256 370 200 330 Q180 260 210 200 Z" fill="#031408"/>
+    <ellipse cx="256" cy="265" rx="55" ry="65" fill="url(#core-glow)" filter="url(#glow-heavy)"/>
+
+    <!-- Energy Tendrils Inside Core -->
+    <g stroke="url(#vine-energy)" stroke-width="3" fill="none" filter="url(#glow-soft)">
+      <path d="M230 220 Q260 250 240 300 T270 330"/>
+      <path d="M280 210 Q240 260 270 290 T230 340"/>
+      <path d="M215 270 Q256 250 295 275"/>
+    </g>
+
+    <!-- Lower Abdominal Pelvis Rocks -->
+    <g filter="url(#shadow-cast)">
+      <path d="M200 320 L256 345 L312 320 L325 370 L256 405 L185 370 Z" fill="url(#granite-dark)"/>
+      <path d="M210 330 L256 350 L256 395 L195 365 Z" fill="url(#granite-mid)"/>
+      <path d="M256 350 L302 330 L315 365 L256 395 Z" fill="url(#granite-light)"/>
+      <!-- Abdominal Moss Overlay -->
+      <path d="M190 360 C220 375 250 365 260 390 C240 395 210 390 190 360 Z" fill="url(#moss-mid)"/>
+      <path d="M256 385 C280 365 305 380 320 360 C315 385 290 400 256 385 Z" fill="url(#moss-bright)"/>
+    </g>
+
+    <!-- Chest Armor Plates (Floating Granite Monoliths) -->
+    <!-- Left Pectoral Rock -->
+    <g filter="url(#shadow-cast)">
+      <path d="M165 190 L245 205 L235 285 L160 265 Z" fill="url(#granite-mid)"/>
+      <path d="M165 190 L245 205 L230 225 L160 215 Z" fill="url(#granite-highlight)"/>
+      <path d="M235 205 L245 205 L235 285 L225 280 Z" fill="url(#granite-dark)"/>
+      <!-- Moss on Left Chest -->
+      <path d="M165 190 C190 180 220 195 245 205 C230 215 180 210 160 215 Z" fill="url(#moss-bright)"/>
+      <path d="M175 187 C200 177 225 190 240 200 C230 207 190 202 170 207 Z" fill="url(#moss-top)"/>
+    </g>
+
+    <!-- Right Pectoral Rock -->
+    <g filter="url(#shadow-cast)">
+      <path d="M265 205 L345 190 L350 265 L275 285 Z" fill="url(#granite-light)"/>
+      <path d="M265 205 L345 190 L350 215 L270 225 Z" fill="url(#granite-highlight)"/>
+      <path d="M265 205 L275 285 L265 280 Z" fill="url(#granite-dark)"/>
+      <!-- Moss on Right Chest -->
+      <path d="M265 205 C290 195 320 180 345 190 C350 215 300 210 270 225 Z" fill="url(#moss-mid)"/>
+      <path d="M280 198 C300 188 325 178 340 187 C342 200 305 202 280 212 Z" fill="url(#moss-top)"/>
+    </g>
+  </g>
+
+  <!-- Collar / Neck Base Rocks -->
+  <path d="M210 165 L256 180 L302 165 L280 200 L232 200 Z" fill="url(#granite-dark)" filter="url(#shadow-cast)"/>
+
+  <!-- ==================== RIGHT LEG (FOREGROUND) ==================== -->
+  <g id="front-right-leg" filter="url(#shadow-cast)">
+    <!-- Thigh Rock -->
+    <path d="M310 330 L365 315 L390 390 L335 405 Z" fill="url(#granite-mid)"/>
+    <path d="M310 330 L365 315 L355 350 L305 355 Z" fill="url(#granite-highlight)"/>
+    <!-- Shin / Calff Block -->
+    <path d="M335 395 L395 380 L410 455 L350 465 Z" fill="url(#granite-dark)"/>
+    <path d="M335 395 L395 380 L385 415 L330 425 Z" fill="url(#granite-light)"/>
+    <!-- Foot / Ankle Boulder -->
+    <path d="M345 445 L415 435 L430 475 L335 480 Z" fill="url(#granite-mid)"/>
+    
+    <!-- Moss Overgrowth on Leg -->
+    <path d="M305 325 C335 310 360 315 370 320 C360 345 330 350 305 325 Z" fill="url(#moss-bright)"/>
+    <path d="M330 390 C360 375 390 380 400 385 C385 410 355 415 330 390 Z" fill="url(#moss-top)"/>
+    <path d="M340 440 C370 430 400 430 420 440 C410 455 370 460 340 440 Z" fill="url(#moss-deep)"/>
+
+    <!-- Vine Wrapping Leg -->
+    <path d="M320 320 Q370 350 340 400 T370 470" stroke="url(#vine-energy)" stroke-width="4.5" fill="none" filter="url(#glow-soft)"/>
+  </g>
+
+  <!-- ==================== LEFT LEG (FOREGROUND MAIN) ==================== -->
+  <g id="front-left-leg" filter="url(#shadow-cast)">
+    <!-- Thigh -->
+    <path d="M145 320 L205 335 L190 405 L130 390 Z" fill="url(#granite-mid)"/>
+    <path d="M145 320 L205 335 L195 350 L140 340 Z" fill="url(#granite-highlight)"/>
+    <!-- Shin Block -->
+    <path d="M125 385 L185 400 L165 470 L105 455 Z" fill="url(#granite-dark)"/>
+    <path d="M125 385 L185 400 L175 420 L120 410 Z" fill="url(#granite-light)"/>
+    <!-- Foot Monolith -->
+    <path d="M95 445 L170 460 L155 485 L80 475 Z" fill="url(#granite-mid)"/>
+
+    <!-- Heavy Moss Caps on Left Leg -->
+    <path d="M140 315 C170 320 195 330 210 338 C190 360 160 355 140 315 Z" fill="url(#moss-bright)"/>
+    <path d="M120 380 C150 390 175 395 190 405 C170 425 140 420 120 380 Z" fill="url(#moss-top)"/>
+    <path d="M142 317 C165 322 185 330 195 336 C185 350 160 348 142 317 Z" fill="#B5FF44" opacity="0.6"/>
+
+    <!-- Root / Wood Strands Binding Leg -->
+    <path d="M135 330 Q180 370 145 420 T130 470" stroke="url(#root-wood)" stroke-width="5" fill="none"/>
+    <path d="M150 340 Q120 390 170 430" stroke="url(#vine-energy)" stroke-width="3" fill="none" filter="url(#glow-soft)"/>
+  </g>
+
+
+  <!-- ==================== HEAD AND ANCIENT MASK ==================== -->
+  <g id="head-group" filter="url(#shadow-cast)">
+    <!-- Base Skull/Rock Structure -->
+    <path d="M215 125 L256 100 L297 125 L290 175 L256 190 L222 175 Z" fill="url(#granite-dark)"/>
+    
+    <!-- Face Plate (Chiseled Granite Mask) -->
+    <path d="M225 130 L256 110 L287 130 L280 170 L256 182 L232 170 Z" fill="url(#granite-mid)"/>
+    <path d="M225 130 L256 110 L256 182 L232 170 Z" fill="url(#granite-light)"/>
+    
+    <!-- Brow Overhang -->
+    <path d="M218 128 L256 112 L294 128 L285 142 L256 132 L227 142 Z" fill="url(#granite-highlight)"/>
+
+    <!-- Deep Sunken Eye Cavities -->
+    <polygon points="233,143 250,145 247,157 232,153" fill="#050D08"/>
+    <polygon points="279,143 262,145 265,157 280,153" fill="#050D08"/>
+
+    <!-- Glowing Ancient Eyes -->
+    <polygon points="235,146 248,148 245,154 234,151" fill="url(#eye-glow)" filter="url(#glow-heavy)"/>
+    <polygon points="277,146 264,148 267,154 278,151" fill="url(#eye-glow)" filter="url(#glow-heavy)"/>
+    
+    <!-- Eye Light Trails / Energy Leak -->
+    <path d="M234 150 Q220 155 210 150" stroke="#00FF66" stroke-width="2" fill="none" filter="url(#glow-soft)" opacity="0.8"/>
+    <path d="M278 150 Q292 155 302 150" stroke="#00FF66" stroke-width="2" fill="none" filter="url(#glow-soft)" opacity="0.8"/>
+
+    <!-- Forehead Ancient Glowing Rune -->
+    <g filter="url(#glow-heavy)">
+      <path d="M256 118 L256 130 M250 122 L262 122 M252 127 L260 119" stroke="#CCFF00" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- Jaw Fractures & Glowing Cracks -->
+    <path d="M256 165 L256 182 M245 168 L250 178 M267 168 L262 178" stroke="url(#vine-energy)" stroke-width="2" filter="url(#glow-soft)"/>
+
+    <!-- Moss Crown & Beard Overgrowth -->
+    <!-- Crown -->
+    <path d="M210 125 C220 100 250 95 256 95 C262 95 292 100 302 125 C280 110 232 110 210 125 Z" fill="url(#moss-bright)"/>
+    <path d="M220 115 C235 95 256 90 256 90 C256 90 277 95 292 115 C275 105 237 105 220 115 Z" fill="url(#moss-top)"/>
+    <!-- Hanging Moss Beard Strands -->
+    <path d="M225 165 C220 185 215 195 222 210 C228 195 232 185 233 170 Z" fill="url(#moss-mid)"/>
+    <path d="M287 165 C292 185 297 195 290 210 C284 195 280 185 279 170 Z" fill="url(#moss-mid)"/>
+    <path d="M245 178 C240 200 250 215 256 225 C262 215 272 200 267 178 Z" fill="url(#moss-top)"/>
+  </g>
+
+
+  <!-- ==================== SHOULDER PAULDRONS (MASSIVE ROCKS) ==================== -->
+  <!-- Left Shoulder Pauldron -->
+  <g id="left-shoulder" filter="url(#shadow-cast)">
+    <path d="M110 150 L180 130 L215 185 L145 215 Z" fill="url(#granite-dark)"/>
+    <path d="M110 150 L180 130 L165 105 L100 130 Z" fill="url(#granite-mid)"/>
+    <path d="M180 130 L215 185 L200 170 L165 105 Z" fill="url(#granite-light)"/>
+    <!-- Moss Cap Left Shoulder -->
+    <path d="M95 130 C120 100 165 95 180 100 C195 110 205 130 215 140 C175 135 125 145 95 130 Z" fill="url(#moss-bright)"/>
+    <path d="M105 125 C125 100 160 95 175 100 C170 115 130 125 105 125 Z" fill="url(#moss-top)"/>
+    <!-- Hanging Foliage/Vines -->
+    <path d="M115 140 C110 160 105 180 112 195 C118 180 120 160 125 145 Z" fill="url(#moss-mid)"/>
+    <path d="M140 145 C138 170 135 190 142 210 C146 190 145 170 148 145 Z" fill="url(#moss-top)"/>
+  </g>
+
+  <!-- Right Shoulder Pauldron (Colossal Front Rock) -->
+  <g id="right-shoulder" filter="url(#shadow-cast)">
+    <path d="M300 130 L370 105 L425 150 L355 200 Z" fill="url(#granite-mid)"/>
+    <path d="M300 130 L370 105 L345 90 L285 120 Z" fill="url(#granite-light)"/>
+    <path d="M370 105 L425 150 L410 120 L345 90 Z" fill="url(#granite-highlight)"/>
+    <!-- Moss Cap Right Shoulder (Multi-layered) -->
+    <path d="M280 120 C310 90 365 85 410 115 C425 135 420 150 405 155 C370 135 320 140 280 120 Z" fill="url(#moss-bright)"/>
+    <path d="M295 112 C325 88 375 85 400 110 C375 115 330 118 295 112 Z" fill="url(#moss-top)"/>
+    <path d="M330 95 C355 82 385 85 410 105 C395 108 360 102 330 95 Z" fill="#C2FF55" opacity="0.8"/>
+
+    <!-- Drooping Vine Tendrils from Shoulder -->
+    <path d="M370 140 Q390 180 375 220" stroke="url(#vine-energy)" stroke-width="3.5" fill="none" filter="url(#glow-soft)"/>
+    <path d="M390 135 Q420 170 410 210" stroke="url(#root-wood)" stroke-width="4" fill="none"/>
+    <path d="M350 145 C352 175 350 195 358 220 C362 195 360 175 362 145 Z" fill="url(#moss-deep)"/>
+  </g>
+
+
+  <!-- ==================== FOREGROUND RIGHT ARM & MASSIVE FIST ==================== -->
+  <!-- Bicep / Upper Arm -->
+  <g id="front-right-arm-upper" filter="url(#shadow-cast)">
+    <path d="M350 200 L415 175 L440 245 L375 265 Z" fill="url(#granite-dark)"/>
+    <path d="M350 200 L415 175 L405 215 L345 225 Z" fill="url(#granite-mid)"/>
+    <!-- Glowing Fissure on Bicep -->
+    <path d="M365 210 Q395 220 420 200" stroke="url(#vine-energy)" stroke-width="3" fill="none" filter="url(#glow-soft)"/>
+  </g>
+
+  <!-- Massive Foreground Forearm & Punching Fist -->
+  <g id="front-right-arm-fist" filter="url(#shadow-cast)">
+    <!-- Forearm Main Boulder -->
+    <path d="M360 250 L450 220 L480 320 L380 350 Z" fill="url(#granite-mid)"/>
+    <path d="M360 250 L450 220 L435 270 L350 290 Z" fill="url(#granite-highlight)"/>
+    <path d="M450 220 L480 320 L460 310 L435 270 Z" fill="url(#granite-dark)"/>
+
+    <!-- Thick Forearm Moss Shield -->
+    <path d="M345 270 C380 240 435 230 460 240 C475 270 465 300 440 305 C400 285 365 300 345 270 Z" fill="url(#moss-bright)"/>
+    <path d="M360 265 C390 242 430 235 450 245 C440 265 400 270 360 265 Z" fill="url(#moss-top)"/>
+
+    <!-- Giant Main Fist Knuckles (Foreground Monoliths) -->
+    <!-- Index Knuckle -->
+    <path d="M330 330 L380 310 L400 365 L345 380 Z" fill="url(#granite-light)"/>
+    <path d="M330 330 L380 310 L370 335 L325 350 Z" fill="url(#granite-highlight)"/>
+    <!-- Middle Knuckle (Largest) -->
+    <path d="M365 370 L425 345 L445 410 L380 430 Z" fill="url(#granite-mid)"/>
+    <path d="M365 370 L425 345 L410 380 L355 400 Z" fill="url(#granite-light)"/>
+    <!-- Ring Knuckle -->
+    <path d="M410 400 L460 380 L475 440 L420 455 Z" fill="url(#granite-dark)"/>
+    <path d="M410 400 L460 380 L445 415 L400 430 Z" fill="url(#granite-mid)"/>
+    <!-- Pinky Knuckle -->
+    <path d="M445 435 L485 420 L495 465 L455 480 Z" fill="url(#granite-dark)"/>
+
+    <!-- Thumb Clamped Down -->
+    <path d="M310 350 L355 375 L340 425 L295 390 Z" fill="url(#granite-dark)"/>
+    <path d="M310 350 L355 375 L345 395 L300 375 Z" fill="url(#granite-mid)"/>
+
+    <!-- Power Core / Glowing Runes on Back of Hand -->
+    <path d="M380 310 Q410 330 430 360 T460 410" stroke="url(#vine-energy)" stroke-width="5" fill="none" filter="url(#glow-heavy)"/>
+    <path d="M360 340 Q400 350 410 390" stroke="url(#vine-energy)" stroke-width="3" fill="none" filter="url(#glow-soft)"/>
+    <circle cx="395" cy="340" r="6" fill="#CCFF00" filter="url(#glow-heavy)"/>
+
+    <!-- Moss Creeping Over Knuckles -->
+    <path d="M325 340 C345 325 370 320 385 325 C375 345 350 350 325 340 Z" fill="url(#moss-top)"/>
+    <path d="M360 380 C385 360 415 355 430 360 C420 380 390 390 360 380 Z" fill="url(#moss-bright)"/>
+  </g>
+
+
+  <!-- ==================== OVERLAY VINES & ANCIENT FOREST DETAILS ==================== -->
+  <g id="foreground-details">
+    <!-- Creeping Vine Tendrils wrapping Body Parts -->
+    <!-- Chest to Left Shoulder Vine -->
+    <path d="M220 210 C180 190 150 170 130 140" stroke="url(#vine-energy)" stroke-width="3.5" fill="none" filter="url(#glow-soft)"/>
+    <!-- Torso Central Binding Root -->
+    <path d="M170 250 Q230 280 270 240 T340 270" stroke="url(#root-wood)" stroke-width="6" fill="none" filter="url(#shadow-cast)"/>
+    <path d="M175 252 Q230 282 270 242 T335 268" stroke="url(#vine-energy)" stroke-width="2" fill="none" filter="url(#glow-soft)"/>
+
+    <!-- Drooping Moss Strands from Left Arm/Torso -->
+    <path d="M160 270 Q150 310 158 340" stroke="url(#moss-mid)" stroke-width="3" fill="none"/>
+    <path d="M180 285 Q175 320 182 350" stroke="url(#moss-bright)" stroke-width="2" fill="none"/>
+
+    <!-- Floating Magical Leaf Particles (Foreground) -->
+    <g filter="url(#glow-soft)">
+      <!-- Leaf 1 -->
+      <path d="M140 160 C135 150 145 140 150 145 C155 150 145 165 140 160 Z" fill="#A2E048"/>
+      <!-- Leaf 2 -->
+      <path d="M370 260 C365 245 380 240 385 248 C390 255 375 270 370 260 Z" fill="#60B02C"/>
+      <!-- Leaf 3 -->
+      <path d="M430 340 C420 330 435 320 440 325 C445 330 435 345 430 340 Z" fill="#CCFF66"/>
+      <!-- Small Magic Magic Embers -->
+      <circle cx="280" cy="170" r="2" fill="#FFFFFF"/>
+      <circle cx="230" cy="290" r="2.5" fill="#76C442"/>
+      <circle cx="350" cy="310" r="1.5" fill="#CCFF00"/>
+      <circle cx="410" cy="370" r="2" fill="#FFFFFF"/>
+    </g>
+  </g>
+</svg>
