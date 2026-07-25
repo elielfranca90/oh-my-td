@@ -83,16 +83,20 @@ export class UIManager {
               <span class="icon">🪙</span>
               <strong id="hud-gold-val">${this.gameState.gold}</strong>
             </div>
+            <div class="hud-stat-badge wave" title="Onda Atual">
+              <span class="icon">🌊</span>
+              <span class="wave-title">WAVE</span>
+              <strong id="hud-wave-val">0/10</strong>
+              <span id="hud-boss-badge" class="boss-badge hidden">⚠️ BOSS</span>
+            </div>
+            <button id="hud-pause-btn" class="hud-btn pause-btn" title="Pausar / Retomar Jogo">
+              ⏸️
+            </button>
           </div>
-
-          <div class="hud-center-wave" title="Onda Atual">
-            <span class="icon">🌊</span>
-            <span class="wave-title">WAVE</span>
-            <strong id="hud-wave-val">0/10</strong>
-            <span id="hud-boss-badge" class="boss-badge hidden">⚠️ BOSS</span>
-          </div>
-
           <div class="hud-right-controls">
+            <button id="changelog-btn" class="hud-btn changelog-gift-btn" title="Últimas Atualizações (🎁)">
+              🎁 Novidades
+            </button>
             <button id="settings-toggle-btn" class="hud-btn settings-btn" title="Configurações & Menus (⚙️)">
               ⚙️
             </button>
@@ -163,6 +167,7 @@ export class UIManager {
 
               <div class="inspector-toolbar-actions">
                 <button id="btn-inspect-target" class="btn secondary">🎯 FIRST</button>
+                <button id="btn-inspect-repair" class="btn success">🔧 Reparo</button>
                 <button id="btn-inspect-upgrade" class="btn success">⬆️ Upgrade (40g)</button>
                 <button id="btn-inspect-sell" class="btn danger">💰 Vender (35g)</button>
                 <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
@@ -173,6 +178,10 @@ export class UIManager {
 
         <!-- 3. FLOATING TIME & WAVE CONTROLS (Bottom Right) -->
         <div id="time-controls" class="time-controls pointer-events-auto">
+          <div id="active-mode-badge" class="active-mode-badge" title="Modo de Jogo Ativo">
+            <span id="active-mode-name" class="mode-name">Modo Padrão</span>
+          </div>
+
           <div class="speed-btns-group">
             <button id="btn-speed-1x" class="speed-btn active">1x</button>
             <button id="btn-speed-2x" class="speed-btn">2x</button>
@@ -228,6 +237,7 @@ export class UIManager {
                     <option value="FAST_ENEMIES">Modo: Invasão Veloz ⚡</option>
                     <option value="HARDCORE">Modo: Hardcore (1 HP) 💀</option>
                     <option value="TURBO_GOLD">Modo: Corrida do Ouro 🪙</option>
+                    <option value="MORTE_CERTA">Modo: ☠️ Morte Certa (Insano!)</option>
                   </select>
                 </div>
                 <div class="setting-item">
@@ -245,9 +255,6 @@ export class UIManager {
                 <div class="meta-game-grid">
                   <button id="settings-talents-btn" class="btn secondary">🌟 Skill Tree</button>
                   <button id="settings-badges-btn" class="btn secondary">🏆 Badges</button>
-                  <button id="settings-changelog-btn" class="btn changelog-gift-btn">
-                    <span>🎁</span> <span>Novidades</span>
-                  </button>
                   <button id="settings-restart-btn" class="btn danger">🔄 Novo Jogo</button>
                 </div>
               </div>
@@ -360,14 +367,20 @@ export class UIManager {
     bus.on('spell:select', (spell: ActiveSpell) => this.onSpellSelected(spell));
     bus.on('status:change', () => this.updateEndGameModal());
     bus.on('pause:change', (isPaused: boolean) => this.onPauseChanged(isPaused));
+    bus.on('challenge:change', (mode: ChallengeMode) => this.onChallengeChanged(mode));
 
     // Initial populate
     this.onGoldChanged(this.gameState.gold);
     this.onHpChanged({ current: this.gameState.baseHp, max: this.gameState.maxBaseHp });
     this.onWaveChanged({ current: this.waveManager.currentWaveIndex + 1, max: 10, isEndless: this.waveManager.isEndlessMode });
+    this.onChallengeChanged(this.gameState.challengeMode);
   }
 
   private setupUIEvents() {
+    document.getElementById('hud-pause-btn')?.addEventListener('click', () => {
+      this.gameState.togglePause();
+    });
+
     // Settings Toggle & Close
     document.getElementById('settings-toggle-btn')?.addEventListener('click', () => {
       this.gameState.isPaused = true;
@@ -375,7 +388,6 @@ export class UIManager {
       this.syncSettingsControls();
       this.settingsOverlayEl.classList.remove('hidden');
     });
-
     document.getElementById('settings-close-btn')?.addEventListener('click', () => {
       this.settingsOverlayEl.classList.add('hidden');
       this.gameState.isPaused = false;
@@ -467,6 +479,9 @@ export class UIManager {
       });
     }
 
+    document.getElementById('changelog-btn')?.addEventListener('click', () => {
+      this.changelogOverlayEl.classList.remove('hidden');
+    });
     const sfxSlider = document.getElementById('settings-sfx-slider') as HTMLInputElement;
     if (sfxSlider) {
       sfxSlider.value = Math.round(this.audioManager.sfxVolume * 100).toString();
@@ -496,7 +511,18 @@ export class UIManager {
       this.spellManager.triggerGlobalFreeze(this.game['enemyManager'].getEnemies());
     });
 
-    // Time & Wave Controls
+    document.getElementById('btn-inspect-target')?.addEventListener('click', () => {
+      this.towerManager.cycleSelectedTowerTargeting();
+    });
+
+    document.getElementById('btn-inspect-repair')?.addEventListener('click', () => {
+      this.towerManager.repairSelectedTower();
+    });
+
+    document.getElementById('btn-inspect-upgrade')?.addEventListener('click', () => {
+      this.towerManager.upgradeSelectedTower();
+    });
+
     document.getElementById('btn-speed-1x')?.addEventListener('click', () => this.setGameSpeed(1));
     document.getElementById('btn-speed-2x')?.addEventListener('click', () => this.setGameSpeed(2));
     document.getElementById('btn-speed-4x')?.addEventListener('click', () => this.setGameSpeed(4));
@@ -615,6 +641,29 @@ export class UIManager {
     if (settingsBtn) {
       settingsBtn.classList.toggle('active', isPaused);
     }
+    const hudPauseBtn = document.getElementById('hud-pause-btn');
+    if (hudPauseBtn) {
+      hudPauseBtn.innerText = isPaused ? '▶️' : '⏸️';
+      hudPauseBtn.classList.toggle('active', isPaused);
+    }
+  }
+
+  private onChallengeChanged(mode: ChallengeMode) {
+    const badgeName = document.getElementById('active-mode-name');
+    const badgeEl = document.getElementById('active-mode-badge');
+    const modeLabels: Record<ChallengeMode, string> = {
+      NORMAL: 'Modo Padrão',
+      NO_SPELLS: 'Modo Sem Magias 🚫',
+      FAST_ENEMIES: 'Invasão Veloz ⚡',
+      HARDCORE: 'Hardcore (1 HP) 💀',
+      TURBO_GOLD: 'Corrida do Ouro 🪙',
+      MORTE_CERTA: '☠️ Morte Certa (Insano!)',
+    };
+    if (badgeName) badgeName.innerText = modeLabels[mode] || 'Modo Padrão';
+    if (badgeEl) {
+      badgeEl.classList.toggle('morte-certa', mode === 'MORTE_CERTA');
+    }
+    this.updateTowerAffordability();
   }
 
   private switchContextState(state: 'STORE' | 'INSPECTOR') {
@@ -654,17 +703,34 @@ export class UIManager {
       }
     });
 
-    const isNoSpells = this.gameState.challengeMode === 'NO_SPELLS';
+    const isNoSpells = this.gameState.challengeMode === 'NO_SPELLS' || this.gameState.challengeMode === 'MORTE_CERTA';
+
     const meteorChip = document.getElementById('chip-meteor') as HTMLButtonElement;
+    const meteorCostEl = document.getElementById('meteor-chip-cost');
     if (meteorChip) {
       const canAfford = this.gameState.gold >= this.spellManager.meteorCost && !isNoSpells && this.spellManager.meteorCooldownMs <= 0;
       meteorChip.disabled = !canAfford;
+      meteorChip.classList.toggle('mode-blocked', isNoSpells);
+      if (isNoSpells) {
+        meteorChip.title = 'Poderes bloqueados neste modo de jogo!';
+        if (meteorCostEl) meteorCostEl.innerText = '🚫 Desativado';
+      } else if (meteorCostEl) {
+        meteorCostEl.innerText = `${this.spellManager.meteorCost}g`;
+      }
     }
 
     const freezeChip = document.getElementById('chip-freeze') as HTMLButtonElement;
+    const freezeCostEl = document.getElementById('freeze-chip-cost');
     if (freezeChip) {
       const canAfford = this.gameState.gold >= this.spellManager.freezeCost && !isNoSpells && this.spellManager.freezeCooldownMs <= 0;
       freezeChip.disabled = !canAfford;
+      freezeChip.classList.toggle('mode-blocked', isNoSpells);
+      if (isNoSpells) {
+        freezeChip.title = 'Poderes bloqueados neste modo de jogo!';
+        if (freezeCostEl) freezeCostEl.innerText = '🚫 Desativado';
+      } else if (freezeCostEl) {
+        freezeCostEl.innerText = `${this.spellManager.freezeCost}g`;
+      }
     }
   }
 
@@ -675,6 +741,7 @@ export class UIManager {
     const statsBox = document.getElementById('inspector-stats-summary');
     if (statsBox) {
       statsBox.innerHTML = `
+        <span>❤️ ${tower.data.hp}/${tower.data.maxHp}</span>
         <span>⚔️ ${tower.data.damage}</span>
         <span>📏 ${tower.data.range}px</span>
         <span>⚡ ${(1000 / tower.data.fireRate).toFixed(1)}/s</span>
@@ -683,6 +750,18 @@ export class UIManager {
 
     const targetBtn = document.getElementById('btn-inspect-target');
     if (targetBtn) targetBtn.innerText = `🎯 ${tower.data.targeting}`;
+
+    const repairBtn = document.getElementById('btn-inspect-repair') as HTMLButtonElement;
+    if (repairBtn) {
+      if (tower.data.hp >= tower.data.maxHp && !tower.data.isDestroyed) {
+        repairBtn.innerText = '🔧 100% OK';
+        repairBtn.disabled = true;
+      } else {
+        const repairCost = tower.getRepairCost();
+        repairBtn.innerText = `🔧 Reparo (${repairCost}g)`;
+        repairBtn.disabled = this.gameState.gold < repairCost;
+      }
+    }
 
     const upgradeBtn = document.getElementById('btn-inspect-upgrade') as HTMLButtonElement;
     if (upgradeBtn) {
@@ -800,6 +879,7 @@ export class UIManager {
           FAST_ENEMIES: 'Invasão Veloz ⚡',
           HARDCORE: 'Hardcore (1 HP) 💀',
           TURBO_GOLD: 'Corrida do Ouro 🪙',
+          MORTE_CERTA: '☠️ Morte Certa (Insano!)',
         };
         modalChallenge.innerText = modeLabels[this.gameState.challengeMode] || 'Padrão';
       }

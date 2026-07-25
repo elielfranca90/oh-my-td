@@ -27,6 +27,9 @@ export class Tower2D {
       targeting: 'FIRST',
       splashRadius: config.splashRadius,
       slowFactor: config.slowFactor,
+      hp: Math.round(100 * (type === 'ARTILLERY' || type === 'CANNON' ? 1.5 : 1.0)),
+      maxHp: Math.round(100 * (type === 'ARTILLERY' || type === 'CANNON' ? 1.5 : 1.0)),
+      isDestroyed: false,
     };
   }
 
@@ -65,17 +68,44 @@ export class Tower2D {
   }
 
   public upgrade(): boolean {
-    if (this.data.level >= 3) return false;
+    if (this.data.level >= 3 || this.data.isDestroyed) return false;
     this.data.level++;
     this.data.damage = Math.floor(this.data.damage * 1.5);
     this.data.range = Math.floor(this.data.range * 1.15);
+    this.data.maxHp = Math.floor(this.data.maxHp * 1.4);
+    this.data.hp = this.data.maxHp;
     if (this.data.splashRadius) {
       this.data.splashRadius = Math.floor(this.data.splashRadius * 1.1);
     }
     return true;
   }
 
+  public takeDamage(amount: number): boolean {
+    if (this.data.isDestroyed) return true;
+    this.data.hp = Math.max(0, this.data.hp - amount);
+    if (this.data.hp <= 0) {
+      this.data.isDestroyed = true;
+    }
+    return this.data.isDestroyed;
+  }
+
+  public getRepairCost(): number {
+    if (this.data.isDestroyed) {
+      // 30% cheaper than new tower cost
+      return Math.ceil(this.data.cost * 0.7);
+    }
+    const missingHpRatio = (this.data.maxHp - this.data.hp) / this.data.maxHp;
+    return Math.max(5, Math.ceil(this.data.cost * 0.7 * missingHpRatio));
+  }
+
+  public repair(): boolean {
+    this.data.hp = this.data.maxHp;
+    this.data.isDestroyed = false;
+    return true;
+  }
+
   public update(): boolean {
+    if (this.data.isDestroyed) return false;
     if (this.data.cooldownTimer > 0) {
       this.data.cooldownTimer--;
       return false;
@@ -103,6 +133,20 @@ export class Tower2D {
     if (this.data.type === 'SOLAR_PRISM') color = '#ff8f00';
     if (this.data.type === 'FROST') color = '#00838f';
     if (this.data.type === 'ARTILLERY') color = '#4a148c';
+
+    if (this.data.isDestroyed) {
+      // Destroyed Crater Render
+      ctx.fillStyle = '#212121';
+      ctx.fillRect(this.data.position.x - half, this.data.position.y - half, this.size, this.size);
+      ctx.strokeStyle = '#f44336';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(this.data.position.x - half, this.data.position.y - half, this.size, this.size);
+      ctx.fillStyle = '#ff5252';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('❌', this.data.position.x, this.data.position.y + 4);
+      return;
+    }
 
     ctx.fillStyle = color;
     ctx.fillRect(this.data.position.x - half, this.data.position.y - half, this.size, this.size);
@@ -135,6 +179,19 @@ export class Tower2D {
       );
       ctx.fillStyle = '#ffeb3b';
       ctx.fill();
+    }
+
+    // Health Bar if damaged
+    if (this.data.hp < this.data.maxHp) {
+      const bw = this.size - 4;
+      const bh = 4;
+      const bx = this.data.position.x - bw / 2;
+      const by = this.data.position.y - half - 7;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(bx, by, bw, bh);
+      const hpRatio = Math.max(0, this.data.hp / this.data.maxHp);
+      ctx.fillStyle = hpRatio > 0.5 ? '#4caf50' : hpRatio > 0.25 ? '#ff9800' : '#f44336';
+      ctx.fillRect(bx, by, bw * hpRatio, bh);
     }
   }
 }

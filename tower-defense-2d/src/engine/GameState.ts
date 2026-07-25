@@ -14,18 +14,18 @@ export class GameState {
   public isPaused = false;
   public challengeMode: ChallengeMode = 'NORMAL';
 
-  constructor(talentManager?: TalentManager, challengeMode: ChallengeMode = 'NORMAL') {
+  constructor(_talentManager?: TalentManager, challengeMode: ChallengeMode = 'NORMAL') {
     this.challengeMode = challengeMode;
-    const goldBonus = talentManager ? talentManager.getStartingGoldBonus() : 0;
-    const hpBonus = talentManager ? talentManager.getBaseHpBonus() : 0;
 
-    this.gold = 70 + goldBonus;
-    if (this.challengeMode === 'HARDCORE') {
+    // Fixed Starting Gold (70) & Base HP (10) as requested
+    this.gold = 70;
+
+    if (this.challengeMode === 'HARDCORE' || this.challengeMode === 'MORTE_CERTA') {
       this.maxBaseHp = 1;
       this.baseHp = 1;
     } else {
-      this.maxBaseHp = 10 + hpBonus;
-      this.baseHp = 10 + hpBonus;
+      this.maxBaseHp = 10;
+      this.baseHp = 10;
     }
   }
 

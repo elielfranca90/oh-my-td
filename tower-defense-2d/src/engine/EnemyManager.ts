@@ -1,3 +1,5 @@
+import { Tower2D } from './Tower';
+
 import type { EnemyType, Vector2D } from '../types';
 
 import { AchievementManager } from './AchievementManager';
@@ -34,7 +36,9 @@ export class EnemyManager2D {
     this.achievementManager = achievementManager;
   }
 
-  public update(deltaTimeMs: number) {
+  private attackTimer = 0;
+
+  public update(deltaTimeMs: number, towers: Tower2D[] = []) {
     // 1. Spawn from wave manager
     const spawnInfo = this.waveManager.getNextEnemyToSpawn(deltaTimeMs);
     if (spawnInfo) {
@@ -58,7 +62,7 @@ export class EnemyManager2D {
           this.achievementManager.addProgress('FIRST_BLOOD', 1);
           if (enemy.data.type === 'RUNNER') this.achievementManager.addProgress('RUNNER_HUNTER', 1);
           if (enemy.data.type === 'SHIELDED' || enemy.data.maxShieldHp > 0) this.achievementManager.addProgress('SHIELD_BREAKER', 1);
-          if (enemy.data.type === 'BOSS') this.achievementManager.addProgress('BOSS_SLAYER', 1);
+          if (enemy.data.type === 'BOSS' || enemy.data.type === 'BLACK_MEGA_BOSS') this.achievementManager.addProgress('BOSS_SLAYER', 1);
         }
 
         // Boss Death Reinforcements: Spawn 2 Runners!
@@ -79,7 +83,32 @@ export class EnemyManager2D {
       }
     }
 
-    // 3. Check wave completion
+    // 3. Boss Attack on Nearby Towers
+    this.attackTimer += deltaTimeMs;
+    if (this.attackTimer >= 1000) {
+      this.attackTimer = 0;
+      for (const enemy of this.enemies) {
+        if (!enemy.data.isDead && (enemy.data.type === 'BLACK_MEGA_BOSS' || enemy.data.type === 'BOSS')) {
+          const attackPower = enemy.data.type === 'BLACK_MEGA_BOSS' ? 25 : 12;
+          const attackRange = enemy.data.type === 'BLACK_MEGA_BOSS' ? 140 : 100;
+
+          for (const tower of towers) {
+            if (!tower.data.isDestroyed) {
+              const dx = tower.data.position.x - enemy.data.position.x;
+              const dy = tower.data.position.y - enemy.data.position.y;
+              if (Math.hypot(dx, dy) <= attackRange) {
+                const destroyed = tower.takeDamage(attackPower);
+                if (destroyed) {
+                  this.audioManager.playBaseDamage();
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // 4. Check wave completion
     this.waveManager.onEnemyCleared(this.enemies.length);
   }
 
@@ -112,9 +141,11 @@ export class EnemyManager2D {
     }
 
     const waypoints = this.mapManager.getWaypoints(pathIndex);
-    const speedMultiplier = this.gameState.challengeMode === 'FAST_ENEMIES' ? 1.4 : 1.0;
+    const isFast = this.gameState.challengeMode === 'FAST_ENEMIES' || this.gameState.challengeMode === 'MORTE_CERTA';
+    const isTurbo = this.gameState.challengeMode === 'TURBO_GOLD' || this.gameState.challengeMode === 'MORTE_CERTA';
+    const speedMultiplier = isFast ? 1.4 : 1.0;
     const currentWaveNum = this.waveManager.currentWaveIndex + 1;
-    let goldMultiplier = this.gameState.challengeMode === 'TURBO_GOLD' ? 1.5 : 1.0;
+    let goldMultiplier = isTurbo ? 1.5 : 1.0;
     if (currentWaveNum >= 4) {
       goldMultiplier *= 0.75;
     }

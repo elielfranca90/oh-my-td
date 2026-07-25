@@ -1,13 +1,6 @@
 import { EventBus } from './EventBus';
 
-export type EnemyType =
-  | 'STANDARD'
-  | 'RUNNER'
-  | 'TANK'
-  | 'SHIELDED'
-  | 'BOSS'
-  | 'SPORE_SPRINTER'
-  | 'MOSS_GIANT';
+import type { EnemyType } from '../types';
 
 export interface WaveConfig {
   waveNumber: number;
@@ -135,8 +128,7 @@ export class WaveManager {
         { type: 'MOSS_GIANT', delay: 1600 },
         { type: 'BOSS', delay: 2000 },
         { type: 'RUNNER', delay: 400 },
-        { type: 'TANK', delay: 800 },
-        { type: 'BOSS', delay: 2500 },
+        { type: 'BLACK_MEGA_BOSS', delay: 3000 },
         { type: 'RUNNER', delay: 400 },
         { type: 'TANK', delay: 800 },
       ],
@@ -199,10 +191,12 @@ export class WaveManager {
       enemies.push({ type: randomType, delay: baseDelay });
     }
 
-    // Add Bosses based on endless wave progress
     const bossCount = Math.floor((waveNum - 10) / 3) + 1;
     for (let b = 0; b < bossCount; b++) {
       enemies.push({ type: 'BOSS', delay: 1800 });
+    }
+    if (waveNum % 10 === 0) {
+      enemies.push({ type: 'BLACK_MEGA_BOSS', delay: 3000 });
     }
 
     return {

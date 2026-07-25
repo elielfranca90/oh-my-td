@@ -144,6 +144,26 @@ export class TowerManager2D {
     }
   }
 
+  public repairSelectedTower(): boolean {
+    if (!this.selectedTower) return false;
+    const cost = this.selectedTower.getRepairCost();
+    if (this.selectedTower.data.hp >= this.selectedTower.data.maxHp && !this.selectedTower.data.isDestroyed) return false;
+
+    if (this.gameState.spendGold(cost)) {
+      if (this.analyticsManager) {
+        this.analyticsManager.recordGoldSpent(cost);
+      }
+      this.selectedTower.repair();
+      EventBus.getInstance().emit('tower:select', this.selectedTower);
+      return true;
+    }
+    return false;
+  }
+
+  public getTowers(): Tower2D[] {
+    return this.towers;
+  }
+
   public setSelectedBuildType(type: TowerType) {
     this.selectedBuildType = type;
     EventBus.getInstance().emit('tower:buildType', this.selectedBuildType);
