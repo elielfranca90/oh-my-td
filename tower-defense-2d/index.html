@@ -166,9 +166,8 @@
 
       .toolbar-state {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
+        flex-direction: column;
+        gap: 6px;
         width: 100%;
         transition: opacity 180ms ease, transform 180ms ease;
       }
@@ -179,12 +178,12 @@
         pointer-events: none;
       }
 
-      .toolbar-section {
+      .toolbar-row {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+        width: 100%;
       }
-
       .toolbar-label {
         font-size: 0.72rem;
         font-weight: 800;

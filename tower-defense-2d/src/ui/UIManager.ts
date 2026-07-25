@@ -103,7 +103,8 @@ export class UIManager {
         <nav id="action-toolbar" class="action-toolbar pointer-events-auto">
           <!-- STORE STATE -->
           <div id="store-state" class="toolbar-state active">
-            <div class="toolbar-section">
+            <!-- ROW 1: TOWERS -->
+            <div class="toolbar-row">
               <span class="toolbar-label">🏗️ TORRES:</span>
               <div class="toolbar-items-row">
                 <button id="card-basic" class="toolbar-card active" data-type="BASIC" title="Torre Básica (50g)">
@@ -134,9 +135,8 @@ export class UIManager {
               </div>
             </div>
 
-            <div class="toolbar-divider"></div>
-
-            <div class="toolbar-section">
+            <!-- ROW 2: POWERS (BELOW TOWERS) -->
+            <div class="toolbar-row">
               <span class="toolbar-label">☄️ PODERES:</span>
               <div class="toolbar-items-row">
                 <button id="chip-meteor" class="toolbar-chip" title="Invocar Meteoro (150g)">
