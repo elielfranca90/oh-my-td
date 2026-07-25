@@ -28,6 +28,10 @@ export class GameState {
       this.baseHp = 10;
     }
   }
+  public setStatus(status: GameStatus) {
+    this.status = status;
+    EventBus.getInstance().emit('status:change', this.status);
+  }
 
   public togglePause(): boolean {
     if (this.status !== 'PLAYING') return false;
@@ -54,8 +58,7 @@ export class GameState {
     this.baseHp = Math.max(0, this.baseHp - amount);
     EventBus.getInstance().emit('hp:change', { current: this.baseHp, max: this.maxBaseHp });
     if (this.baseHp <= 0) {
-      this.status = 'GAME_OVER';
-      EventBus.getInstance().emit('status:change', this.status);
+      this.setStatus('GAME_OVER');
     }
   }
 

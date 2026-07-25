@@ -1,3 +1,5 @@
+import { MegaBossSpriteRenderer } from './MegaBossSpriteRenderer';
+
 import type { EnemyType, IEnemy2D, Vector2D } from '../types';
 
 export class Enemy2D {
@@ -124,9 +126,9 @@ export class Enemy2D {
   }
 
   public update(waypoints: Vector2D[], isStandingOnGrass = false): boolean {
-    if (this.data.isDead) return false;
-
-    // Moss Giant Natural Healing on Grass
+    if (this.data.type === 'BLACK_MEGA_BOSS') {
+      MegaBossSpriteRenderer.getInstance().update(16.6);
+    }
     if (this.data.type === 'MOSS_GIANT' && isStandingOnGrass && this.data.hp < this.data.maxHp) {
       this.mossRegenTimer++;
       if (this.mossRegenTimer >= 20) { // +1 HP every 20 frames (~3 HP/sec)
@@ -216,24 +218,25 @@ export class Enemy2D {
       ctx.fill();
     }
 
-    // Body
-    ctx.beginPath();
-    ctx.arc(this.data.position.x, this.data.position.y, this.data.radius, 0, Math.PI * 2);
-    ctx.fillStyle = this.data.freezeTimer > 0 ? '#80deea' : this.data.color;
-    ctx.fill();
-
-    // Outline / Details per type
-    ctx.strokeStyle = this.data.type === 'BLACK_MEGA_BOSS' ? '#e040fb' : this.data.type === 'BOSS' ? '#ffd700' : this.data.type === 'MOSS_GIANT' ? '#aed581' : '#ffffff';
-    ctx.lineWidth = this.data.type === 'BLACK_MEGA_BOSS' ? 4.5 : this.data.type === 'BOSS' ? 3.5 : 1.5;
-    ctx.stroke();
-
-    // Black Mega Boss Red Glowing Eyes
+    // Body & Spritesheet Render
     if (this.data.type === 'BLACK_MEGA_BOSS') {
-      ctx.fillStyle = '#ff1744';
+      const state = this.data.freezeTimer > 0 ? 'HURT' : 'MOVING';
+      MegaBossSpriteRenderer.getInstance().render(
+        ctx,
+        this.data.position.x,
+        this.data.position.y,
+        76,
+        state
+      );
+    } else {
       ctx.beginPath();
-      ctx.arc(this.data.position.x - 8, this.data.position.y - 6, 4, 0, Math.PI * 2);
-      ctx.arc(this.data.position.x + 8, this.data.position.y - 6, 4, 0, Math.PI * 2);
+      ctx.arc(this.data.position.x, this.data.position.y, this.data.radius, 0, Math.PI * 2);
+      ctx.fillStyle = this.data.freezeTimer > 0 ? '#80deea' : this.data.color;
       ctx.fill();
+
+      ctx.strokeStyle = this.data.type === 'BOSS' ? '#ffd700' : this.data.type === 'MOSS_GIANT' ? '#aed581' : '#ffffff';
+      ctx.lineWidth = this.data.type === 'BOSS' ? 3.5 : 1.5;
+      ctx.stroke();
     }
 
     // HP Bar & Shield Bar

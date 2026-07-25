@@ -67,6 +67,7 @@ export class Game2D {
     this.talentManager = new TalentManager();
     this.achievementManager = new AchievementManager(this.talentManager);
     this.gameState = new GameState(this.talentManager, this.currentSavedChallengeMode);
+    this.gameState.setStatus('PLAYING');
     this.waveManager = new WaveManager();
     if (this.currentSavedChallengeMode === 'MORTE_CERTA') {
       this.waveManager.isMorteCerta = true;
@@ -204,7 +205,7 @@ export class Game2D {
 
     this.canvas.addEventListener('mousemove', handleMove);
     this.canvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       handleMove(e);
     }, { passive: false });
 
@@ -233,7 +234,7 @@ export class Game2D {
 
     this.canvas.addEventListener('click', handleTap);
     this.canvas.addEventListener('touchend', (e) => {
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       handleTap(e);
     }, { passive: false });
   }
@@ -354,7 +355,7 @@ export class Game2D {
 
         // Check Victory
         if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
-          this.gameState.status = 'VICTORY';
+          this.gameState.setStatus('VICTORY');
         }
       }
 
