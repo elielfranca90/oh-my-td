@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "cd tower-defense-2d && npm run dev",
     "build": "cd tower-defense-2d && npm install && npm run build",
-    "preview": "cd tower-defense-2d && npm run preview"
+    "preview": "cd tower-defense-2d && npm run preview",
+    "test": "cd tower-defense-2d && npm test"
   }
 }
