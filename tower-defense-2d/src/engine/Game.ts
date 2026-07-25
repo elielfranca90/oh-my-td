@@ -1,3 +1,4 @@
+import type { ChallengeMode } from '../types';
 import { UIManager } from '../ui/UIManager';
 import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
@@ -12,7 +13,6 @@ import { SpellManager } from './SpellManager';
 import { TalentManager } from './TalentManager';
 import { TowerManager2D } from './TowerManager';
 import { WaveManager } from './WaveManager';
-
 export class Game2D {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -39,6 +39,7 @@ export class Game2D {
   private lastTime = 0;
   private hasAwardedStars = false;
   private currentSavedMapId: MapId = 'MAP_1';
+  private currentSavedChallengeMode: ChallengeMode = 'NORMAL';
 
   constructor() {
     const gameArea = document.getElementById('game-area');
@@ -65,7 +66,7 @@ export class Game2D {
     this.analyticsManager = new AnalyticsManager();
     this.talentManager = new TalentManager();
     this.achievementManager = new AchievementManager(this.talentManager);
-    this.gameState = new GameState(this.talentManager);
+    this.gameState = new GameState(this.talentManager, this.currentSavedChallengeMode);
     this.waveManager = new WaveManager();
     this.mapManager = new MapManager2D(this.currentSavedMapId);
     this.fxManager = new FXManager();
@@ -117,6 +118,10 @@ export class Game2D {
 
   public changeMap(mapId: MapId) {
     this.currentSavedMapId = mapId;
+    this.initGame();
+  }
+  public changeChallengeMode(mode: ChallengeMode) {
+    this.currentSavedChallengeMode = mode;
     this.initGame();
   }
 

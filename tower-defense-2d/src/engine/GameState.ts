@@ -1,3 +1,4 @@
+import type { ChallengeMode } from '../types';
 import { TalentManager } from './TalentManager';
 
 export type GameStatus = 'PLAYING' | 'GAME_OVER' | 'VICTORY';
@@ -10,14 +11,21 @@ export class GameState {
   public maxWaves = 10;
   public status: GameStatus = 'PLAYING';
   public isPaused = false;
+  public challengeMode: ChallengeMode = 'NORMAL';
 
-  constructor(talentManager?: TalentManager) {
+  constructor(talentManager?: TalentManager, challengeMode: ChallengeMode = 'NORMAL') {
+    this.challengeMode = challengeMode;
     const goldBonus = talentManager ? talentManager.getStartingGoldBonus() : 0;
     const hpBonus = talentManager ? talentManager.getBaseHpBonus() : 0;
 
     this.gold = 50 + goldBonus;
-    this.maxBaseHp = 20 + hpBonus;
-    this.baseHp = 20 + hpBonus;
+    if (this.challengeMode === 'HARDCORE') {
+      this.maxBaseHp = 1;
+      this.baseHp = 1;
+    } else {
+      this.maxBaseHp = 20 + hpBonus;
+      this.baseHp = 20 + hpBonus;
+    }
   }
 
   public togglePause(): boolean {

@@ -7,14 +7,22 @@ export class Enemy2D {
   private hasTriggeredSpore = false;
   private mossRegenTimer = 0;
 
-  constructor(waypoints: Vector2D[], type: EnemyType, id: string, hpMultiplier = 1.0, pathIndex = 0) {
+  constructor(
+    waypoints: Vector2D[],
+    type: EnemyType,
+    id: string,
+    hpMultiplier = 1.0,
+    pathIndex = 0,
+    speedMultiplier = 1.0,
+    goldMultiplier = 1.0
+  ) {
     const config = this.getEnemyConfig(type);
     this.baseDamage = config.baseDamage;
     this.pathIndex = pathIndex;
 
     const scaledHp = Math.round(config.hp * hpMultiplier);
     const scaledShield = Math.round(config.shield * hpMultiplier);
-    const scaledReward = Math.round(config.reward * Math.pow(hpMultiplier, 0.4));
+    const scaledReward = Math.round(config.reward * Math.pow(hpMultiplier, 0.4) * goldMultiplier);
 
     this.data = {
       id,
@@ -23,7 +31,7 @@ export class Enemy2D {
       maxHp: scaledHp,
       shieldHp: scaledShield,
       maxShieldHp: scaledShield,
-      speed: config.speed,
+      speed: Number((config.speed * speedMultiplier).toFixed(2)),
       goldReward: scaledReward,
       waypointIndex: 0,
       pathIndex,

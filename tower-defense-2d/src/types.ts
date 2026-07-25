@@ -92,3 +92,12 @@ export interface FirePatch {
   duration: number;
   damage: number;
 }
+export type ChallengeMode = 'NORMAL' | 'NO_SPELLS' | 'FAST_ENEMIES' | 'HARDCORE' | 'TURBO_GOLD';
+
+export interface IChangelogItem {
+  version: string;
+  title: string;
+  date: string;
+  badge?: string;
+  changes: string[];
+}

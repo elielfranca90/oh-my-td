@@ -52,6 +52,10 @@ export class SpellManager {
   }
 
   public selectSpell(spell: ActiveSpell) {
+    if (this.gameState.challengeMode === 'NO_SPELLS') {
+      this.activeSpell = null;
+      return;
+    }
     if (this.activeSpell === spell) {
       this.activeSpell = null; // Toggle off
     } else {
@@ -69,9 +73,9 @@ export class SpellManager {
   }
 
   public triggerGlobalFreeze(allEnemies: Enemy2D[]): boolean {
+    if (this.gameState.challengeMode === 'NO_SPELLS') return false;
     if (this.freezeCooldownMs > 0) return false;
     if (!this.gameState.spendGold(this.freezeCost)) return false;
-
     this.freezeCooldownMs = this.FREEZE_MAX_COOLDOWN;
     this.fxManager.triggerScreenShake(10);
     this.audioManager.playFreeze();
@@ -94,6 +98,7 @@ export class SpellManager {
   }
 
   public castMeteorAt(x: number, y: number, allEnemies: Enemy2D[]): boolean {
+    if (this.gameState.challengeMode === 'NO_SPELLS') return false;
     if (this.meteorCooldownMs > 0) return false;
     if (!this.gameState.spendGold(this.meteorCost)) return false;
 

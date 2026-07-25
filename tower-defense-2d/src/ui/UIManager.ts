@@ -8,7 +8,7 @@ import { SpellManager } from '../engine/SpellManager';
 import { TalentManager } from '../engine/TalentManager';
 import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager } from '../engine/WaveManager';
-import type { TowerType } from '../types';
+import type { ChallengeMode, TowerType } from '../types';
 
 export type MobileTab = 'STORE' | 'SPELLS' | 'TALENTS' | 'INSPECTOR';
 
@@ -29,6 +29,7 @@ export class UIManager {
 
   private overlayEl!: HTMLElement;
   private achievementsOverlayEl!: HTMLElement;
+  private changelogOverlayEl!: HTMLElement;
 
   constructor(
     gameState: GameState,
@@ -90,10 +91,21 @@ export class UIManager {
 
           <div class="map-selector-row">
             <span class="icon">🗺️</span>
-            <select id="map-select" class="map-select">
+            <select id="map-select" class="map-select" title="Seleção de Mapa">
               <option value="MAP_1">Map 1: Green Valley</option>
               <option value="MAP_2">Map 2: Death Pass (Dual Spawn)</option>
               <option value="MAP_3">Map 3: Citadel (Short Route)</option>
+            </select>
+          </div>
+
+          <div class="challenge-selector-row">
+            <span class="icon">⚔️</span>
+            <select id="challenge-select" class="challenge-select" title="Selecione o Modo Desafio">
+              <option value="NORMAL">Modo: Padrão</option>
+              <option value="NO_SPELLS">Modo: Sem Magias 🚫</option>
+              <option value="FAST_ENEMIES">Modo: Invasão Veloz ⚡</option>
+              <option value="HARDCORE">Modo: Hardcore (1 HP) 💀</option>
+              <option value="TURBO_GOLD">Modo: Corrida do Ouro 🪙</option>
             </select>
           </div>
         </div>
@@ -135,6 +147,9 @@ export class UIManager {
         <div class="actions-row">
           <div class="speed-controls">
             <button id="badges-btn" class="btn secondary" title="View Achievements">🏆 Badges</button>
+            <button id="changelog-btn" class="btn changelog-gift-btn" title="Últimas 5 Atualizações">
+              <span class="gift-icon">🎁</span> <span class="gift-text">Novidades</span>
+            </button>
             <button id="pause-btn" class="btn pause-btn" title="Pause/Resume">⏸️</button>
             <button id="speed-1x" class="btn speed-btn active">1x</button>
             <button id="speed-2x" class="btn speed-btn">2x</button>
@@ -279,6 +294,10 @@ export class UIManager {
               <span>🪙 Gold Earned / Spent:</span>
               <strong id="modal-gold">0g / 0g</strong>
             </div>
+            <div class="analytics-row">
+              <span>⚔️ Mode:</span>
+              <strong id="modal-challenge">Padrão</strong>
+            </div>
           </div>
 
           <button id="restart-btn" class="btn primary modal-restart-btn">Play Again</button>
@@ -296,10 +315,82 @@ export class UIManager {
           <button id="close-achievements-btn" class="btn primary modal-restart-btn">Close</button>
         </div>
       </div>
+
+      <!-- CHANGELOG / UPDATES MODAL -->
+      <div id="changelog-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-card changelog-modal-card">
+          <div class="changelog-header">
+            <h1>🎁 ÚLTIMAS 5 ATUALIZAÇÕES</h1>
+            <p>Confira o histórico recente de novos recursos, ajustes e melhorias do jogo.</p>
+          </div>
+
+          <div id="changelog-list" class="changelog-list">
+            <div class="changelog-item latest">
+              <div class="changelog-item-header">
+                <span class="badge-tag new">NOVO</span>
+                <strong class="version-tag">v1.6</strong>
+                <span class="changelog-title">Modo Desafio & Central de Novidades</span>
+              </div>
+              <ul class="changelog-bullets">
+                <li><strong>Modo Desafio Selecionável:</strong> Jogue nos modos <em>Sem Magias</em>, <em>Invasão Veloz (+40% velocidade)</em>, <em>Hardcore (1 HP)</em> ou <em>Corrida do Ouro (+50% ouro)</em>.</li>
+                <li><strong>Ícone Presente Interativo:</strong> Modal animado de novidades para acompanhar as últimas 5 atualizações.</li>
+                <li><strong>Ajustes de Qualidade:</strong> Integração completa de scripts de testes e refinamento da interface.</li>
+              </ul>
+            </div>
+
+            <div class="changelog-item">
+              <div class="changelog-item-header">
+                <strong class="version-tag">v1.5</strong>
+                <span class="changelog-title">Biomas Visuais & Trilha Sonora Sintetizada</span>
+              </div>
+              <ul class="changelog-bullets">
+                <li><strong>3 Biomas Únicos:</strong> Gráficos dedicados para Green Valley, Death Pass Lava e Citadel Neon.</li>
+                <li><strong>Música Sintetizada:</strong> Trilhas dinâmicas BGM sintetizadas em tempo real via Web Audio API.</li>
+              </ul>
+            </div>
+
+            <div class="changelog-item">
+              <div class="changelog-item-header">
+                <strong class="version-tag">v1.4</strong>
+                <span class="changelog-title">Prisma Solar & Tropas Especializadas</span>
+              </div>
+              <ul class="changelog-bullets">
+                <li><strong>Nova Torre Prisma Solar:</strong> Dispara feixe concentrado contínuo com escalonamento de dano.</li>
+                <li><strong>Inimigos Especiais:</strong> Introdução de <em>Spore Sprinter</em> (boost de velocidade) e <em>Moss Giant</em> (regeneração).</li>
+              </ul>
+            </div>
+
+            <div class="changelog-item">
+              <div class="changelog-item-header">
+                <strong class="version-tag">v1.3</strong>
+                <span class="changelog-title">Árvore de Talentos & Sistema de Badges</span>
+              </div>
+              <ul class="changelog-bullets">
+                <li><strong>Talentos Permanentes:</strong> Gaste estrelas para evoluir dano, ouro inicial, HP de base e recargas.</li>
+                <li><strong>7 Badges Desbloqueáveis:</strong> Conquistas com notificações e modal de galeria.</li>
+              </ul>
+            </div>
+
+            <div class="changelog-item">
+              <div class="changelog-item-header">
+                <strong class="version-tag">v1.2</strong>
+                <span class="changelog-title">Analytics Pós-Partida & Suporte Mobile</span>
+              </div>
+              <ul class="changelog-bullets">
+                <li><strong>Relatório Pós-Partida:</strong> Estatísticas completas com Torre MVP, abates e High Score salvo.</li>
+                <li><strong>Interface Mobile Responsiva:</strong> Adaptada para telas touch com viewport 100dvh e navegação em abas.</li>
+              </ul>
+            </div>
+          </div>
+
+          <button id="close-changelog-btn" class="btn primary modal-restart-btn">Fechar</button>
+        </div>
+      </div>
     `;
 
     this.overlayEl = document.getElementById('modal-overlay')!;
     this.achievementsOverlayEl = document.getElementById('achievements-modal-overlay')!;
+    this.changelogOverlayEl = document.getElementById('changelog-modal-overlay')!;
 
     this.setupEvents();
   }
@@ -313,6 +404,23 @@ export class UIManager {
         this.game.changeMap(val);
       });
     }
+
+    const challengeSelect = document.getElementById('challenge-select') as HTMLSelectElement;
+    if (challengeSelect) {
+      challengeSelect.value = this.gameState.challengeMode;
+      challengeSelect.addEventListener('change', (e) => {
+        const val = (e.target as HTMLSelectElement).value as ChallengeMode;
+        this.game.changeChallengeMode(val);
+      });
+    }
+
+    document.getElementById('changelog-btn')?.addEventListener('click', () => {
+      this.changelogOverlayEl.classList.remove('hidden');
+    });
+
+    document.getElementById('close-changelog-btn')?.addEventListener('click', () => {
+      this.changelogOverlayEl.classList.add('hidden');
+    });
 
     // Mobile Tab Bar Buttons
     document.getElementById('tab-store-btn')?.addEventListener('click', () => this.switchMobileTab('STORE'));
@@ -738,6 +846,18 @@ export class UIManager {
 
       const modalGold = document.getElementById('modal-gold');
       if (modalGold) modalGold.innerText = `${this.analyticsManager.goldEarned}g / ${this.analyticsManager.goldSpent}g`;
+
+      const modalChallenge = document.getElementById('modal-challenge');
+      if (modalChallenge) {
+        const modeLabels: Record<ChallengeMode, string> = {
+          NORMAL: 'Padrão',
+          NO_SPELLS: 'Sem Magias 🚫',
+          FAST_ENEMIES: 'Invasão Veloz ⚡',
+          HARDCORE: 'Hardcore (1 HP) 💀',
+          TURBO_GOLD: 'Corrida do Ouro 🪙',
+        };
+        modalChallenge.innerText = modeLabels[this.gameState.challengeMode] || 'Padrão';
+      }
     } else {
       this.overlayEl.classList.add('hidden');
     }

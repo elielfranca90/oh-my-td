@@ -699,6 +699,148 @@
         margin-top: 8px;
       }
 
+      /* CHANGELOG GIFT BUTTON & MODAL STYLES */
+      .changelog-gift-btn {
+        background: linear-gradient(135deg, #ff4081, #d500f9);
+        color: #ffffff;
+        border: 1.5px solid #ff80ab;
+        font-weight: bold;
+        box-shadow: 0 0 10px rgba(255, 64, 129, 0.6);
+        animation: giftPulse 2.2s infinite ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .changelog-gift-btn:hover {
+        transform: scale(1.08);
+        box-shadow: 0 0 16px rgba(213, 0, 249, 0.9);
+      }
+
+      @keyframes giftPulse {
+        0%, 100% {
+          transform: scale(1);
+          box-shadow: 0 0 10px rgba(255, 64, 129, 0.6);
+        }
+        50% {
+          transform: scale(1.07);
+          box-shadow: 0 0 18px rgba(213, 0, 249, 0.95);
+        }
+      }
+
+      .challenge-selector-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #444444;
+      }
+
+      .challenge-select {
+        background-color: #1e1e1e;
+        color: #ffca28;
+        border: 1px solid #555555;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        cursor: pointer;
+        outline: none;
+      }
+
+      .challenge-select:hover {
+        border-color: #ffb300;
+      }
+
+      .changelog-modal-card {
+        max-width: 540px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+      }
+
+      .changelog-header h1 {
+        font-size: 1.25rem;
+        color: #e040fb;
+        margin-bottom: 4px;
+      }
+
+      .changelog-header p {
+        font-size: 0.82rem;
+        color: #aaaaaa;
+      }
+
+      .changelog-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        text-align: left;
+        max-height: 52vh;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+
+      .changelog-item {
+        background-color: #1f1f28;
+        border: 1px solid #3a3a4c;
+        border-radius: 6px;
+        padding: 10px 12px;
+      }
+
+      .changelog-item.latest {
+        border-color: #e040fb;
+        background-color: #281d33;
+        box-shadow: 0 0 10px rgba(224, 64, 251, 0.2);
+      }
+
+      .changelog-item-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+
+      .badge-tag.new {
+        background-color: #e040fb;
+        color: #ffffff;
+        font-size: 0.65rem;
+        font-weight: bold;
+        padding: 1px 5px;
+        border-radius: 3px;
+        letter-spacing: 0.5px;
+      }
+
+      .version-tag {
+        color: #40c4ff;
+        font-size: 0.9rem;
+      }
+
+      .changelog-title {
+        font-weight: bold;
+        font-size: 0.9rem;
+        color: #ffffff;
+      }
+
+      .changelog-bullets {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 0.8rem;
+        color: #dddddd;
+        line-height: 1.45;
+      }
+
+      .changelog-bullets li {
+        margin-bottom: 3px;
+      }
+
       /* --- MOBILE RESPONSIVE MEDIA QUERIES --- */
       @media (max-width: 640px) {
         body {

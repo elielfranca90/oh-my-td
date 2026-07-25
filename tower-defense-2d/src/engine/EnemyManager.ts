@@ -112,7 +112,18 @@ export class EnemyManager2D {
     }
 
     const waypoints = this.mapManager.getWaypoints(pathIndex);
-    const enemy = new Enemy2D(waypoints, type, `enemy-${Date.now()}-${Math.random()}`, hpMultiplier, pathIndex);
+    const speedMultiplier = this.gameState.challengeMode === 'FAST_ENEMIES' ? 1.4 : 1.0;
+    const goldMultiplier = this.gameState.challengeMode === 'TURBO_GOLD' ? 1.5 : 1.0;
+
+    const enemy = new Enemy2D(
+      waypoints,
+      type,
+      `enemy-${Date.now()}-${Math.random()}`,
+      hpMultiplier,
+      pathIndex,
+      speedMultiplier,
+      goldMultiplier
+    );
     this.enemies.push(enemy);
   }
 
