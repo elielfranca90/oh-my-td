@@ -20,6 +20,7 @@ export class AnalyticsManager {
     SPORE_SPRINTER: 0,
     MOSS_GIANT: 0,
     BOSS: 0,
+    BLACK_MEGA_BOSS: 0,
   };
 
   public goldEarned = 0;

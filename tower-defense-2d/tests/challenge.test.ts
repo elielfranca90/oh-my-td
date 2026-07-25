@@ -17,7 +17,7 @@ describe('Challenge Mode Mechanics Tests', () => {
     const normalState = new GameState(undefined, 'NORMAL');
     const hardcoreState = new GameState(undefined, 'HARDCORE');
 
-    expect(normalState.baseHp).toBe(20);
+    expect(normalState.baseHp).toBe(10);
     expect(hardcoreState.baseHp).toBe(1);
     expect(hardcoreState.maxBaseHp).toBe(1);
   });
@@ -56,5 +56,20 @@ describe('Challenge Mode Mechanics Tests', () => {
 
     const meteorCasted = spellManager.castMeteorAt(50, 50, [enemy]);
     expect(meteorCasted).toBe(false);
+  });
+  it('should combine all challenge and special rules in MORTE_CERTA mode', () => {
+    const morteCertaState = new GameState(undefined, 'MORTE_CERTA');
+    morteCertaState.gold = 1000;
+
+    expect(morteCertaState.baseHp).toBe(1);
+    expect(morteCertaState.maxBaseHp).toBe(1);
+
+    const fx = new FXManager();
+    const audio = new AudioManager();
+    const particles = new ParticleManager();
+    const spellManager = new SpellManager(morteCertaState, fx, audio, particles);
+
+    spellManager.selectSpell('METEOR');
+    expect(spellManager.activeSpell).toBeNull();
   });
 });

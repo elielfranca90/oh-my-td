@@ -10,7 +10,8 @@ export type EnemyType =
   | 'SHIELDED'
   | 'BOSS'
   | 'SPORE_SPRINTER'
-  | 'MOSS_GIANT';
+  | 'MOSS_GIANT'
+  | 'BLACK_MEGA_BOSS';
 
 export interface IEnemy2D {
   id: string;
@@ -57,6 +58,9 @@ export interface ITower2D {
   laserTargetId?: string;
   beamDuration?: number;
   onSproutTile?: boolean;
+  hp: number;
+  maxHp: number;
+  isDestroyed?: boolean;
 }
 
 export interface IProjectile2D {
@@ -92,7 +96,7 @@ export interface FirePatch {
   duration: number;
   damage: number;
 }
-export type ChallengeMode = 'NORMAL' | 'NO_SPELLS' | 'FAST_ENEMIES' | 'HARDCORE' | 'TURBO_GOLD';
+export type ChallengeMode = 'NORMAL' | 'NO_SPELLS' | 'FAST_ENEMIES' | 'HARDCORE' | 'TURBO_GOLD' | 'MORTE_CERTA';
 
 export interface IChangelogItem {
   version: string;

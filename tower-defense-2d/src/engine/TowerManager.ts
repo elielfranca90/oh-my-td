@@ -1,4 +1,5 @@
 import type { TowerType } from '../types';
+import { EventBus } from './EventBus';
 import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
@@ -53,8 +54,8 @@ export class TowerManager2D {
   public getTowerCost(type: TowerType): number {
     switch (type) {
       case 'ARTILLERY': return 110;
-      case 'CANNON': return 90;
-      case 'SOLAR_PRISM': return 80;
+      case 'CANNON': return 105;
+      case 'SOLAR_PRISM': return 100;
       case 'FROST': return 70;
       case 'BASIC':
       default: return 50;
@@ -65,11 +66,12 @@ export class TowerManager2D {
     const existing = this.getTowerAt(gridX, gridY);
     if (existing) {
       this.selectedTower = existing;
+      EventBus.getInstance().emit('tower:select', this.selectedTower);
       return true;
     }
 
     this.selectedTower = null;
-
+    EventBus.getInstance().emit('tower:select', null);
     if (!this.mapManager.isBuildable(gridX, gridY)) {
       return false;
     }
@@ -99,6 +101,7 @@ export class TowerManager2D {
 
     this.towers.push(tower);
     this.selectedTower = tower;
+    EventBus.getInstance().emit('tower:select', this.selectedTower);
     return true;
   }
 
@@ -111,7 +114,11 @@ export class TowerManager2D {
       if (this.analyticsManager) {
         this.analyticsManager.recordGoldSpent(cost);
       }
-      return this.selectedTower.upgrade();
+      const upgraded = this.selectedTower.upgrade();
+      if (upgraded) {
+        EventBus.getInstance().emit('tower:select', this.selectedTower);
+      }
+      return upgraded;
     }
     return false;
   }
@@ -126,13 +133,40 @@ export class TowerManager2D {
       this.towers.splice(index, 1);
     }
     this.selectedTower = null;
+    EventBus.getInstance().emit('tower:select', null);
     return true;
   }
 
   public cycleSelectedTowerTargeting() {
     if (this.selectedTower) {
       this.selectedTower.cycleTargeting();
+      EventBus.getInstance().emit('tower:select', this.selectedTower);
     }
+  }
+
+  public repairSelectedTower(): boolean {
+    if (!this.selectedTower) return false;
+    const cost = this.selectedTower.getRepairCost();
+    if (this.selectedTower.data.hp >= this.selectedTower.data.maxHp && !this.selectedTower.data.isDestroyed) return false;
+
+    if (this.gameState.spendGold(cost)) {
+      if (this.analyticsManager) {
+        this.analyticsManager.recordGoldSpent(cost);
+      }
+      this.selectedTower.repair();
+      EventBus.getInstance().emit('tower:select', this.selectedTower);
+      return true;
+    }
+    return false;
+  }
+
+  public getTowers(): Tower2D[] {
+    return this.towers;
+  }
+
+  public setSelectedBuildType(type: TowerType) {
+    this.selectedBuildType = type;
+    EventBus.getInstance().emit('tower:buildType', this.selectedBuildType);
   }
 
   public update(enemies: Enemy2D[], fxManager?: FXManager) {

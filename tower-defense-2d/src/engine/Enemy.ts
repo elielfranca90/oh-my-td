@@ -62,7 +62,8 @@ export class Enemy2D {
         return { hp: 45, shield: 0, speed: 1.0, radius: 22, reward: 30, color: '#33691e', baseDamage: 3, armorFactor: 0.7, dodgeChance: 0.0 };
       case 'BOSS':
         return { hp: 160, shield: 0, speed: 0.8, radius: 26, reward: 100, color: '#d50000', baseDamage: 5, armorFactor: 0.8, dodgeChance: 0.0 };
-      case 'STANDARD':
+      case 'BLACK_MEGA_BOSS':
+        return { hp: 450, shield: 120, speed: 0.55, radius: 32, reward: 300, color: '#11111a', baseDamage: 10, armorFactor: 0.45, dodgeChance: 0.0 };
       default:
         return { hp: 10, shield: 0, speed: 2.0, radius: 15, reward: 10, color: '#e53935', baseDamage: 1, armorFactor: 1.0, dodgeChance: 0.0 };
     }
@@ -222,9 +223,18 @@ export class Enemy2D {
     ctx.fill();
 
     // Outline / Details per type
-    ctx.strokeStyle = this.data.type === 'BOSS' ? '#ffd700' : this.data.type === 'MOSS_GIANT' ? '#aed581' : '#ffffff';
-    ctx.lineWidth = this.data.type === 'BOSS' ? 3.5 : 1.5;
+    ctx.strokeStyle = this.data.type === 'BLACK_MEGA_BOSS' ? '#e040fb' : this.data.type === 'BOSS' ? '#ffd700' : this.data.type === 'MOSS_GIANT' ? '#aed581' : '#ffffff';
+    ctx.lineWidth = this.data.type === 'BLACK_MEGA_BOSS' ? 4.5 : this.data.type === 'BOSS' ? 3.5 : 1.5;
     ctx.stroke();
+
+    // Black Mega Boss Red Glowing Eyes
+    if (this.data.type === 'BLACK_MEGA_BOSS') {
+      ctx.fillStyle = '#ff1744';
+      ctx.beginPath();
+      ctx.arc(this.data.position.x - 8, this.data.position.y - 6, 4, 0, Math.PI * 2);
+      ctx.arc(this.data.position.x + 8, this.data.position.y - 6, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // HP Bar & Shield Bar
     const barWidth = this.data.radius * 2.2;

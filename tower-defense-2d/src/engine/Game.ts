@@ -68,6 +68,10 @@ export class Game2D {
     this.achievementManager = new AchievementManager(this.talentManager);
     this.gameState = new GameState(this.talentManager, this.currentSavedChallengeMode);
     this.waveManager = new WaveManager();
+    if (this.currentSavedChallengeMode === 'MORTE_CERTA') {
+      this.waveManager.setEndlessMode(true);
+      this.waveManager.setAutoMode(true);
+    }
     this.mapManager = new MapManager2D(this.currentSavedMapId);
     this.fxManager = new FXManager();
     this.particleManager = new ParticleManager();
@@ -332,7 +336,7 @@ export class Game2D {
       // 1. Update logic (only if active and NOT paused)
       if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
         this.waveManager.updateAutoCountdown(deltaTimeMs);
-        this.enemyManager.update(deltaTimeMs);
+        this.enemyManager.update(deltaTimeMs, this.towerManager.getTowers());
         this.towerManager.update(this.enemyManager.getEnemies());
         this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
         this.spellManager.update(deltaTimeMs);

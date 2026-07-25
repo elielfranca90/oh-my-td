@@ -1,11 +1,6 @@
-export type EnemyType =
-  | 'STANDARD'
-  | 'RUNNER'
-  | 'TANK'
-  | 'SHIELDED'
-  | 'BOSS'
-  | 'SPORE_SPRINTER'
-  | 'MOSS_GIANT';
+import { EventBus } from './EventBus';
+
+import type { EnemyType } from '../types';
 
 export interface WaveConfig {
   waveNumber: number;
@@ -133,8 +128,7 @@ export class WaveManager {
         { type: 'MOSS_GIANT', delay: 1600 },
         { type: 'BOSS', delay: 2000 },
         { type: 'RUNNER', delay: 400 },
-        { type: 'TANK', delay: 800 },
-        { type: 'BOSS', delay: 2500 },
+        { type: 'BLACK_MEGA_BOSS', delay: 3000 },
         { type: 'RUNNER', delay: 400 },
         { type: 'TANK', delay: 800 },
       ],
@@ -157,10 +151,12 @@ export class WaveManager {
     if (enabled && !this.isWaveActive) {
       this.autoCountdownMs = 5000;
     }
+    EventBus.getInstance().emit('wave:autoMode', this.isAutoMode);
   }
 
   public setEndlessMode(enabled: boolean) {
     this.isEndlessMode = enabled;
+    EventBus.getInstance().emit('wave:endlessMode', this.isEndlessMode);
   }
 
   public startNextWave(): boolean {
@@ -179,6 +175,8 @@ export class WaveManager {
     this.spawnQueue = [...this.waves[this.currentWaveIndex].enemies];
     this.isWaveActive = true;
     this.timer = 0;
+    EventBus.getInstance().emit('wave:start', { currentWave: this.currentWaveIndex + 1, isEndless: this.isEndlessMode });
+    EventBus.getInstance().emit('wave:change', { current: this.currentWaveIndex + 1, max: 10, isEndless: this.isEndlessMode });
     return true;
   }
 
@@ -193,10 +191,12 @@ export class WaveManager {
       enemies.push({ type: randomType, delay: baseDelay });
     }
 
-    // Add Bosses based on endless wave progress
     const bossCount = Math.floor((waveNum - 10) / 3) + 1;
     for (let b = 0; b < bossCount; b++) {
       enemies.push({ type: 'BOSS', delay: 1800 });
+    }
+    if (waveNum % 10 === 0) {
+      enemies.push({ type: 'BLACK_MEGA_BOSS', delay: 3000 });
     }
 
     return {
@@ -229,10 +229,24 @@ export class WaveManager {
 
       const currentWaveNum = this.currentWaveIndex + 1;
       let hpMultiplier = 1.0;
-      if (currentWaveNum > 10) {
-        hpMultiplier = Math.pow(1.12, currentWaveNum - 10);
-      }
+      const campaignHpScales: Record<number, number> = {
+        1: 1.0,
+        2: 1.15,
+        3: 1.3,
+        4: 1.5,
+        5: 1.85,
+        6: 2.2,
+        7: 2.6,
+        8: 3.1,
+        9: 3.7,
+        10: 4.5,
+      };
 
+      if (currentWaveNum <= 10) {
+        hpMultiplier = campaignHpScales[currentWaveNum] || 1.0;
+      } else {
+        hpMultiplier = Number((4.5 * Math.pow(1.18, currentWaveNum - 10)).toFixed(2));
+      }
       return { type: enemy.type, hpMultiplier };
     }
 
@@ -243,6 +257,8 @@ export class WaveManager {
     if (this.isWaveActive && this.spawnQueue.length === 0 && remainingEnemiesCount === 0) {
       this.isWaveActive = false;
       this.autoCountdownMs = 5000;
+      EventBus.getInstance().emit('wave:end', { currentWave: this.currentWaveIndex + 1, isEndless: this.isEndlessMode });
+      EventBus.getInstance().emit('wave:change', { current: this.currentWaveIndex + 1, max: 10, isEndless: this.isEndlessMode });
       return true;
     }
     return false;
