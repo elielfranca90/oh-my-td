@@ -1,3 +1,5 @@
+import { EventBus } from './EventBus';
+
 export type EnemyType =
   | 'STANDARD'
   | 'RUNNER'
@@ -157,10 +159,12 @@ export class WaveManager {
     if (enabled && !this.isWaveActive) {
       this.autoCountdownMs = 5000;
     }
+    EventBus.getInstance().emit('wave:autoMode', this.isAutoMode);
   }
 
   public setEndlessMode(enabled: boolean) {
     this.isEndlessMode = enabled;
+    EventBus.getInstance().emit('wave:endlessMode', this.isEndlessMode);
   }
 
   public startNextWave(): boolean {
@@ -179,6 +183,8 @@ export class WaveManager {
     this.spawnQueue = [...this.waves[this.currentWaveIndex].enemies];
     this.isWaveActive = true;
     this.timer = 0;
+    EventBus.getInstance().emit('wave:start', { currentWave: this.currentWaveIndex + 1, isEndless: this.isEndlessMode });
+    EventBus.getInstance().emit('wave:change', { current: this.currentWaveIndex + 1, max: 10, isEndless: this.isEndlessMode });
     return true;
   }
 
@@ -243,6 +249,8 @@ export class WaveManager {
     if (this.isWaveActive && this.spawnQueue.length === 0 && remainingEnemiesCount === 0) {
       this.isWaveActive = false;
       this.autoCountdownMs = 5000;
+      EventBus.getInstance().emit('wave:end', { currentWave: this.currentWaveIndex + 1, isEndless: this.isEndlessMode });
+      EventBus.getInstance().emit('wave:change', { current: this.currentWaveIndex + 1, max: 10, isEndless: this.isEndlessMode });
       return true;
     }
     return false;

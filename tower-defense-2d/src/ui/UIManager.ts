@@ -1,16 +1,16 @@
 import { AchievementManager } from '../engine/AchievementManager';
 import { AnalyticsManager } from '../engine/AnalyticsManager';
+import { AudioManager } from '../engine/AudioManager';
+import { EventBus } from '../engine/EventBus';
 import { Game2D } from '../engine/Game';
 import { GameState } from '../engine/GameState';
-import { AudioManager } from '../engine/AudioManager';
-import type { MapId } from '../engine/MapManager';
-import { SpellManager } from '../engine/SpellManager';
+import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
 import { TalentManager } from '../engine/TalentManager';
+import type { Tower2D } from '../engine/Tower';
 import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager } from '../engine/WaveManager';
+import type { MapId } from '../engine/MapManager';
 import type { ChallengeMode, TowerType } from '../types';
-
-export type MobileTab = 'STORE' | 'SPELLS' | 'TALENTS' | 'INSPECTOR';
 
 export class UIManager {
   private gameState: GameState;
@@ -24,12 +24,18 @@ export class UIManager {
   private game: Game2D;
   private onRestartCallback: () => void;
 
-  public activeMobileTab: MobileTab = 'STORE';
-  private lastSelectedTowerId: string | null = null;
+  private currentGold = -1;
+  private currentHp = -1;
+  private currentWave = -1;
 
+  // DOM Overlay Elements
   private overlayEl!: HTMLElement;
+  private settingsOverlayEl!: HTMLElement;
+  private talentsOverlayEl!: HTMLElement;
   private achievementsOverlayEl!: HTMLElement;
   private changelogOverlayEl!: HTMLElement;
+  private storeStateEl!: HTMLElement;
+  private inspectorStateEl!: HTMLElement;
 
   constructor(
     gameState: GameState,
@@ -55,6 +61,7 @@ export class UIManager {
     this.onRestartCallback = onRestart;
 
     this.createUI();
+    this.subscribeToEvents();
   }
 
   private createUI() {
@@ -62,341 +69,418 @@ export class UIManager {
     if (!container) return;
 
     container.innerHTML = `
-      <!-- TOP STATUS & WAVE CONTROL BAR -->
-      <div id="top-bar" class="ui-panel">
-        <!-- ROW 0: GAME TITLE -->
-        <div class="game-title-row">
-          <div class="game-title-group">
-            <span class="game-title-text">🏰 TOWER DEFENSE 2D <span class="game-subtitle">· Oh My TD</span></span>
-          </div>
-
-          <div class="author-social-group">
-            <span class="author-label">Dev:</span>
-            <a href="https://www.linkedin.com/in/eliel-franca/" target="_blank" rel="noopener noreferrer" class="social-link linkedin-link" title="LinkedIn - Eliel França">
-              <span class="social-icon">👔</span> <span class="social-name">LinkedIn</span>
-            </a>
-            <a href="https://x.com/elielofranca" target="_blank" rel="noopener noreferrer" class="social-link x-link" title="X (Twitter) - @elielofranca">
-              <span class="social-icon">𝕏</span> <span class="social-name">@elielofranca</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- ROW 1: STATS & MAP SELECTOR -->
-        <div class="stats-row">
-          <div class="stat"><span class="icon">🪙</span> <span class="stat-label">Gold:</span> <strong id="gold-val">50</strong></div>
-          <div class="stat"><span class="icon">❤️</span> <span class="stat-label">HP:</span> <strong id="hp-val">20/20</strong></div>
-          <div class="stat"><span class="icon">🌊</span> <span class="stat-label">Wave:</span> <strong id="wave-val">0/10</strong></div>
-          <div class="stat"><span class="icon">🌟</span> <span class="stat-label">Stars:</span> <strong id="stars-val">0</strong></div>
-          <div class="stat"><span class="icon">🏆</span> <span class="stat-label">Best:</span> <strong id="highscore-val">0</strong></div>
-
-          <div class="map-selector-row">
-            <span class="icon">🗺️</span>
-            <select id="map-select" class="map-select" title="Seleção de Mapa">
-              <option value="MAP_1">Map 1: Green Valley</option>
-              <option value="MAP_2">Map 2: Death Pass (Dual Spawn)</option>
-              <option value="MAP_3">Map 3: Citadel (Short Route)</option>
-            </select>
-          </div>
-
-          <div class="challenge-selector-row">
-            <span class="icon">⚔️</span>
-            <select id="challenge-select" class="challenge-select" title="Selecione o Modo Desafio">
-              <option value="NORMAL">Modo: Padrão</option>
-              <option value="NO_SPELLS">Modo: Sem Magias 🚫</option>
-              <option value="FAST_ENEMIES">Modo: Invasão Veloz ⚡</option>
-              <option value="HARDCORE">Modo: Hardcore (1 HP) 💀</option>
-              <option value="TURBO_GOLD">Modo: Corrida do Ouro 🪙</option>
-            </select>
-          </div>
-        </div>
+      <!-- UI OVERLAY CONTAINER (Fixed Fullscreen, pointer-events: none) -->
+      <div id="ui-wrapper" class="ui-wrapper">
         
-        <!-- ROW 2: TOGGLES & AUDIO SLIDERS -->
-        <div class="audio-toggles-row">
-          <div class="toggles-group">
-            <div class="auto-mode-row">
-              <span>⚡ Auto</span>
-              <label class="switch">
-                <input type="checkbox" id="auto-mode-toggle" />
-                <span class="slider round"></span>
-              </label>
+        <!-- TOP HUD STATUS BAR -->
+        <header id="hud-top" class="hud-top pointer-events-auto">
+          <div class="hud-left-stats">
+            <div class="hud-stat-badge hp" title="Vida da Base">
+              <span class="icon">❤️</span>
+              <strong id="hud-hp-val">${this.gameState.baseHp}/${this.gameState.maxBaseHp}</strong>
             </div>
-
-            <div class="auto-mode-row endless">
-              <span>♾️ Endless</span>
-              <label class="switch">
-                <input type="checkbox" id="endless-mode-toggle" />
-                <span class="slider round"></span>
-              </label>
+            <div class="hud-stat-badge gold" title="Ouro Disponível">
+              <span class="icon">🪙</span>
+              <strong id="hud-gold-val">${this.gameState.gold}</strong>
             </div>
           </div>
 
-          <!-- INDEPENDENT AUDIO CONTROLS -->
-          <div class="audio-controls-group">
-            <div class="audio-control-item" title="Music Volume (BGM)">
-              <button id="bgm-mute-btn" class="btn sound-btn">🎵</button>
-              <input type="range" id="bgm-vol-slider" class="vol-slider" min="0" max="100" value="60" />
+          <div class="hud-center-wave" title="Onda Atual">
+            <span class="icon">🌊</span>
+            <span class="wave-title">WAVE</span>
+            <strong id="hud-wave-val">0/10</strong>
+            <span id="hud-boss-badge" class="boss-badge hidden">⚠️ BOSS</span>
+          </div>
+
+          <div class="hud-right-controls">
+            <button id="settings-toggle-btn" class="hud-btn settings-btn" title="Configurações & Menus (⚙️)">
+              ⚙️
+            </button>
+          </div>
+        </header>
+
+        <!-- CONTEXTUAL SIDEBAR / BOTTOM SHEET PANEL -->
+        <aside id="context-panel" class="context-panel pointer-events-auto">
+          <!-- STORE & SPELLS STATE -->
+          <div id="store-state" class="panel-state active">
+            <div class="panel-header">
+              <span>🏗️ Construir Torres</span>
             </div>
-            <div class="audio-control-item" title="Sound Effects Volume (SFX)">
-              <button id="sfx-mute-btn" class="btn sound-btn">🔊</button>
-              <input type="range" id="sfx-vol-slider" class="vol-slider" min="0" max="100" value="80" />
+
+            <div class="tower-cards-grid">
+              <button id="card-basic" class="tower-card active" data-type="BASIC">
+                <div class="t-icon basic"></div>
+                <div class="t-details">
+                  <strong class="t-name">Básica</strong>
+                  <span class="t-cost">🪙 50g</span>
+                </div>
+              </button>
+              <button id="card-frost" class="tower-card" data-type="FROST">
+                <div class="t-icon frost"></div>
+                <div class="t-details">
+                  <strong class="t-name">Gelo</strong>
+                  <span class="t-cost">🪙 70g</span>
+                </div>
+              </button>
+              <button id="card-solar" class="tower-card" data-type="SOLAR_PRISM">
+                <div class="t-icon solar"></div>
+                <div class="t-details">
+                  <strong class="t-name">Prisma</strong>
+                  <span class="t-cost">🪙 80g</span>
+                </div>
+              </button>
+              <button id="card-cannon" class="tower-card" data-type="CANNON">
+                <div class="t-icon cannon"></div>
+                <div class="t-details">
+                  <strong class="t-name">Canhão</strong>
+                  <span class="t-cost">🪙 90g</span>
+                </div>
+              </button>
+              <button id="card-artillery" class="tower-card" data-type="ARTILLERY">
+                <div class="t-icon artillery"></div>
+                <div class="t-details">
+                  <strong class="t-name">Artilharia</strong>
+                  <span class="t-cost">🪙 110g</span>
+                </div>
+              </button>
             </div>
+
+            <div class="spells-section">
+              <div class="panel-header compact">
+                <span>☄️ Poderes Supremos</span>
+              </div>
+              <div class="spells-chips-row">
+                <button id="chip-meteor" class="spell-chip">
+                  <span class="chip-icon">☄️</span>
+                  <span class="chip-label">Meteoro</span>
+                  <span id="meteor-chip-cost" class="chip-cost">150g</span>
+                  <span id="meteor-chip-cd" class="chip-cd hidden"></span>
+                </button>
+                <button id="chip-freeze" class="spell-chip">
+                  <span class="chip-icon">❄️</span>
+                  <span class="chip-label">Congelar</span>
+                  <span id="freeze-chip-cost" class="chip-cost">120g</span>
+                  <span id="freeze-chip-cd" class="chip-cd hidden"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- INSPECTOR STATE -->
+          <div id="inspector-state" class="panel-state hidden">
+            <div class="panel-header space-between">
+              <strong id="inspector-title">Torre Nível 1</strong>
+              <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
+            </div>
+
+            <div id="inspector-details-box" class="inspector-details-box"></div>
+
+            <div class="inspector-actions-group">
+              <button id="btn-inspect-target" class="btn secondary action-btn">🎯 Target: FIRST</button>
+              <button id="btn-inspect-upgrade" class="btn success action-btn">⬆️ Upgrade (40g)</button>
+              <button id="btn-inspect-sell" class="btn danger action-btn">💰 Sell (35g)</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- FLOATING TIME & WAVE CONTROLS (Bottom Right) -->
+        <div id="time-controls" class="time-controls pointer-events-auto">
+          <div class="speed-btns-group">
+            <button id="btn-speed-1x" class="speed-btn active">1x</button>
+            <button id="btn-speed-2x" class="speed-btn">2x</button>
+            <button id="btn-speed-4x" class="speed-btn">4x</button>
+            <button id="btn-auto-mode" class="auto-toggle-btn">⚡ Auto</button>
+          </div>
+
+          <button id="btn-next-wave" class="start-wave-main-btn">
+            <span id="start-wave-label">Iniciar Onda 1</span>
+          </button>
+        </div>
+
+        <!-- SETTINGS & META-GAME MODAL (⚙️) -->
+        <div id="settings-modal-overlay" class="modal-overlay hidden pointer-events-auto">
+          <div class="modal-card settings-modal-card">
+            <div class="modal-header">
+              <h1>⚙️ Configurações & Menus</h1>
+              <button id="settings-close-btn" class="close-icon-btn">✖</button>
+            </div>
+
+            <div class="settings-content">
+              <!-- Audio Controls -->
+              <div class="settings-section">
+                <h3>🎵 Som & Música</h3>
+                <div class="setting-item">
+                  <span>Música BGM:</span>
+                  <button id="settings-bgm-mute-btn" class="btn sound-btn">🎵</button>
+                  <input type="range" id="settings-bgm-slider" class="vol-slider" min="0" max="100" value="60" />
+                </div>
+                <div class="setting-item">
+                  <span>Efeitos SFX:</span>
+                  <button id="settings-sfx-mute-btn" class="btn sound-btn">🔊</button>
+                  <input type="range" id="settings-sfx-slider" class="vol-slider" min="0" max="100" value="80" />
+                </div>
+              </div>
+
+              <!-- Map & Challenge Selection -->
+              <div class="settings-section">
+                <h3>🗺️ Mapa & Modo Desafio</h3>
+                <div class="setting-item">
+                  <span>Selecione o Mapa:</span>
+                  <select id="settings-map-select" class="map-select">
+                    <option value="MAP_1">Green Valley</option>
+                    <option value="MAP_2">Death Pass (Dual Spawn)</option>
+                    <option value="MAP_3">Citadel (Short Route)</option>
+                  </select>
+                </div>
+                <div class="setting-item">
+                  <span>Modo Desafio:</span>
+                  <select id="settings-challenge-select" class="challenge-select">
+                    <option value="NORMAL">Modo: Padrão</option>
+                    <option value="NO_SPELLS">Modo: Sem Magias 🚫</option>
+                    <option value="FAST_ENEMIES">Modo: Invasão Veloz ⚡</option>
+                    <option value="HARDCORE">Modo: Hardcore (1 HP) 💀</option>
+                    <option value="TURBO_GOLD">Modo: Corrida do Ouro 🪙</option>
+                  </select>
+                </div>
+                <div class="setting-item">
+                  <span>Modo Infinito:</span>
+                  <label class="switch">
+                    <input type="checkbox" id="settings-endless-toggle" />
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Meta-Game Quick Actions -->
+              <div class="settings-section">
+                <h3>🌟 Meta-Jogo & Extras</h3>
+                <div class="meta-game-grid">
+                  <button id="settings-talents-btn" class="btn secondary">🌟 Skill Tree</button>
+                  <button id="settings-badges-btn" class="btn secondary">🏆 Badges</button>
+                  <button id="settings-changelog-btn" class="btn changelog-gift-btn">
+                    <span>🎁</span> <span>Novidades</span>
+                  </button>
+                  <button id="settings-restart-btn" class="btn danger">🔄 Novo Jogo</button>
+                </div>
+              </div>
+            </div>
+
+            <button id="settings-resume-btn" class="btn primary modal-restart-btn">▶️ Retomar Jogo</button>
           </div>
         </div>
 
-        <!-- ROW 3: CONTROLS & START WAVE -->
-        <div class="actions-row">
-          <div class="speed-controls">
-            <button id="badges-btn" class="btn secondary" title="View Achievements">🏆 Badges</button>
-            <button id="changelog-btn" class="btn changelog-gift-btn" title="Últimas 5 Atualizações">
-              <span class="gift-icon">🎁</span> <span class="gift-text">Novidades</span>
-            </button>
-            <button id="pause-btn" class="btn pause-btn" title="Pause/Resume">⏸️</button>
-            <button id="speed-1x" class="btn speed-btn active">1x</button>
-            <button id="speed-2x" class="btn speed-btn">2x</button>
-            <button id="speed-4x" class="btn speed-btn">4x</button>
-            <button id="reset-btn" class="btn secondary reset-btn" title="Start a New Game">🔄 New Game</button>
-          </div>
-
-          <button id="next-wave-btn" class="btn primary wave-start-btn">Start Wave 1</button>
-        </div>
-      </div>
-
-      <!-- MOBILE TAB NAVIGATION BAR -->
-      <div id="mobile-tabs-bar" class="mobile-tabs-bar">
-        <button id="tab-store-btn" class="mobile-tab-btn active">🏗️ Build</button>
-        <button id="tab-spells-btn" class="mobile-tab-btn">☄️ Spells</button>
-        <button id="tab-talents-btn" class="mobile-tab-btn">🌟 Skills</button>
-        <button id="tab-inspector-btn" class="mobile-tab-btn">🔍 Inspector</button>
-      </div>
-
-      <!-- BOTTOM CONTROL PANELS GRID -->
-      <div class="controls-grid">
-        <!-- STORE PANEL -->
-        <div id="store-panel" class="ui-panel tab-panel">
-          <div class="title">Build Towers</div>
-          <div class="store-grid">
-            <button id="build-basic-btn" class="btn store-btn active">
-              <div class="tower-icon basic"></div>
-              <div>
-                <strong>Basic</strong>
-                <div class="cost">🪙 50g</div>
+        <!-- SKILL TREE MODAL -->
+        <div id="talents-modal-overlay" class="modal-overlay hidden pointer-events-auto">
+          <div class="modal-card talents-modal-card">
+            <h1>🌟 Skill Tree (Talentos)</h1>
+            <p>Estrelas Disponíveis: <strong id="modal-stars-val" class="highlight-star">0★</strong></p>
+            <div class="talents-list">
+              <div class="talent-item">
+                <span>🏹 Archery (<span id="dmg-lvl">0/3</span>)</span>
+                <button id="talent-dmg-btn" class="btn talent-btn">Upgrade (2★)</button>
               </div>
-            </button>
-            <button id="build-frost-btn" class="btn store-btn">
-              <div class="tower-icon frost"></div>
-              <div>
-                <strong>Frost</strong>
-                <div class="cost">🪙 70g</div>
+              <div class="talent-item">
+                <span>💰 Economy (<span id="gold-lvl">0/2</span>)</span>
+                <button id="talent-gold-btn" class="btn talent-btn">Upgrade (3★)</button>
               </div>
-            </button>
-            <button id="build-solar-btn" class="btn store-btn">
-              <div class="tower-icon solar"></div>
-              <div>
-                <strong>Solar</strong>
-                <div class="cost">🪙 80g</div>
+              <div class="talent-item">
+                <span>🏰 Fortress (<span id="hp-lvl">0/2</span>)</span>
+                <button id="talent-hp-btn" class="btn talent-btn">Upgrade (2★)</button>
               </div>
-            </button>
-            <button id="build-cannon-btn" class="btn store-btn">
-              <div class="tower-icon cannon"></div>
-              <div>
-                <strong>Cannon</strong>
-                <div class="cost">🪙 90g</div>
+              <div class="talent-item">
+                <span>⚡ Channeling (<span id="cd-lvl">0/2</span>)</span>
+                <button id="talent-cd-btn" class="btn talent-btn">Upgrade (3★)</button>
               </div>
-            </button>
-            <button id="build-artillery-btn" class="btn store-btn">
-              <div class="tower-icon artillery"></div>
-              <div>
-                <strong>Artillery</strong>
-                <div class="cost">🪙 110g</div>
-              </div>
-            </button>
+            </div>
+            <button id="close-talents-btn" class="btn primary modal-restart-btn">Fechar</button>
           </div>
         </div>
 
-        <!-- SPELLS PANEL -->
-        <div id="spells-panel" class="ui-panel tab-panel">
-          <div class="title">Ultimate Spells</div>
-          <div class="spell-buttons">
-            <button id="spell-meteor-btn" class="btn spell-btn">
-              <div class="spell-title">☄️ Meteor</div>
-              <div id="meteor-info" class="spell-info">150g • 30s CD</div>
-              <div id="meteor-cd-overlay" class="cd-overlay"></div>
-            </button>
-            <button id="spell-freeze-btn" class="btn spell-btn">
-              <div class="spell-title">❄️ Freeze</div>
-              <div id="freeze-info" class="spell-info">120g • 40s CD</div>
-              <div id="freeze-cd-overlay" class="cd-overlay"></div>
-            </button>
+        <!-- ACHIEVEMENTS & BADGES MODAL -->
+        <div id="achievements-modal-overlay" class="modal-overlay hidden pointer-events-auto">
+          <div class="modal-card achievements-modal-card">
+            <h1>🏆 Badges & Achievements</h1>
+            <p id="achievements-summary">Unlocked 0/7 Badges</p>
+            <div id="achievements-grid" class="achievements-grid"></div>
+            <button id="close-achievements-btn" class="btn primary modal-restart-btn">Fechar</button>
           </div>
         </div>
 
-        <!-- SKILL TREE TALENTS PANEL -->
-        <div id="talents-panel" class="ui-panel tab-panel">
-          <div class="title">🌟 Skill Tree</div>
-          <div class="talents-list">
-            <div class="talent-item">
-              <span>🏹 Archery (<span id="dmg-lvl">0/3</span>)</span>
-              <button id="talent-dmg-btn" class="btn talent-btn">Upgrade (2★)</button>
+        <!-- CHANGELOG MODAL -->
+        <div id="changelog-modal-overlay" class="modal-overlay hidden pointer-events-auto">
+          <div class="modal-card changelog-modal-card">
+            <div class="changelog-header">
+              <h1>🎁 ÚLTIMAS 5 ATUALIZAÇÕES</h1>
+              <p>Confira o histórico recente de novos recursos, ajustes e melhorias do jogo.</p>
             </div>
-            <div class="talent-item">
-              <span>💰 Economy (<span id="gold-lvl">0/2</span>)</span>
-              <button id="talent-gold-btn" class="btn talent-btn">Upgrade (3★)</button>
+            <div id="changelog-list" class="changelog-list">
+              <div class="changelog-item latest">
+                <div class="changelog-item-header">
+                  <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v2.0</strong>
+                  <span class="changelog-title">UI 2.0 DOM Overlay & Performance Reativa</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Layout Canvas Fullscreen:</strong> UI em DOM Overlay sobreposto (100vw x 100vh) com pointer-events otimizados.</li>
+                  <li><strong>Status HUD Minimalista:</strong> Barra superior limpa com HP, Gold, Wave e acesso a Configurações.</li>
+                  <li><strong>Reatividade Desacoplada:</strong> Sistema Pub/Sub (EventBus) garantindo 0 reflows e 0 mutações DOM no Game Loop.</li>
+                  <li><strong>Painel Contextual Reativo:</strong> Alternância suave entre Loja e Inspeção via animações de GPU (transform/opacity).</li>
+                </ul>
+              </div>
+
+              <div class="changelog-item">
+                <div class="changelog-item-header">
+                  <strong class="version-tag">v1.6</strong>
+                  <span class="changelog-title">Modo Desafio & Central de Novidades</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Modo Desafio Selecionável:</strong> Jogue nos modos <em>Sem Magias</em>, <em>Invasão Veloz</em>, <em>Hardcore</em> ou <em>Corrida do Ouro</em>.</li>
+                  <li><strong>Ícone Presente Interativo:</strong> Modal animado de novidades para acompanhar o progresso.</li>
+                </ul>
+              </div>
+
+              <div class="changelog-item">
+                <div class="changelog-item-header">
+                  <strong class="version-tag">v1.5</strong>
+                  <span class="changelog-title">Biomas Visuais & Trilha Sonora Sintetizada</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>3 Biomas Únicos:</strong> Gráficos dedicados para Green Valley, Death Pass Lava e Citadel Neon.</li>
+                  <li><strong>Música Sintetizada:</strong> Trilhas dinâmicas BGM sintetizadas em tempo real via Web Audio API.</li>
+                </ul>
+              </div>
+
+              <div class="changelog-item">
+                <div class="changelog-item-header">
+                  <strong class="version-tag">v1.4</strong>
+                  <span class="changelog-title">Prisma Solar & Tropas Especializadas</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Nova Torre Prisma Solar:</strong> Dispara feixe concentrado contínuo com escalonamento de dano.</li>
+                  <li><strong>Inimigos Especiais:</strong> Introdução de <em>Spore Sprinter</em> e <em>Moss Giant</em>.</li>
+                </ul>
+              </div>
+
+              <div class="changelog-item">
+                <div class="changelog-item-header">
+                  <strong class="version-tag">v1.3</strong>
+                  <span class="changelog-title">Árvore de Talentos & Sistema de Badges</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Talentos Permanentes:</strong> Gaste estrelas para evoluir dano, ouro inicial, HP e recargas.</li>
+                  <li><strong>7 Badges Desbloqueáveis:</strong> Conquistas com notificações e modal de galeria.</li>
+                </ul>
+              </div>
             </div>
-            <div class="talent-item">
-              <span>🏰 Fortress (<span id="hp-lvl">0/2</span>)</span>
-              <button id="talent-hp-btn" class="btn talent-btn">Upgrade (2★)</button>
-            </div>
-            <div class="talent-item">
-              <span>⚡ Channeling (<span id="cd-lvl">0/2</span>)</span>
-              <button id="talent-cd-btn" class="btn talent-btn">Upgrade (3★)</button>
-            </div>
+            <button id="close-changelog-btn" class="btn primary modal-restart-btn">Fechar</button>
           </div>
         </div>
 
-        <!-- TOWER INSPECTOR PANEL -->
-        <div id="inspector-panel" class="ui-panel inspector-slot tab-panel">
-          <div id="inspector-content" class="hidden">
-            <div class="title" id="inspector-title">Tower Level 1</div>
-            <div id="inspector-stats" class="inspector-details"></div>
-            <div class="action-buttons">
-              <button id="targeting-btn" class="btn secondary">🎯 Target: FIRST</button>
-              <button id="upgrade-btn" class="btn success">⬆️ Upgrade (40g)</button>
-              <button id="sell-btn" class="btn danger">💰 Sell (35g)</button>
+        <!-- END GAME ANALYTICS MODAL -->
+        <div id="modal-overlay" class="modal-overlay hidden pointer-events-auto">
+          <div class="modal-card analytics-modal">
+            <h1 id="modal-title">Game Over</h1>
+            <p id="modal-desc">Sua base foi destruída!</p>
+            <div id="analytics-details" class="analytics-details">
+              <div id="record-badge" class="record-badge hidden">✨ NOVO RECORDE! ✨</div>
+              <div class="analytics-row"><span>🏆 High Score:</span><strong id="modal-highscore">Wave 0</strong></div>
+              <div class="analytics-row"><span>👑 MVP Tower:</span><strong id="modal-mvp">Basic Tower (0 Dmg)</strong></div>
+              <div class="analytics-row"><span>⚔️ Total Kills:</span><strong id="modal-kills">0 inimigos</strong></div>
+              <div class="analytics-row"><span>🪙 Gold Earned / Spent:</span><strong id="modal-gold">0g / 0g</strong></div>
+              <div class="analytics-row"><span>⚔️ Modo:</span><strong id="modal-challenge">Padrão</strong></div>
             </div>
+            <button id="restart-btn" class="btn primary modal-restart-btn">Jogar Novamente</button>
           </div>
-          <div id="inspector-placeholder" class="inspector-placeholder-text">
-            <span>🔍 Click a tower on the grid to inspect, upgrade or sell.</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- END GAME MODAL WITH ANALYTICS -->
-      <div id="modal-overlay" class="modal-overlay hidden">
-        <div class="modal-card analytics-modal">
-          <h1 id="modal-title">Game Over</h1>
-          <p id="modal-desc">Your base was destroyed!</p>
-
-          <div id="analytics-details" class="analytics-details">
-            <div id="record-badge" class="record-badge hidden">✨ NEW RECORD! ✨</div>
-            <div class="analytics-row">
-              <span>🏆 High Score:</span>
-              <strong id="modal-highscore">Wave 0</strong>
-            </div>
-            <div class="analytics-row">
-              <span>👑 MVP Tower:</span>
-              <strong id="modal-mvp">Basic Tower (0 Dmg)</strong>
-            </div>
-            <div class="analytics-row">
-              <span>⚔️ Total Kills:</span>
-              <strong id="modal-kills">0 enemies</strong>
-            </div>
-            <div class="analytics-row">
-              <span>🪙 Gold Earned / Spent:</span>
-              <strong id="modal-gold">0g / 0g</strong>
-            </div>
-            <div class="analytics-row">
-              <span>⚔️ Mode:</span>
-              <strong id="modal-challenge">Padrão</strong>
-            </div>
-          </div>
-
-          <button id="restart-btn" class="btn primary modal-restart-btn">Play Again</button>
-        </div>
-      </div>
-
-      <!-- ACHIEVEMENTS & BADGES MODAL -->
-      <div id="achievements-modal-overlay" class="modal-overlay hidden">
-        <div class="modal-card achievements-modal-card">
-          <h1>🏆 Badges & Achievements</h1>
-          <p id="achievements-summary">Unlocked 0/7 Badges</p>
-
-          <div id="achievements-grid" class="achievements-grid"></div>
-
-          <button id="close-achievements-btn" class="btn primary modal-restart-btn">Close</button>
-        </div>
-      </div>
-
-      <!-- CHANGELOG / UPDATES MODAL -->
-      <div id="changelog-modal-overlay" class="modal-overlay hidden">
-        <div class="modal-card changelog-modal-card">
-          <div class="changelog-header">
-            <h1>🎁 ÚLTIMAS 5 ATUALIZAÇÕES</h1>
-            <p>Confira o histórico recente de novos recursos, ajustes e melhorias do jogo.</p>
-          </div>
-
-          <div id="changelog-list" class="changelog-list">
-            <div class="changelog-item latest">
-              <div class="changelog-item-header">
-                <span class="badge-tag new">NOVO</span>
-                <strong class="version-tag">v1.6</strong>
-                <span class="changelog-title">Modo Desafio & Central de Novidades</span>
-              </div>
-              <ul class="changelog-bullets">
-                <li><strong>Modo Desafio Selecionável:</strong> Jogue nos modos <em>Sem Magias</em>, <em>Invasão Veloz (+40% velocidade)</em>, <em>Hardcore (1 HP)</em> ou <em>Corrida do Ouro (+50% ouro)</em>.</li>
-                <li><strong>Ícone Presente Interativo:</strong> Modal animado de novidades para acompanhar as últimas 5 atualizações.</li>
-                <li><strong>Ajustes de Qualidade:</strong> Integração completa de scripts de testes e refinamento da interface.</li>
-              </ul>
-            </div>
-
-            <div class="changelog-item">
-              <div class="changelog-item-header">
-                <strong class="version-tag">v1.5</strong>
-                <span class="changelog-title">Biomas Visuais & Trilha Sonora Sintetizada</span>
-              </div>
-              <ul class="changelog-bullets">
-                <li><strong>3 Biomas Únicos:</strong> Gráficos dedicados para Green Valley, Death Pass Lava e Citadel Neon.</li>
-                <li><strong>Música Sintetizada:</strong> Trilhas dinâmicas BGM sintetizadas em tempo real via Web Audio API.</li>
-              </ul>
-            </div>
-
-            <div class="changelog-item">
-              <div class="changelog-item-header">
-                <strong class="version-tag">v1.4</strong>
-                <span class="changelog-title">Prisma Solar & Tropas Especializadas</span>
-              </div>
-              <ul class="changelog-bullets">
-                <li><strong>Nova Torre Prisma Solar:</strong> Dispara feixe concentrado contínuo com escalonamento de dano.</li>
-                <li><strong>Inimigos Especiais:</strong> Introdução de <em>Spore Sprinter</em> (boost de velocidade) e <em>Moss Giant</em> (regeneração).</li>
-              </ul>
-            </div>
-
-            <div class="changelog-item">
-              <div class="changelog-item-header">
-                <strong class="version-tag">v1.3</strong>
-                <span class="changelog-title">Árvore de Talentos & Sistema de Badges</span>
-              </div>
-              <ul class="changelog-bullets">
-                <li><strong>Talentos Permanentes:</strong> Gaste estrelas para evoluir dano, ouro inicial, HP de base e recargas.</li>
-                <li><strong>7 Badges Desbloqueáveis:</strong> Conquistas com notificações e modal de galeria.</li>
-              </ul>
-            </div>
-
-            <div class="changelog-item">
-              <div class="changelog-item-header">
-                <strong class="version-tag">v1.2</strong>
-                <span class="changelog-title">Analytics Pós-Partida & Suporte Mobile</span>
-              </div>
-              <ul class="changelog-bullets">
-                <li><strong>Relatório Pós-Partida:</strong> Estatísticas completas com Torre MVP, abates e High Score salvo.</li>
-                <li><strong>Interface Mobile Responsiva:</strong> Adaptada para telas touch com viewport 100dvh e navegação em abas.</li>
-              </ul>
-            </div>
-          </div>
-
-          <button id="close-changelog-btn" class="btn primary modal-restart-btn">Fechar</button>
         </div>
       </div>
     `;
 
     this.overlayEl = document.getElementById('modal-overlay')!;
+    this.settingsOverlayEl = document.getElementById('settings-modal-overlay')!;
+    this.talentsOverlayEl = document.getElementById('talents-modal-overlay')!;
     this.achievementsOverlayEl = document.getElementById('achievements-modal-overlay')!;
     this.changelogOverlayEl = document.getElementById('changelog-modal-overlay')!;
 
-    this.setupEvents();
+    this.storeStateEl = document.getElementById('store-state')!;
+    this.inspectorStateEl = document.getElementById('inspector-state')!;
+
+    this.setupUIEvents();
   }
 
-  private setupEvents() {
-    const mapSelect = document.getElementById('map-select') as HTMLSelectElement;
+  private subscribeToEvents() {
+    const bus = EventBus.getInstance();
+
+    bus.on('gold:change', (gold: number) => this.onGoldChanged(gold));
+    bus.on('hp:change', (data: { current: number; max: number }) => this.onHpChanged(data));
+    bus.on('wave:change', (data: { current: number; max: number; isEndless: boolean }) => this.onWaveChanged(data));
+    bus.on('tower:select', (tower: Tower2D | null) => this.onTowerSelected(tower));
+    bus.on('tower:buildType', (type: TowerType) => this.onBuildTypeChanged(type));
+    bus.on('spell:select', (spell: ActiveSpell) => this.onSpellSelected(spell));
+    bus.on('status:change', () => this.updateEndGameModal());
+    bus.on('pause:change', (isPaused: boolean) => this.onPauseChanged(isPaused));
+
+    // Initial populate
+    this.onGoldChanged(this.gameState.gold);
+    this.onHpChanged({ current: this.gameState.baseHp, max: this.gameState.maxBaseHp });
+    this.onWaveChanged({ current: this.waveManager.currentWaveIndex + 1, max: 10, isEndless: this.waveManager.isEndlessMode });
+  }
+
+  private setupUIEvents() {
+    // 1. Settings Toggle & Close
+    document.getElementById('settings-toggle-btn')?.addEventListener('click', () => {
+      this.gameState.isPaused = true;
+      EventBus.getInstance().emit('pause:change', true);
+      this.syncSettingsControls();
+      this.settingsOverlayEl.classList.remove('hidden');
+    });
+
+    document.getElementById('settings-close-btn')?.addEventListener('click', () => {
+      this.settingsOverlayEl.classList.add('hidden');
+      this.gameState.isPaused = false;
+      EventBus.getInstance().emit('pause:change', false);
+    });
+
+    document.getElementById('settings-resume-btn')?.addEventListener('click', () => {
+      this.settingsOverlayEl.classList.add('hidden');
+      this.gameState.isPaused = false;
+      EventBus.getInstance().emit('pause:change', false);
+    });
+
+    // 2. Settings Sub-Modals
+    document.getElementById('settings-talents-btn')?.addEventListener('click', () => {
+      this.updateTalentsModal();
+      this.talentsOverlayEl.classList.remove('hidden');
+    });
+
+    document.getElementById('close-talents-btn')?.addEventListener('click', () => {
+      this.talentsOverlayEl.classList.add('hidden');
+    });
+
+    document.getElementById('settings-badges-btn')?.addEventListener('click', () => {
+      this.openAchievementsModal();
+    });
+
+    document.getElementById('close-achievements-btn')?.addEventListener('click', () => {
+      this.achievementsOverlayEl.classList.add('hidden');
+    });
+
+    document.getElementById('settings-changelog-btn')?.addEventListener('click', () => {
+      this.changelogOverlayEl.classList.remove('hidden');
+    });
+
+    document.getElementById('close-changelog-btn')?.addEventListener('click', () => {
+      this.changelogOverlayEl.classList.add('hidden');
+    });
+
+    document.getElementById('settings-restart-btn')?.addEventListener('click', () => {
+      if (window.confirm('Reiniciar a partida atual? Todo o progresso da onda será perdido.')) {
+        this.settingsOverlayEl.classList.add('hidden');
+        this.onRestartCallback();
+      }
+    });
+
+    // 3. Audio & Settings Sliders
+    const mapSelect = document.getElementById('settings-map-select') as HTMLSelectElement;
     if (mapSelect) {
       mapSelect.value = this.game['mapManager'].currentMapId;
       mapSelect.addEventListener('change', (e) => {
@@ -405,7 +489,7 @@ export class UIManager {
       });
     }
 
-    const challengeSelect = document.getElementById('challenge-select') as HTMLSelectElement;
+    const challengeSelect = document.getElementById('settings-challenge-select') as HTMLSelectElement;
     if (challengeSelect) {
       challengeSelect.value = this.gameState.challengeMode;
       challengeSelect.addEventListener('change', (e) => {
@@ -414,49 +498,25 @@ export class UIManager {
       });
     }
 
-    document.getElementById('changelog-btn')?.addEventListener('click', () => {
-      this.changelogOverlayEl.classList.remove('hidden');
-    });
+    const endlessToggle = document.getElementById('settings-endless-toggle') as HTMLInputElement;
+    if (endlessToggle) {
+      endlessToggle.checked = this.waveManager.isEndlessMode;
+      endlessToggle.addEventListener('change', (e) => {
+        this.waveManager.setEndlessMode((e.target as HTMLInputElement).checked);
+      });
+    }
 
-    document.getElementById('close-changelog-btn')?.addEventListener('click', () => {
-      this.changelogOverlayEl.classList.add('hidden');
-    });
-
-    // Mobile Tab Bar Buttons
-    document.getElementById('tab-store-btn')?.addEventListener('click', () => this.switchMobileTab('STORE'));
-    document.getElementById('tab-spells-btn')?.addEventListener('click', () => this.switchMobileTab('SPELLS'));
-    document.getElementById('tab-talents-btn')?.addEventListener('click', () => this.switchMobileTab('TALENTS'));
-    document.getElementById('tab-inspector-btn')?.addEventListener('click', () => this.switchMobileTab('INSPECTOR'));
-
-    document.getElementById('badges-btn')?.addEventListener('click', () => {
-      this.openAchievementsModal();
-    });
-
-    document.getElementById('close-achievements-btn')?.addEventListener('click', () => {
-      this.achievementsOverlayEl.classList.add('hidden');
-    });
-
-    document.getElementById('next-wave-btn')?.addEventListener('click', () => {
-      this.waveManager.startNextWave();
-    });
-
-    document.getElementById('reset-btn')?.addEventListener('click', () => {
-      const confirmed = window.confirm('Tem certeza que deseja reiniciar o jogo? Todo o progresso atual será perdido.');
-      if (confirmed) {
-        this.onRestartCallback();
-      }
-    });
-
-    // Independent Audio Controls Events
-    document.getElementById('bgm-mute-btn')?.addEventListener('click', () => {
+    document.getElementById('settings-bgm-mute-btn')?.addEventListener('click', () => {
       this.audioManager.toggleBgmMute();
+      this.syncSettingsControls();
     });
 
-    document.getElementById('sfx-mute-btn')?.addEventListener('click', () => {
+    document.getElementById('settings-sfx-mute-btn')?.addEventListener('click', () => {
       this.audioManager.toggleSfxMute();
+      this.syncSettingsControls();
     });
 
-    const bgmSlider = document.getElementById('bgm-vol-slider') as HTMLInputElement;
+    const bgmSlider = document.getElementById('settings-bgm-slider') as HTMLInputElement;
     if (bgmSlider) {
       bgmSlider.value = Math.round(this.audioManager.bgmVolume * 100).toString();
       bgmSlider.addEventListener('input', (e) => {
@@ -465,7 +525,7 @@ export class UIManager {
       });
     }
 
-    const sfxSlider = document.getElementById('sfx-vol-slider') as HTMLInputElement;
+    const sfxSlider = document.getElementById('settings-sfx-slider') as HTMLInputElement;
     if (sfxSlider) {
       sfxSlider.value = Math.round(this.audioManager.sfxVolume * 100).toString();
       sfxSlider.addEventListener('input', (e) => {
@@ -474,342 +534,293 @@ export class UIManager {
       });
     }
 
-    document.getElementById('pause-btn')?.addEventListener('click', () => {
-      this.gameState.togglePause();
+    // 4. Tower Store Cards
+    const towerCards = document.querySelectorAll<HTMLButtonElement>('.tower-card');
+    towerCards.forEach((card) => {
+      card.addEventListener('click', () => {
+        const type = card.getAttribute('data-type') as TowerType;
+        if (type) {
+          this.setBuildType(type);
+        }
+      });
     });
 
-    const autoToggle = document.getElementById('auto-mode-toggle') as HTMLInputElement;
-    autoToggle?.addEventListener('change', (e) => {
-      const checked = (e.target as HTMLInputElement).checked;
-      this.waveManager.setAutoMode(checked);
-    });
-
-    const endlessToggle = document.getElementById('endless-mode-toggle') as HTMLInputElement;
-    endlessToggle?.addEventListener('change', (e) => {
-      const checked = (e.target as HTMLInputElement).checked;
-      this.waveManager.setEndlessMode(checked);
-    });
-
-    // Speed Controls
-    document.getElementById('speed-1x')?.addEventListener('click', () => this.setGameSpeed(1));
-    document.getElementById('speed-2x')?.addEventListener('click', () => this.setGameSpeed(2));
-    document.getElementById('speed-4x')?.addEventListener('click', () => this.setGameSpeed(4));
-
-    // Store Buttons
-    document.getElementById('build-basic-btn')?.addEventListener('click', () => this.setBuildType('BASIC'));
-    document.getElementById('build-frost-btn')?.addEventListener('click', () => this.setBuildType('FROST'));
-    document.getElementById('build-solar-btn')?.addEventListener('click', () => this.setBuildType('SOLAR_PRISM'));
-    document.getElementById('build-cannon-btn')?.addEventListener('click', () => this.setBuildType('CANNON'));
-    document.getElementById('build-artillery-btn')?.addEventListener('click', () => this.setBuildType('ARTILLERY'));
-
-    // Spells
-    document.getElementById('spell-meteor-btn')?.addEventListener('click', () => {
+    // 5. Spells Chips
+    document.getElementById('chip-meteor')?.addEventListener('click', () => {
       this.spellManager.selectSpell('METEOR');
     });
 
-    document.getElementById('spell-freeze-btn')?.addEventListener('click', () => {
+    document.getElementById('chip-freeze')?.addEventListener('click', () => {
       this.spellManager.triggerGlobalFreeze(this.game['enemyManager'].getEnemies());
     });
 
-    // Talent Upgrades
-    document.getElementById('talent-dmg-btn')?.addEventListener('click', () => {
-      this.talentManager.upgradeTalent('damageLvl');
+    // 6. Time & Wave Controls
+    document.getElementById('btn-speed-1x')?.addEventListener('click', () => this.setGameSpeed(1));
+    document.getElementById('btn-speed-2x')?.addEventListener('click', () => this.setGameSpeed(2));
+    document.getElementById('btn-speed-4x')?.addEventListener('click', () => this.setGameSpeed(4));
+
+    document.getElementById('btn-auto-mode')?.addEventListener('click', () => {
+      const isAuto = !this.waveManager.isAutoMode;
+      this.waveManager.setAutoMode(isAuto);
+      document.getElementById('btn-auto-mode')?.classList.toggle('active', isAuto);
     });
 
-    document.getElementById('talent-gold-btn')?.addEventListener('click', () => {
-      this.talentManager.upgradeTalent('goldLvl');
+    document.getElementById('btn-next-wave')?.addEventListener('click', () => {
+      this.waveManager.startNextWave();
     });
 
-    document.getElementById('talent-hp-btn')?.addEventListener('click', () => {
-      this.talentManager.upgradeTalent('hpLvl');
+    // 7. Inspector Actions
+    document.getElementById('inspector-close-btn')?.addEventListener('click', () => {
+      this.towerManager.selectedTower = null;
+      EventBus.getInstance().emit('tower:select', null);
     });
 
-    document.getElementById('talent-cd-btn')?.addEventListener('click', () => {
-      this.talentManager.upgradeTalent('cdLvl');
-    });
-
-    // Inspector
-    document.getElementById('targeting-btn')?.addEventListener('click', () => {
+    document.getElementById('btn-inspect-target')?.addEventListener('click', () => {
       this.towerManager.cycleSelectedTowerTargeting();
     });
 
-    document.getElementById('upgrade-btn')?.addEventListener('click', () => {
+    document.getElementById('btn-inspect-upgrade')?.addEventListener('click', () => {
       this.towerManager.upgradeSelectedTower();
     });
 
-    document.getElementById('sell-btn')?.addEventListener('click', () => {
+    document.getElementById('btn-inspect-sell')?.addEventListener('click', () => {
       this.towerManager.sellSelectedTower();
     });
 
     document.getElementById('restart-btn')?.addEventListener('click', () => {
+      this.overlayEl.classList.add('hidden');
       this.onRestartCallback();
+    });
+
+    // Skill Tree Upgrade Buttons
+    document.getElementById('talent-dmg-btn')?.addEventListener('click', () => {
+      if (this.talentManager.upgradeTalent('damageLvl')) {
+        this.updateTalentsModal();
+      }
+    });
+
+    document.getElementById('talent-gold-btn')?.addEventListener('click', () => {
+      if (this.talentManager.upgradeTalent('goldLvl')) {
+        this.updateTalentsModal();
+      }
+    });
+
+    document.getElementById('talent-hp-btn')?.addEventListener('click', () => {
+      if (this.talentManager.upgradeTalent('hpLvl')) {
+        this.updateTalentsModal();
+      }
+    });
+
+    document.getElementById('talent-cd-btn')?.addEventListener('click', () => {
+      if (this.talentManager.upgradeTalent('cdLvl')) {
+        this.updateTalentsModal();
+      }
     });
   }
 
-  public switchMobileTab(tab: MobileTab) {
-    this.activeMobileTab = tab;
-    document.getElementById('tab-store-btn')?.classList.toggle('active', tab === 'STORE');
-    document.getElementById('tab-spells-btn')?.classList.toggle('active', tab === 'SPELLS');
-    document.getElementById('tab-talents-btn')?.classList.toggle('active', tab === 'TALENTS');
-    document.getElementById('tab-inspector-btn')?.classList.toggle('active', tab === 'INSPECTOR');
+  // --- REACTION HANDLERS (EXCLUSIVELY EVENT-DRIVEN) ---
 
-    document.getElementById('store-panel')?.classList.toggle('mobile-active', tab === 'STORE');
-    document.getElementById('spells-panel')?.classList.toggle('mobile-active', tab === 'SPELLS');
-    document.getElementById('talents-panel')?.classList.toggle('mobile-active', tab === 'TALENTS');
-    document.getElementById('inspector-panel')?.classList.toggle('mobile-active', tab === 'INSPECTOR');
+  private onGoldChanged(gold: number) {
+    if (this.currentGold === gold) return;
+    this.currentGold = gold;
+    const goldVal = document.getElementById('hud-gold-val');
+    if (goldVal) goldVal.innerText = `${gold}`;
+    this.updateTowerAffordability();
+  }
+
+  private onHpChanged(data: { current: number; max: number }) {
+    if (this.currentHp === data.current) return;
+    this.currentHp = data.current;
+    const hpVal = document.getElementById('hud-hp-val');
+    if (hpVal) hpVal.innerText = `${data.current}/${data.max}`;
+  }
+
+  private onWaveChanged(data: { current: number; max: number; isEndless: boolean }) {
+    if (this.currentWave === data.current) return;
+    this.currentWave = data.current;
+    const waveVal = document.getElementById('hud-wave-val');
+    if (waveVal) {
+      waveVal.innerText = data.isEndless ? `${data.current}/♾️` : `${data.current}/${data.max}`;
+    }
+  }
+
+  private onTowerSelected(tower: Tower2D | null) {
+    if (tower) {
+      this.renderInspector(tower);
+      this.switchContextState('INSPECTOR');
+    } else {
+      this.switchContextState('STORE');
+    }
+  }
+
+  private onBuildTypeChanged(type: TowerType) {
+    const cards = document.querySelectorAll<HTMLButtonElement>('.tower-card');
+    cards.forEach((card) => {
+      const cardType = card.getAttribute('data-type');
+      card.classList.toggle('active', cardType === type);
+    });
+  }
+
+  private onSpellSelected(spell: ActiveSpell) {
+    const meteorChip = document.getElementById('chip-meteor');
+    const freezeChip = document.getElementById('chip-freeze');
+    if (meteorChip) meteorChip.classList.toggle('active', spell === 'METEOR');
+    if (freezeChip) freezeChip.classList.toggle('active', spell === 'FREEZE');
+  }
+
+  private onPauseChanged(isPaused: boolean) {
+    const settingsBtn = document.getElementById('settings-toggle-btn');
+    if (settingsBtn) {
+      settingsBtn.classList.toggle('active', isPaused);
+    }
+  }
+
+  private switchContextState(state: 'STORE' | 'INSPECTOR') {
+    if (state === 'INSPECTOR') {
+      this.storeStateEl.classList.remove('active');
+      this.storeStateEl.classList.add('hidden');
+      this.inspectorStateEl.classList.remove('hidden');
+      this.inspectorStateEl.classList.add('active');
+    } else {
+      this.inspectorStateEl.classList.remove('active');
+      this.inspectorStateEl.classList.add('hidden');
+      this.storeStateEl.classList.remove('hidden');
+      this.storeStateEl.classList.add('active');
+    }
+  }
+
+  private setBuildType(type: TowerType) {
+    this.towerManager.setSelectedBuildType(type);
+  }
+
+  private setGameSpeed(speed: number) {
+    this.game.gameSpeedMultiplier = speed;
+    document.getElementById('btn-speed-1x')?.classList.toggle('active', speed === 1);
+    document.getElementById('btn-speed-2x')?.classList.toggle('active', speed === 2);
+    document.getElementById('btn-speed-4x')?.classList.toggle('active', speed === 4);
+  }
+
+  private updateTowerAffordability() {
+    const cards = document.querySelectorAll<HTMLButtonElement>('.tower-card');
+    cards.forEach((card) => {
+      const type = card.getAttribute('data-type') as TowerType;
+      if (type) {
+        const cost = this.towerManager.getTowerCost(type);
+        const canAfford = this.gameState.gold >= cost;
+        card.disabled = !canAfford;
+        card.classList.toggle('disabled', !canAfford);
+      }
+    });
+
+    const isNoSpells = this.gameState.challengeMode === 'NO_SPELLS';
+    const meteorChip = document.getElementById('chip-meteor') as HTMLButtonElement;
+    if (meteorChip) {
+      const canAfford = this.gameState.gold >= this.spellManager.meteorCost && !isNoSpells && this.spellManager.meteorCooldownMs <= 0;
+      meteorChip.disabled = !canAfford;
+    }
+
+    const freezeChip = document.getElementById('chip-freeze') as HTMLButtonElement;
+    if (freezeChip) {
+      const canAfford = this.gameState.gold >= this.spellManager.freezeCost && !isNoSpells && this.spellManager.freezeCooldownMs <= 0;
+      freezeChip.disabled = !canAfford;
+    }
+  }
+
+  private renderInspector(tower: Tower2D) {
+    const title = document.getElementById('inspector-title');
+    if (title) title.innerText = `${tower.data.type} (Nível ${tower.data.level})`;
+
+    const statsBox = document.getElementById('inspector-details-box');
+    if (statsBox) {
+      statsBox.innerHTML = `
+        <div class="stat-row"><span>🎯 Alvo:</span><strong>${tower.data.targeting}</strong></div>
+        <div class="stat-row"><span>⚔️ Dano:</span><strong>${tower.data.damage}</strong></div>
+        <div class="stat-row"><span>📏 Alcance:</span><strong>${tower.data.range}px</strong></div>
+        <div class="stat-row"><span>⚡ Frequência:</span><strong>${(1000 / tower.data.fireRate).toFixed(1)}/s</strong></div>
+      `;
+    }
+
+    const targetBtn = document.getElementById('btn-inspect-target');
+    if (targetBtn) targetBtn.innerText = `🎯 Alvo: ${tower.data.targeting}`;
+
+    const upgradeBtn = document.getElementById('btn-inspect-upgrade') as HTMLButtonElement;
+    if (upgradeBtn) {
+      if (tower.data.level >= 3) {
+        upgradeBtn.innerText = '⭐ Nível Máximo';
+        upgradeBtn.disabled = true;
+      } else {
+        const cost = tower.getUpgradeCost();
+        upgradeBtn.innerText = `⬆️ Upgrade (${cost}g)`;
+        upgradeBtn.disabled = this.gameState.gold < cost;
+      }
+    }
+
+    const sellBtn = document.getElementById('btn-inspect-sell');
+    if (sellBtn) {
+      sellBtn.innerText = `💰 Vender (${tower.getSellValue()}g)`;
+    }
+  }
+
+  private syncSettingsControls() {
+    const bgmMuteBtn = document.getElementById('settings-bgm-mute-btn');
+    if (bgmMuteBtn) bgmMuteBtn.innerText = this.audioManager.isBgmMuted ? '🔇' : '🎵';
+
+    const sfxMuteBtn = document.getElementById('settings-sfx-mute-btn');
+    if (sfxMuteBtn) sfxMuteBtn.innerText = this.audioManager.isSfxMuted ? '🔇' : '🔊';
+
+    const mapSelect = document.getElementById('settings-map-select') as HTMLSelectElement;
+    if (mapSelect) mapSelect.value = this.game['mapManager'].currentMapId;
+
+    const challengeSelect = document.getElementById('settings-challenge-select') as HTMLSelectElement;
+    if (challengeSelect) challengeSelect.value = this.gameState.challengeMode;
+  }
+
+  private updateTalentsModal() {
+    const starsVal = document.getElementById('modal-stars-val');
+    if (starsVal) starsVal.innerText = `${this.talentManager.stars}★`;
+
+    const dmgLvl = document.getElementById('dmg-lvl');
+    if (dmgLvl) dmgLvl.innerText = `${this.talentManager.talents.damageLvl}/3`;
+
+    const goldLvl = document.getElementById('gold-lvl');
+    if (goldLvl) goldLvl.innerText = `${this.talentManager.talents.goldLvl}/2`;
+
+    const hpLvl = document.getElementById('hp-lvl');
+    if (hpLvl) hpLvl.innerText = `${this.talentManager.talents.hpLvl}/2`;
+
+    const cdLvl = document.getElementById('cd-lvl');
+    if (cdLvl) cdLvl.innerText = `${this.talentManager.talents.cdLvl}/2`;
   }
 
   private openAchievementsModal() {
-    this.achievementsOverlayEl.classList.remove('hidden');
-
     const grid = document.getElementById('achievements-grid');
     const summary = document.getElementById('achievements-summary');
-    if (!grid) return;
+    if (!grid || !summary) return;
 
-    const allAchs = Object.values(this.achievementManager.achievements);
-    const unlockedCount = allAchs.filter(a => a.unlocked).length;
+    const achievements = Object.values(this.achievementManager.achievements);
+    const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
-    if (summary) summary.innerText = `Unlocked ${unlockedCount}/${allAchs.length} Badges`;
+    summary.innerText = `Desbloqueadas ${unlockedCount}/${achievements.length} Badges`;
 
-    grid.innerHTML = allAchs.map(ach => `
+    grid.innerHTML = achievements
+      .map(
+        (ach) => `
       <div class="achievement-card ${ach.unlocked ? 'unlocked' : 'locked'}">
         <div class="ach-icon">${ach.icon}</div>
         <div class="ach-info">
           <div class="ach-title">${ach.title}</div>
           <div class="ach-desc">${ach.desc}</div>
-          <div class="ach-progress">${ach.unlocked ? `COMPLETED (+${ach.rewardStars}★)` : `${ach.progress}/${ach.maxProgress} (${ach.rewardStars}★)`}</div>
+          <div class="ach-progress">${ach.unlocked ? '✅ Desbloqueado' : `${ach.progress}/${ach.maxProgress}`}</div>
         </div>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
+
+    this.achievementsOverlayEl.classList.remove('hidden');
   }
 
-  private setGameSpeed(speed: number) {
-    this.game.gameSpeedMultiplier = speed;
-    document.getElementById('speed-1x')?.classList.toggle('active', speed === 1);
-    document.getElementById('speed-2x')?.classList.toggle('active', speed === 2);
-    document.getElementById('speed-4x')?.classList.toggle('active', speed === 4);
-  }
-
-  private setBuildType(type: TowerType) {
-    this.towerManager.selectedBuildType = type;
-    document.getElementById('build-basic-btn')?.classList.toggle('active', type === 'BASIC');
-    document.getElementById('build-frost-btn')?.classList.toggle('active', type === 'FROST');
-    document.getElementById('build-solar-btn')?.classList.toggle('active', type === 'SOLAR_PRISM');
-    document.getElementById('build-cannon-btn')?.classList.toggle('active', type === 'CANNON');
-    document.getElementById('build-artillery-btn')?.classList.toggle('active', type === 'ARTILLERY');
-  }
-
-  public update() {
-    // Check Auto-Tab Switch to INSPECTOR on Mobile when tower is selected
-    const currentTower = this.towerManager.selectedTower;
-    const currentTowerId = currentTower ? currentTower.data.id : null;
-
-    if (currentTowerId !== this.lastSelectedTowerId) {
-      this.lastSelectedTowerId = currentTowerId;
-      if (currentTowerId !== null) {
-        this.switchMobileTab('INSPECTOR');
-      } else if (this.activeMobileTab === 'INSPECTOR') {
-        this.switchMobileTab('STORE');
-      }
-    }
-
-    // Top Bar
-    const goldVal = document.getElementById('gold-val');
-    if (goldVal) goldVal.innerText = `${this.gameState.gold}`;
-
-    const hpVal = document.getElementById('hp-val');
-    if (hpVal) hpVal.innerText = `${this.gameState.baseHp}/${this.gameState.maxBaseHp}`;
-
-    const starsVal = document.getElementById('stars-val');
-    if (starsVal) starsVal.innerText = `${this.talentManager.stars}`;
-
-    const highscoreVal = document.getElementById('highscore-val');
-    if (highscoreVal) highscoreVal.innerText = `${this.analyticsManager.highScoreWave}`;
-
-    const mapSelect = document.getElementById('map-select') as HTMLSelectElement;
-    if (mapSelect && mapSelect.value !== this.game['mapManager'].currentMapId) {
-      mapSelect.value = this.game['mapManager'].currentMapId;
-    }
-
-    // Audio Buttons Update
-    const bgmMuteBtn = document.getElementById('bgm-mute-btn');
-    if (bgmMuteBtn) {
-      bgmMuteBtn.innerText = this.audioManager.isBgmMuted ? '🔇' : '🎵';
-    }
-
-    const sfxMuteBtn = document.getElementById('sfx-mute-btn');
-    if (sfxMuteBtn) {
-      sfxMuteBtn.innerText = this.audioManager.isSfxMuted ? '🔇' : '🔊';
-    }
-
-    const pauseBtn = document.getElementById('pause-btn');
-    if (pauseBtn) {
-      pauseBtn.innerText = this.gameState.isPaused ? '▶️' : '⏸️';
-      pauseBtn.classList.toggle('active', this.gameState.isPaused);
-    }
-
-    const totalWaves = this.waveManager.waves.length;
-    const currentNum = Math.max(0, this.waveManager.currentWaveIndex + 1);
-
-    const waveVal = document.getElementById('wave-val');
-    if (waveVal) {
-      if (this.waveManager.isEndlessMode) {
-        waveVal.innerText = `${currentNum}/♾️`;
-      } else {
-        waveVal.innerText = `${currentNum}/${Math.max(10, totalWaves)}`;
-      }
-    }
-
-    const nextWaveNum = this.waveManager.currentWaveIndex + 2;
-    const isNextBoss = nextWaveNum === 5 || nextWaveNum === 8 || nextWaveNum === 10 || (nextWaveNum > 10 && nextWaveNum % 3 === 0);
-
-    const waveBtn = document.getElementById('next-wave-btn') as HTMLButtonElement;
-    if (waveBtn) {
-      if (this.waveManager.isWaveActive) {
-        waveBtn.disabled = true;
-        const activeWaveNum = this.waveManager.currentWaveIndex + 1;
-        const isCurrentBoss = activeWaveNum === 5 || activeWaveNum === 8 || activeWaveNum === 10 || (activeWaveNum > 10 && activeWaveNum % 3 === 0);
-        waveBtn.innerText = isCurrentBoss ? '⚠️ BOSS WAVE IN PROGRESS! ⚠️' : 'Wave in Progress...';
-        waveBtn.className = isCurrentBoss ? 'btn danger wave-start-btn' : 'btn primary wave-start-btn';
-      } else if (this.waveManager.isAutoMode) {
-        waveBtn.disabled = true;
-        const countdownSec = this.waveManager.getAutoCountdownSeconds();
-        waveBtn.innerText = isNextBoss ? `⚠️ BOSS IN ${countdownSec}s! ⚠️` : `Auto Wave in ${countdownSec}s...`;
-        waveBtn.className = isNextBoss ? `btn danger wave-start-btn` : `btn primary wave-start-btn`;
-      } else {
-        waveBtn.disabled = false;
-        waveBtn.innerText = isNextBoss ? `⚠️ Start BOSS Wave ${nextWaveNum} ⚠️` : `Start Wave ${nextWaveNum}`;
-        waveBtn.className = isNextBoss ? `btn danger wave-start-btn` : `btn primary wave-start-btn`;
-      }
-    }
-
-    // Spells UI
-    const meteorBtn = document.getElementById('spell-meteor-btn') as HTMLButtonElement;
-    if (meteorBtn) {
-      const isMeteorActive = this.spellManager.activeSpell === 'METEOR';
-      meteorBtn.classList.toggle('active', isMeteorActive);
-      const isCd = this.spellManager.meteorCooldownMs > 0;
-      const canAfford = this.gameState.gold >= this.spellManager.meteorCost;
-      meteorBtn.disabled = isCd || !canAfford;
-
-      const meteorInfo = document.getElementById('meteor-info');
-      if (meteorInfo) {
-        meteorInfo.innerText = `${this.spellManager.meteorCost}g • 30s CD`;
-      }
-
-      const cdOverlay = document.getElementById('meteor-cd-overlay');
-      if (cdOverlay) {
-        if (isCd) {
-          const sec = Math.ceil(this.spellManager.meteorCooldownMs / 1000);
-          cdOverlay.innerText = `${sec}s`;
-          cdOverlay.classList.remove('hidden');
-        } else {
-          cdOverlay.classList.add('hidden');
-        }
-      }
-    }
-
-    const freezeBtn = document.getElementById('spell-freeze-btn') as HTMLButtonElement;
-    if (freezeBtn) {
-      const isCd = this.spellManager.freezeCooldownMs > 0;
-      const canAfford = this.gameState.gold >= this.spellManager.freezeCost;
-      freezeBtn.disabled = isCd || !canAfford;
-
-      const freezeInfo = document.getElementById('freeze-info');
-      if (freezeInfo) {
-        freezeInfo.innerText = `${this.spellManager.freezeCost}g • 40s CD`;
-      }
-
-      const cdOverlay = document.getElementById('freeze-cd-overlay');
-      if (cdOverlay) {
-        if (isCd) {
-          const sec = Math.ceil(this.spellManager.freezeCooldownMs / 1000);
-          cdOverlay.innerText = `${sec}s`;
-          cdOverlay.classList.remove('hidden');
-        } else {
-          cdOverlay.classList.add('hidden');
-        }
-      }
-    }
-
-    // Talents UI
-    const updateTalentUI = (id: string, btnId: string, type: keyof typeof this.talentManager.talents) => {
-      const lvlEl = document.getElementById(id);
-      const btn = document.getElementById(btnId) as HTMLButtonElement;
-      if (!lvlEl || !btn) return;
-
-      const current = this.talentManager.talents[type];
-      const max = this.talentManager.getTalentMaxLvl(type);
-      lvlEl.innerText = `${current}/${max}`;
-
-      if (current >= max) {
-        btn.disabled = true;
-        btn.innerText = 'MAX';
-      } else {
-        const cost = this.talentManager.getTalentCost(type);
-        btn.disabled = this.talentManager.stars < cost;
-        btn.innerText = `Upgrade (${cost}★)`;
-      }
-    };
-
-    updateTalentUI('dmg-lvl', 'talent-dmg-btn', 'damageLvl');
-    updateTalentUI('gold-lvl', 'talent-gold-btn', 'goldLvl');
-    updateTalentUI('hp-lvl', 'talent-hp-btn', 'hpLvl');
-    updateTalentUI('cd-lvl', 'talent-cd-btn', 'cdLvl');
-
-    // Inspector
-    const tower = this.towerManager.selectedTower;
-    const inspectorContent = document.getElementById('inspector-content');
-    const inspectorPlaceholder = document.getElementById('inspector-placeholder');
-
-    if (tower) {
-      if (inspectorContent) inspectorContent.classList.remove('hidden');
-      if (inspectorPlaceholder) inspectorPlaceholder.classList.add('hidden');
-
-      const title = document.getElementById('inspector-title');
-      if (title) title.innerText = `${tower.data.type} Tower (Lvl ${tower.data.level})`;
-
-      const stats = document.getElementById('inspector-stats');
-      if (stats) {
-        let extraInfo = '';
-        if (tower.data.slowFactor) extraInfo = `<div><strong>Slow:</strong> ${(tower.data.slowFactor * 100).toFixed(0)}%</div>`;
-        if (tower.data.splashRadius) extraInfo = `<div><strong>Splash Radius:</strong> ${tower.data.splashRadius}px</div>`;
-
-        stats.innerHTML = `
-          <div><strong>Damage:</strong> ${tower.data.damage}</div>
-          <div><strong>Range:</strong> ${tower.data.range}px</div>
-          <div><strong>Fire Rate:</strong> ${(60 / tower.data.fireRate).toFixed(1)} shots/sec</div>
-          ${extraInfo}
-        `;
-      }
-
-      const targetingBtn = document.getElementById('targeting-btn') as HTMLButtonElement;
-      if (targetingBtn) {
-        targetingBtn.innerText = `🎯 Target: ${tower.data.targeting}`;
-      }
-
-      const upgradeBtn = document.getElementById('upgrade-btn') as HTMLButtonElement;
-      if (upgradeBtn) {
-        if (tower.data.level >= 3) {
-          upgradeBtn.disabled = true;
-          upgradeBtn.innerText = 'Max Level Reached';
-        } else {
-          const cost = tower.getUpgradeCost();
-          upgradeBtn.disabled = this.gameState.gold < cost;
-          upgradeBtn.innerText = `⬆️ Upgrade (${cost}g)`;
-        }
-      }
-
-      const sellBtn = document.getElementById('sell-btn') as HTMLButtonElement;
-      if (sellBtn) {
-        sellBtn.innerText = `💰 Sell (+${tower.getSellValue()}g)`;
-      }
-    } else {
-      if (inspectorContent) inspectorContent.classList.add('hidden');
-      if (inspectorPlaceholder) inspectorPlaceholder.classList.remove('hidden');
-    }
-
-    // Modal Status Check & Post-Game Analytics Display
+  private updateEndGameModal() {
     if (this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') {
       this.overlayEl.classList.remove('hidden');
       const title = document.getElementById('modal-title');
@@ -818,21 +829,14 @@ export class UIManager {
       if (this.gameState.status === 'GAME_OVER') {
         if (title) title.innerText = '💀 Game Over';
         const survivedWave = Math.max(1, this.waveManager.currentWaveIndex + 1);
-        if (desc) desc.innerText = `Enemies overwhelmed your base! You survived until Wave ${survivedWave}!`;
+        if (desc) desc.innerText = `Inimigos invadiram a base na Onda ${survivedWave}!`;
       } else {
-        if (title) title.innerText = '🏆 Campaign Victory!';
-        if (desc) desc.innerText = 'You defended the base through all 10 Campaign Waves!';
+        if (title) title.innerText = '🏆 Vitória!';
+        if (desc) desc.innerText = 'Você defendeu a base em todas as 10 Ondas!';
       }
 
-      // Populate Analytics details
       const recordBadge = document.getElementById('record-badge');
-      if (recordBadge) {
-        if (this.analyticsManager.isNewRecord) {
-          recordBadge.classList.remove('hidden');
-        } else {
-          recordBadge.classList.add('hidden');
-        }
-      }
+      if (recordBadge) recordBadge.classList.toggle('hidden', !this.analyticsManager.isNewRecord);
 
       const modalHs = document.getElementById('modal-highscore');
       if (modalHs) modalHs.innerText = `Wave ${this.analyticsManager.highScoreWave}`;
@@ -842,7 +846,7 @@ export class UIManager {
       if (modalMvp) modalMvp.innerText = `${mvp.type} Tower (${mvp.damage} Dmg)`;
 
       const modalKills = document.getElementById('modal-kills');
-      if (modalKills) modalKills.innerText = `${this.analyticsManager.getTotalKills()} enemies`;
+      if (modalKills) modalKills.innerText = `${this.analyticsManager.getTotalKills()} inimigos`;
 
       const modalGold = document.getElementById('modal-gold');
       if (modalGold) modalGold.innerText = `${this.analyticsManager.goldEarned}g / ${this.analyticsManager.goldSpent}g`;
@@ -858,8 +862,68 @@ export class UIManager {
         };
         modalChallenge.innerText = modeLabels[this.gameState.challengeMode] || 'Padrão';
       }
-    } else {
-      this.overlayEl.classList.add('hidden');
+    }
+  }
+
+  /**
+   * Called during loop ONLY for lightweight UI frame updates (e.g. wave button text or cooldown numbers)
+   * NO reflows, NO structural DOM recreation!
+   */
+  public update() {
+    // 1. Next Wave Button State
+    const waveBtnLabel = document.getElementById('start-wave-label');
+    const waveBtn = document.getElementById('btn-next-wave') as HTMLButtonElement;
+    if (waveBtn && waveBtnLabel) {
+      const nextWaveNum = this.waveManager.currentWaveIndex + 2;
+      const isNextBoss = nextWaveNum === 5 || nextWaveNum === 8 || nextWaveNum === 10 || (nextWaveNum > 10 && nextWaveNum % 3 === 0);
+
+      if (this.waveManager.isWaveActive) {
+        waveBtn.disabled = true;
+        const activeWaveNum = this.waveManager.currentWaveIndex + 1;
+        const isCurrentBoss = activeWaveNum === 5 || activeWaveNum === 8 || activeWaveNum === 10 || (activeWaveNum > 10 && activeWaveNum % 3 === 0);
+        waveBtnLabel.innerText = isCurrentBoss ? '⚠️ BOSS EM ANDAMENTO' : 'Onda em Andamento...';
+        waveBtn.className = isCurrentBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn active';
+      } else if (this.waveManager.isAutoMode) {
+        waveBtn.disabled = true;
+        const countdownSec = this.waveManager.getAutoCountdownSeconds();
+        waveBtnLabel.innerText = isNextBoss ? `⚠️ BOSS EM ${countdownSec}s` : `Auto em ${countdownSec}s...`;
+        waveBtn.className = isNextBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn primary';
+      } else {
+        waveBtn.disabled = false;
+        waveBtnLabel.innerText = isNextBoss ? `⚠️ Iniciar BOSS Onda ${nextWaveNum}` : `Iniciar Onda ${nextWaveNum}`;
+        waveBtn.className = isNextBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn primary';
+      }
+    }
+
+    // 2. Boss warning badge
+    const bossBadge = document.getElementById('hud-boss-badge');
+    if (bossBadge) {
+      const activeWaveNum = this.waveManager.currentWaveIndex + 1;
+      const isCurrentBoss = activeWaveNum === 5 || activeWaveNum === 8 || activeWaveNum === 10 || (activeWaveNum > 10 && activeWaveNum % 3 === 0);
+      bossBadge.classList.toggle('hidden', !(this.waveManager.isWaveActive && isCurrentBoss));
+    }
+
+    // 3. Spells Cooldown text
+    const meteorCd = document.getElementById('meteor-chip-cd');
+    if (meteorCd) {
+      if (this.spellManager.meteorCooldownMs > 0) {
+        const sec = Math.ceil(this.spellManager.meteorCooldownMs / 1000);
+        meteorCd.innerText = `${sec}s`;
+        meteorCd.classList.remove('hidden');
+      } else {
+        meteorCd.classList.add('hidden');
+      }
+    }
+
+    const freezeCd = document.getElementById('freeze-chip-cd');
+    if (freezeCd) {
+      if (this.spellManager.freezeCooldownMs > 0) {
+        const sec = Math.ceil(this.spellManager.freezeCooldownMs / 1000);
+        freezeCd.innerText = `${sec}s`;
+        freezeCd.classList.remove('hidden');
+      } else {
+        freezeCd.classList.add('hidden');
+      }
     }
   }
 }

@@ -1,3 +1,5 @@
+import { EventBus } from './EventBus';
+
 import { AchievementManager } from './AchievementManager';
 import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
@@ -54,6 +56,7 @@ export class SpellManager {
   public selectSpell(spell: ActiveSpell) {
     if (this.gameState.challengeMode === 'NO_SPELLS') {
       this.activeSpell = null;
+      EventBus.getInstance().emit('spell:select', null);
       return;
     }
     if (this.activeSpell === spell) {
@@ -61,6 +64,7 @@ export class SpellManager {
     } else {
       this.activeSpell = spell;
     }
+    EventBus.getInstance().emit('spell:select', this.activeSpell);
   }
 
   public update(deltaTimeMs: number) {
@@ -94,6 +98,7 @@ export class SpellManager {
 
     // Double the cost after usage
     this.freezeCost *= 2;
+    EventBus.getInstance().emit('spell:cast', { spell: 'FREEZE', cost: this.freezeCost, cd: this.freezeCooldownMs });
     return true;
   }
 
@@ -104,6 +109,8 @@ export class SpellManager {
 
     this.meteorCooldownMs = this.METEOR_MAX_COOLDOWN;
     this.activeSpell = null; // Reset spell cursor
+    EventBus.getInstance().emit('spell:select', null);
+    EventBus.getInstance().emit('spell:cast', { spell: 'METEOR', cost: this.meteorCost, cd: this.meteorCooldownMs });
 
     if (this.achievementManager) {
       this.achievementManager.addProgress('METEOR_STRIKE', 1);
