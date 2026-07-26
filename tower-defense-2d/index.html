@@ -66,22 +66,22 @@
       }
 
       /* 1. TOP HUD STATUS BAR */
-      .hud-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        max-width: 840px;
-        margin: 0 auto;
-        padding: 6px 14px;
-        background: rgba(18, 18, 26, 0.88);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-      }
-
+.hud-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(100%, var(--canvas-width, 840px));
+  max-width: var(--canvas-width, 840px);
+  margin: 0 auto;
+  padding: 6px 14px;
+  background: rgba(18, 18, 26, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+}
       .hud-left-stats {
         display: flex;
         align-items: center;
@@ -147,20 +147,19 @@
       .hud-btn.active { background: #e040fb; border-color: #ea80fc; }
 
       /* 2. FIXED RED ZONE ACTION TOOLBAR (Just below top bar, above map) */
-      .action-toolbar {
-        width: 100%;
-        max-width: 840px;
-        margin: 6px auto 0 auto;
-        padding: 6px 14px;
-        background: rgba(18, 18, 26, 0.92);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        border-radius: 12px;
-        box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
-        box-sizing: border-box;
-      }
-
+.action-toolbar {
+  width: min(100%, var(--canvas-width, 840px));
+  max-width: var(--canvas-width, 840px);
+  margin: 6px auto 0 auto;
+  padding: 6px 14px;
+  background: rgba(18, 18, 26, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
+  box-sizing: border-box;
+}
       .toolbar-state {
         display: flex;
         flex-direction: column;
@@ -189,12 +188,19 @@
         white-space: nowrap;
       }
 
-      .toolbar-items-row {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
+.toolbar-items-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
 
+.toolbar-items-row::-webkit-scrollbar {
+  display: none;
+}
       .toolbar-card {
         display: flex;
         align-items: center;
@@ -318,13 +324,14 @@
       .toolbar-chip .cd { color: #ff5252; }
 
       /* INSPECTOR TOOLBAR ROW */
-      .inspector-toolbar-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-      }
-
+.inspector-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 6px;
+}
       .inspector-info-group {
         display: flex;
         align-items: center;
@@ -343,23 +350,27 @@
         border-radius: 6px;
       }
 
-      .inspector-toolbar-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
+.inspector-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
       /* 3. FLOATING TIME CONTROLS (Bottom Right) */
-      .time-controls {
-        position: fixed;
-        right: 16px;
-        bottom: 14px;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 8px;
-        z-index: 20;
-      }
+/* 3. FLOATING TIME CONTROLS (Bottom Right) */
+.time-controls {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(12px, env(safe-area-inset-bottom));
+  width: min(calc(100% - 20px), var(--canvas-width, 840px));
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 30;
+}
 
       .active-mode-badge {
         display: flex;
@@ -370,7 +381,7 @@
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 8px;
-        padding: 4px 10px;
+        padding: 6px 10px;
         font-size: 0.78rem;
         font-weight: 700;
         color: #ffca28;
@@ -421,10 +432,10 @@
         background: linear-gradient(135deg, #00c853, #64dd17);
         color: #000000;
         border: none;
-        border-radius: 10px;
-        padding: 10px 18px;
+        border-radius: 8px;
+        padding: 6px 14px;
         font-weight: 800;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         cursor: pointer;
         box-shadow: 0 4px 16px rgba(0, 200, 83, 0.4);
         transition: transform 140ms ease-out, box-shadow 140ms ease;
@@ -641,49 +652,106 @@
 
       .hidden { display: none !important; }
 
-      /* MOBILE RESPONSIVE LAYOUT (<= 768px) */
-      @media (max-width: 768px) {
-        .ui-wrapper { padding: 6px; }
-        .hud-top { padding: 6px 10px; }
-        .hud-stat-badge { padding: 4px 6px; font-size: 0.8rem; }
-        .hud-center-wave { padding: 4px 8px; font-size: 0.8rem; }
+/* MOBILE RESPONSIVE LAYOUT (<= 768px) */
+@media (max-width: 768px) {
+  .ui-wrapper { padding: 4px; }
+  .hud-top {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+  .hud-left-stats { gap: 6px; }
+  .hud-stat-badge { padding: 4px 6px; font-size: 0.8rem; }
+  .hud-center-wave { padding: 4px 6px; font-size: 0.8rem; }
 
-        .action-toolbar {
-          padding: 6px 8px;
-          margin-top: 4px;
-        }
+  .action-toolbar {
+    padding: 4px 8px;
+    margin-top: 4px;
+  }
 
-        .toolbar-state {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 6px;
-        }
+  .toolbar-state {
+    gap: 4px;
+  }
 
-        .toolbar-items-row {
-          overflow-x: auto;
-          width: 100%;
-          padding-bottom: 2px;
-        }
+  .toolbar-row {
+    gap: 6px;
+  }
 
-        .toolbar-card, .btn, .toolbar-chip, .speed-btn, .start-wave-main-btn {
-          min-height: 44px;
-          min-width: 44px;
-        }
+  .toolbar-card, .btn, .toolbar-chip, .speed-btn, .start-wave-main-btn {
+    min-height: 38px;
+    padding: 4px 8px;
+  }
 
-        .time-controls {
-          right: 6px;
-          bottom: 8px;
-          flex-direction: row;
-          align-items: center;
-        }
+  .inspector-toolbar-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+  }
 
-        .inspector-toolbar-row {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 6px;
-        }
-      }
-    </style>
+  .time-controls {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    gap: 4px;
+  }
+}
+
+@media (max-width: 600px) {
+  .changelog-btn-text {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .hud-top {
+    padding: 4px 6px;
+  }
+  .hud-stat-badge {
+    padding: 3px 5px;
+    font-size: 0.75rem;
+    gap: 4px;
+  }
+  .hud-label-text {
+    display: none;
+  }
+  .toolbar-label {
+    display: none;
+  }
+  .toolbar-card .name {
+    font-size: 0.75rem;
+  }
+  .toolbar-card .cost {
+    font-size: 0.7rem;
+  }
+  .toolbar-chip {
+    font-size: 0.75rem;
+    padding: 4px 6px;
+  }
+  .stats-summary-inline {
+    font-size: 0.72rem;
+    padding: 2px 6px;
+    gap: 4px;
+  }
+}
+
+@media (max-height: 500px) {
+  .active-mode-badge {
+    display: none;
+  }
+  .action-toolbar {
+    margin-top: 2px;
+    padding: 3px 6px;
+  }
+  .hud-top {
+    padding: 3px 6px;
+  }
+}
+
+@media (max-aspect-ratio: 1/1) {
+  .ui-wrapper {
+    justify-content: flex-start;
+  }
+}
+</style>
   </head>
   <body>
     <div id="game-area"></div>
