@@ -1,0 +1,348 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="bgGrad" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#1f1035"/>
+      <stop offset="40%" stop-color="#120924"/>
+      <stop offset="75%" stop-color="#080412"/>
+      <stop offset="100%" stop-color="#030106"/>
+    </radialGradient>
+
+    <radialGradient id="solarAura" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="15%" stop-color="#ffe660" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#ff9000" stop-opacity="0.6"/>
+      <stop offset="70%" stop-color="#ff3600" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#e01200" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="sunCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#ffffa0"/>
+      <stop offset="70%" stop-color="#ffae00"/>
+      <stop offset="100%" stop-color="#d64000"/>
+    </radialGradient>
+
+    <!-- Metallic Gold Gradients -->
+    <linearGradient id="goldLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff8db"/>
+      <stop offset="30%" stop-color="#ffe17d"/>
+      <stop offset="70%" stop-color="#df971a"/>
+      <stop offset="100%" stop-color="#965600"/>
+    </linearGradient>
+
+    <linearGradient id="goldDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ab7822"/>
+      <stop offset="50%" stop-color="#6e4606"/>
+      <stop offset="100%" stop-color="#3b2000"/>
+    </linearGradient>
+
+    <linearGradient id="goldRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe899"/>
+      <stop offset="50%" stop-color="#cca133"/>
+      <stop offset="100%" stop-color="#543b0c"/>
+    </linearGradient>
+
+    <!-- Crystal Facet Gradients -->
+    <linearGradient id="facetTopCenter" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#fff4a8"/>
+      <stop offset="100%" stop-color="#ffb700"/>
+    </linearGradient>
+
+    <linearGradient id="facetTopLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffde6"/>
+      <stop offset="50%" stop-color="#ffd24d"/>
+      <stop offset="100%" stop-color="#e67300"/>
+    </linearGradient>
+
+    <linearGradient id="facetTopRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffe680"/>
+      <stop offset="60%" stop-color="#ff9400"/>
+      <stop offset="100%" stop-color="#b33600"/>
+    </linearGradient>
+
+    <linearGradient id="facetBottomCenter" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffca36"/>
+      <stop offset="50%" stop-color="#ff6a00"/>
+      <stop offset="100%" stop-color="#991b00"/>
+    </linearGradient>
+
+    <linearGradient id="facetBottomLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff9d00"/>
+      <stop offset="70%" stop-color="#b83300"/>
+      <stop offset="100%" stop-color="#5c0d00"/>
+    </linearGradient>
+
+    <linearGradient id="facetBottomRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e65c00"/>
+      <stop offset="70%" stop-color="#8c1c00"/>
+      <stop offset="100%" stop-color="#400600"/>
+    </linearGradient>
+
+    <linearGradient id="facetBack" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ff8000"/>
+      <stop offset="100%" stop-color="#3d0900"/>
+    </linearGradient>
+
+    <!-- Obsidian & Pedestal Gradients -->
+    <linearGradient id="obsidian" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a2238"/>
+      <stop offset="50%" stop-color="#140f1f"/>
+      <stop offset="100%" stop-color="#07040d"/>
+    </linearGradient>
+
+    <linearGradient id="beamGrad" x1="50%" y1="100%" x2="50%" y2="0%">
+      <stop offset="0%" stop-color="#ff3600" stop-opacity="0"/>
+      <stop offset="25%" stop-color="#ff9000" stop-opacity="0.4"/>
+      <stop offset="70%" stop-color="#ffea75" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.95"/>
+    </linearGradient>
+
+    <!-- Glowing Filters -->
+    <filter id="glowLight" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="glowIntense" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur1"/>
+      <feGaussianBlur stdDeviation="25" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="solarFlareGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComponentTransfer in="blur" result="boost">
+        <feFuncA type="linear" slope="1.5"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="boost"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Base Icon Background -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#bgGrad)"/>
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="url(#goldRim)" stroke-width="4" opacity="0.8"/>
+  <rect x="24" y="24" width="464" height="464" rx="88" fill="none" stroke="#ffaa00" stroke-width="1.5" opacity="0.25"/>
+
+  <!-- Background Sunburst Rays -->
+  <g transform="translate(256, 195)" opacity="0.35">
+    <g filter="url(#glowLight)">
+      <!-- 16 Radial Rays -->
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(22.5)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(45)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(67.5)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(90)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(112.5)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(135)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(157.5)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(180)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(202.5)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(225)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(247.5)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(270)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(292.5)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(315)"/>
+      <path d="M0,0 L-15,-220 L15,-220 Z" fill="url(#solarAura)" transform="rotate(337.5)"/>
+    </g>
+  </g>
+
+  <!-- Sacred Geometry Background Rings -->
+  <g transform="translate(256, 195)" opacity="0.4">
+    <!-- Outer Octagon Star -->
+    <path d="M0,-170 L45,-110 L120,-120 L110,-45 L170,0 L110,45 L120,120 L45,110 L0,170 L-45,110 L-120,120 L-110,45 L-170,0 L-110,-45 L-120,-120 L-45,-110 Z" fill="none" stroke="url(#goldLight)" stroke-width="1.5"/>
+    <!-- Concentric Dials -->
+    <circle cx="0" cy="0" r="155" fill="none" stroke="#ffb700" stroke-width="1" stroke-dasharray="4 8"/>
+    <circle cx="0" cy="0" r="135" fill="none" stroke="#ffa200" stroke-width="2"/>
+    <circle cx="0" cy="0" r="125" fill="none" stroke="#ff8400" stroke-width="1" stroke-dasharray="12 4 2 4"/>
+    <circle cx="0" cy="0" r="95" fill="none" stroke="#ffe680" stroke-width="1.5" stroke-dasharray="36 6"/>
+    <!-- Sacred Triangle Frame -->
+    <polygon points="0,-150 130,75 -130,75" fill="none" stroke="url(#goldLight)" stroke-width="1.5" opacity="0.7"/>
+    <polygon points="0,150 130,-75 -130,-75" fill="none" stroke="url(#goldLight)" stroke-width="1.5" opacity="0.7"/>
+  </g>
+
+  <!-- Main Solar Flare Background Aura -->
+  <circle cx="256" cy="195" r="140" fill="url(#solarAura)" filter="url(#glowIntense)"/>
+
+  <!-- PEDESTAL (Sacred Geometry Temple Base) -->
+  <g id="pedestal">
+    <!-- Shadow beneath base -->
+    <ellipse cx="256" cy="455" rx="140" ry="25" fill="#000000" opacity="0.8" filter="url(#glowLight)"/>
+
+    <!-- Bottom Tier - Large Octagonal Step -->
+    <polygon points="146,430 186,415 326,415 366,430 346,450 166,450" fill="url(#goldDark)"/>
+    <polygon points="166,450 346,450 336,462 176,462" fill="url(#goldRim)"/>
+    <polygon points="146,430 166,450 176,462 136,438" fill="#241400"/>
+    <polygon points="366,430 346,450 336,462 376,438" fill="#523300"/>
+
+    <!-- Gold Trim Bottom Tier -->
+    <path d="M146,430 L186,415 L326,415 L366,430 L346,450 L166,450 Z" fill="none" stroke="url(#goldLight)" stroke-width="2"/>
+
+    <!-- Pillar Columns / Obsidian Body -->
+    <polygon points="170,380 342,380 356,420 156,420" fill="url(#obsidian)"/>
+    <!-- Obsidian Facet Lines -->
+    <polygon points="170,380 216,380 210,420 156,420" fill="#1c1626" opacity="0.7"/>
+    <polygon points="296,380 342,380 356,420 302,420" fill="#0d0812" opacity="0.9"/>
+    <polygon points="216,380 296,380 302,420 210,420" fill="#251c33"/>
+
+    <!-- Runic Lines on Obsidian Base -->
+    <path d="M210,410 L220,390 L292,390 L302,410" fill="none" stroke="#ffaa00" stroke-width="2" filter="url(#glowLight)"/>
+    <circle cx="256" cy="400" r="6" fill="#ffffff" filter="url(#glowLight)"/>
+    <circle cx="256" cy="400" r="3" fill="#ffaa00"/>
+
+    <!-- Upper Tier Gold Altar Plate -->
+    <ellipse cx="256" cy="380" rx="90" ry="24" fill="url(#goldDark)"/>
+    <ellipse cx="256" cy="380" rx="90" ry="24" fill="none" stroke="url(#goldLight)" stroke-width="3"/>
+    <ellipse cx="256" cy="380" rx="75" ry="18" fill="url(#obsidian)"/>
+    <ellipse cx="256" cy="380" rx="75" ry="18" fill="none" stroke="#ffaa00" stroke-width="1.5" opacity="0.8"/>
+
+    <!-- Central Glowing Solar Well -->
+    <ellipse cx="256" cy="380" rx="55" ry="12" fill="url(#sunCore)" filter="url(#glowLight)"/>
+    <ellipse cx="256" cy="380" rx="30" ry="6" fill="#ffffff" filter="url(#glowLight)"/>
+  </g>
+
+  <!-- Vertical Power Energy Beam -->
+  <polygon points="226,380 286,380 310,195 202,195" fill="url(#beamGrad)" opacity="0.85" style="mix-blend-mode: screen;"/>
+  <polygon points="240,380 272,380 280,195 232,195" fill="url(#beamGrad)" filter="url(#glowLight)"/>
+  <line x1="256" y1="380" x2="256" y2="100" stroke="#ffffff" stroke-width="4" filter="url(#glowIntense)"/>
+
+  <!-- FLOATING SACRED RINGS (Orbiting the Prism) -->
+  <!-- Back Arc of Ring 1 -->
+  <path d="M140,210 A120,40 0 0,1 372,180" fill="none" stroke="url(#goldLight)" stroke-width="4" opacity="0.5"/>
+  <path d="M140,210 A120,40 0 0,1 372,180" fill="none" stroke="#ffaa00" stroke-width="1.5" opacity="0.7"/>
+
+  <!-- Back Arc of Ring 2 (Tilted Opposite) -->
+  <path d="M144,175 A120,40 0 0,1 368,215" fill="none" stroke="url(#goldLight)" stroke-width="3" opacity="0.4"/>
+
+  <!-- THE SOLAR PRISM CRYSTAL (MAIN FOCAL POINT) -->
+  <g id="solarPrism">
+    <!-- Crystal Base Back Shadow Hull -->
+    <polygon points="256,60 365,185 256,330 147,185" fill="url(#facetBack)"/>
+
+    <!-- Left Outer Facet (Back/Side) -->
+    <polygon points="256,60 147,185 200,205" fill="url(#facetTopLeft)"/>
+    <!-- Right Outer Facet (Back/Side) -->
+    <polygon points="256,60 365,185 312,205" fill="url(#facetTopRight)"/>
+
+    <!-- Bottom Left Outer Facet -->
+    <polygon points="256,330 147,185 200,205" fill="url(#facetBottomLeft)"/>
+    <!-- Bottom Right Outer Facet -->
+    <polygon points="256,330 365,185 312,205" fill="url(#facetBottomRight)"/>
+
+    <!-- TOP FRONT CENTER FACET (Brightest Light Source Absorption) -->
+    <polygon points="256,60 200,205 256,230" fill="url(#facetTopCenter)"/>
+    <!-- TOP FRONT RIGHT FACET -->
+    <polygon points="256,60 256,230 312,205" fill="url(#facetTopRight)"/>
+
+    <!-- BOTTOM FRONT CENTER LEFT FACET -->
+    <polygon points="256,330 200,205 256,230" fill="url(#facetBottomCenter)"/>
+    <!-- BOTTOM FRONT CENTER RIGHT FACET -->
+    <polygon points="256,330 256,230 312,205" fill="url(#facetBottomRight)"/>
+
+    <!-- Inner Core Solar Gem Glow (Visible inside Prism) -->
+    <circle cx="256" cy="195" r="35" fill="url(#sunCore)" filter="url(#glowIntense)"/>
+    <circle cx="256" cy="195" r="18" fill="#ffffff" filter="url(#glowLight)"/>
+
+    <!-- Inner Sacred Geometry Lines inside Crystal -->
+    <line x1="256" y1="60" x2="256" y2="330" stroke="#ffffff" stroke-width="2" opacity="0.7" filter="url(#glowLight)"/>
+    <line x1="147" y1="185" x2="365" y2="185" stroke="#ffe680" stroke-width="1.5" opacity="0.6"/>
+    <line x1="200" y1="205" x2="312" y2="205" stroke="#ffffff" stroke-width="1.5" opacity="0.8"/>
+
+    <!-- Crystal Edge Highlights (Crisp Sharp Vector Lines) -->
+    <polyline points="147,185 256,60 365,185 256,330 147,185" fill="none" stroke="url(#goldLight)" stroke-width="2.5"/>
+    <polyline points="200,205 256,60 312,205" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.9" filter="url(#glowLight)"/>
+    <polyline points="200,205 256,230 312,205" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.9"/>
+    <line x1="256" y1="230" x2="256" y2="330" stroke="#ffea88" stroke-width="2"/>
+  </g>
+
+  <!-- Front Arc of Ring 1 (Overlapping Crystal for Depth) -->
+  <path d="M372,180 A120,40 0 0,1 140,210" fill="none" stroke="url(#goldLight)" stroke-width="4.5" filter="url(#glowLight)"/>
+  <path d="M372,180 A120,40 0 0,1 140,210" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+  <!-- Floating Ring Nodes/Runes -->
+  <circle cx="175" cy="214" r="5" fill="#ffffff" filter="url(#glowLight)"/>
+  <circle cx="337" cy="194" r="5" fill="#ffffff" filter="url(#glowLight)"/>
+
+  <!-- Front Arc of Ring 2 (Tilted) -->
+  <path d="M368,215 A120,40 0 0,1 144,175" fill="none" stroke="url(#goldLight)" stroke-width="3" filter="url(#glowLight)"/>
+  <circle cx="205" cy="177" r="4" fill="#ffaa00" filter="url(#glowLight)"/>
+  <circle cx="307" cy="213" r="4" fill="#ffaa00" filter="url(#glowLight)"/>
+
+  <!-- SWIRLING SOLAR FLARES & ORBITING ENERGY CURVES -->
+  <g filter="url(#solarFlareGlow)">
+    <!-- Arc 1 -->
+    <path d="M210,240 Q180,180 230,130 T300,140" fill="none" stroke="#ffea75" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+    <!-- Arc 2 -->
+    <path d="M310,160 Q340,220 280,260 T200,230" fill="none" stroke="#ff7700" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+    <!-- Top Flare Prominence -->
+    <path d="M256,60 Q280,30 270,10" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+    <path d="M256,60 Q235,35 240,15" fill="none" stroke="#ffcc00" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- SPARKS & FLOATING SOLAR PARTICLES -->
+  <g fill="#ffffff" filter="url(#glowLight)">
+    <!-- Diamond Sparks -->
+    <polygon points="256,35 260,42 256,49 252,42" opacity="0.9"/>
+    <polygon points="180,120 183,125 180,130 177,125" opacity="0.8"/>
+    <polygon points="335,110 339,116 335,122 331,116" opacity="0.85"/>
+    <polygon points="150,260 153,264 150,268 147,264" opacity="0.7"/>
+    <polygon points="360,250 364,255 360,260 356,255" opacity="0.75"/>
+    <polygon points="270,310 273,314 270,318 267,314" opacity="0.8"/>
+
+    <!-- Fine Light Particles -->
+    <circle cx="210" cy="100" r="2.5" fill="#ffea75" opacity="0.9"/>
+    <circle cx="295" cy="90" r="1.5" fill="#ffffff" opacity="0.9"/>
+    <circle cx="310" cy="130" r="2" fill="#ff9900" opacity="0.8"/>
+    <circle cx="165" cy="160" r="1.5" fill="#ffea75" opacity="0.7"/>
+    <circle cx="345" cy="170" r="2.5" fill="#ffffff" opacity="0.9"/>
+    <circle cx="190" cy="280" r="2" fill="#ffaa00" opacity="0.8"/>
+    <circle cx="320" cy="290" r="1.5" fill="#ffea75" opacity="0.7"/>
+    <circle cx="230" cy="340" r="2.5" fill="#ffffff" opacity="0.9"/>
+    <circle cx="285" cy="350" r="1.5" fill="#ff7700" opacity="0.8"/>
+  </g>
+
+  <!-- LENS FLARE STAR BURSTS (Focal Highlights) -->
+  <!-- Top Apex Flare -->
+  <g transform="translate(256, 60)" filter="url(#glowIntense)">
+    <ellipse cx="0" cy="0" rx="25" ry="4" fill="#ffffff"/>
+    <ellipse cx="0" cy="0" rx="4" ry="25" fill="#ffffff"/>
+    <circle cx="0" cy="0" r="6" fill="#ffffff"/>
+  </g>
+
+  <!-- Center Core Lens Flare -->
+  <g transform="translate(256, 195)" filter="url(#glowIntense)">
+    <ellipse cx="0" cy="0" rx="55" ry="6" fill="#ffffff" opacity="0.95"/>
+    <ellipse cx="0" cy="0" rx="6" ry="55" fill="#ffffff" opacity="0.95"/>
+    <ellipse cx="0" cy="0" rx="35" ry="35" fill="url(#sunCore)"/>
+    <circle cx="0" cy="0" r="12" fill="#ffffff"/>
+  </g>
+
+  <!-- Bottom Tip Subtle Flare -->
+  <g transform="translate(256, 330)" filter="url(#glowLight)">
+    <ellipse cx="0" cy="0" rx="15" ry="3" fill="#ffea75"/>
+    <ellipse cx="0" cy="0" rx="3" ry="15" fill="#ffea75"/>
+    <circle cx="0" cy="0" r="4" fill="#ffffff"/>
+  </g>
+
+  <!-- ICON UI CORNER ACCENTS (Game Asset Polishing) -->
+  <g stroke="url(#goldLight)" stroke-width="3" fill="none" opacity="0.6">
+    <!-- Top-Left Corner -->
+    <path d="M 40 70 L 40 40 L 70 40"/>
+    <!-- Top-Right Corner -->
+    <path d="M 472 70 L 472 40 L 442 40"/>
+    <!-- Bottom-Left Corner -->
+    <path d="M 40 442 L 40 472 L 70 472"/>
+    <!-- Bottom-Right Corner -->
+    <path d="M 472 442 L 472 472 L 442 472"/>
+  </g>
+</svg>

@@ -36,6 +36,21 @@ export class UIManager {
   private changelogOverlayEl!: HTMLElement;
   private storeStateEl!: HTMLElement;
   private inspectorStateEl!: HTMLElement;
+  // Cached DOM Elements for 60fps Loop Optimization
+  private waveBtnEl: HTMLButtonElement | null = null;
+  private waveBtnLabelEl: HTMLElement | null = null;
+  private bossBadgeEl: HTMLElement | null = null;
+  private meteorCdEl: HTMLElement | null = null;
+  private freezeCdEl: HTMLElement | null = null;
+
+  private lastWaveDisabled: boolean | null = null;
+  private lastWaveLabelText = '';
+  private lastWaveClassName = '';
+  private lastBossBadgeHidden: boolean | null = null;
+  private lastMeteorCdText = '';
+  private lastMeteorCdHidden: boolean | null = null;
+  private lastFreezeCdText = '';
+  private lastFreezeCdHidden: boolean | null = null;
 
   constructor(
     gameState: GameState,
@@ -85,7 +100,7 @@ export class UIManager {
             </div>
             <div class="hud-stat-badge wave" title="Onda Atual">
               <span class="icon">🌊</span>
-              <span class="wave-title">WAVE</span>
+              <span class="wave-title hud-label-text">WAVE</span>
               <strong id="hud-wave-val">0/10</strong>
               <span id="hud-boss-badge" class="boss-badge hidden">⚠️ BOSS</span>
             </div>
@@ -94,8 +109,8 @@ export class UIManager {
             </button>
           </div>
           <div class="hud-right-controls">
-            <button id="changelog-btn" class="hud-btn changelog-gift-btn" title="Últimas Atualizações (🎁)">
-              🎁 Novidades
+            <button id="changelog-btn" class="hud-btn changelog-gift-btn" title="Últimas Atualizações (🎁)" aria-label="Novidades">
+              🎁<span class="changelog-btn-text"> Novidades</span>
             </button>
             <button id="settings-toggle-btn" class="hud-btn settings-btn" title="Configurações & Menus (⚙️)">
               ⚙️
@@ -112,27 +127,27 @@ export class UIManager {
               <span class="toolbar-label">🏗️ TORRES:</span>
               <div class="toolbar-items-row">
                 <button id="card-basic" class="toolbar-card active" data-type="BASIC" title="Torre Básica (50g)">
-                  <span class="dot basic"></span>
+                  <img class="tower-card-icon" src="/assets/basic_tower_icon.svg" alt="Básica" />
                   <span class="name">Básica</span>
                   <span class="cost">🪙 50g</span>
                 </button>
                 <button id="card-frost" class="toolbar-card" data-type="FROST" title="Torre de Gelo (70g)">
-                  <span class="dot frost"></span>
+                  <img class="tower-card-icon" src="/assets/frost_tower_icon.svg" alt="Gelo" />
                   <span class="name">Gelo</span>
                   <span class="cost">🪙 70g</span>
                 </button>
                 <button id="card-solar" class="toolbar-card" data-type="SOLAR_PRISM" title="Prisma Solar (100g)">
-                  <span class="dot solar"></span>
+                  <img class="tower-card-icon" src="/assets/solar_prism_icon.svg" alt="Prisma" />
                   <span class="name">Prisma</span>
                   <span class="cost">🪙 100g</span>
                 </button>
                 <button id="card-cannon" class="toolbar-card" data-type="CANNON" title="Canhão (105g)">
-                  <span class="dot cannon"></span>
+                  <img class="tower-card-icon" src="/assets/cannon_tower_icon.svg" alt="Canhão" />
                   <span class="name">Canhão</span>
                   <span class="cost">🪙 105g</span>
                 </button>
                 <button id="card-artillery" class="toolbar-card" data-type="ARTILLERY" title="Artilharia (110g)">
-                  <span class="dot artillery"></span>
+                  <img class="tower-card-icon" src="/assets/artillery_tower_icon.svg" alt="Artilharia" />
                   <span class="name">Artilharia</span>
                   <span class="cost">🪙 110g</span>
                 </button>
@@ -166,10 +181,10 @@ export class UIManager {
               </div>
 
               <div class="inspector-toolbar-actions">
-                <button id="btn-inspect-target" class="btn secondary">🎯 FIRST</button>
-                <button id="btn-inspect-repair" class="btn success">🔧 Reparo</button>
-                <button id="btn-inspect-upgrade" class="btn success">⬆️ Upgrade (40g)</button>
-                <button id="btn-inspect-sell" class="btn danger">💰 Vender (35g)</button>
+                <button id="btn-inspect-target" class="btn secondary btn-inspect-action">🎯 FIRST</button>
+                <button id="btn-inspect-repair" class="btn success btn-inspect-action">🔧 Reparo</button>
+                <button id="btn-inspect-upgrade" class="btn success btn-inspect-action">⬆️ Upgrade (40g)</button>
+                <button id="btn-inspect-sell" class="btn danger btn-inspect-action">💰 Vender (35g)</button>
                 <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
               </div>
             </div>
@@ -511,17 +526,6 @@ export class UIManager {
       this.spellManager.triggerGlobalFreeze(this.game['enemyManager'].getEnemies());
     });
 
-    document.getElementById('btn-inspect-target')?.addEventListener('click', () => {
-      this.towerManager.cycleSelectedTowerTargeting();
-    });
-
-    document.getElementById('btn-inspect-repair')?.addEventListener('click', () => {
-      this.towerManager.repairSelectedTower();
-    });
-
-    document.getElementById('btn-inspect-upgrade')?.addEventListener('click', () => {
-      this.towerManager.upgradeSelectedTower();
-    });
 
     document.getElementById('btn-speed-1x')?.addEventListener('click', () => this.setGameSpeed(1));
     document.getElementById('btn-speed-2x')?.addEventListener('click', () => this.setGameSpeed(2));
@@ -545,6 +549,10 @@ export class UIManager {
 
     document.getElementById('btn-inspect-target')?.addEventListener('click', () => {
       this.towerManager.cycleSelectedTowerTargeting();
+    });
+
+    document.getElementById('btn-inspect-repair')?.addEventListener('click', () => {
+      this.towerManager.repairSelectedTower();
     });
 
     document.getElementById('btn-inspect-upgrade')?.addEventListener('click', () => {
@@ -887,62 +895,110 @@ export class UIManager {
   }
 
   public update() {
-    // 1. Next Wave Button State
-    const waveBtnLabel = document.getElementById('start-wave-label');
-    const waveBtn = document.getElementById('btn-next-wave') as HTMLButtonElement;
-    if (waveBtn && waveBtnLabel) {
+    if (!this.waveBtnEl) {
+      this.waveBtnEl = document.getElementById('btn-next-wave') as HTMLButtonElement;
+      this.waveBtnLabelEl = document.getElementById('start-wave-label');
+    }
+
+    if (this.waveBtnEl && this.waveBtnLabelEl) {
       const nextWaveNum = this.waveManager.currentWaveIndex + 2;
       const isNextBoss = nextWaveNum === 5 || nextWaveNum === 8 || nextWaveNum === 10 || (nextWaveNum > 10 && nextWaveNum % 3 === 0);
 
+      let disabled = false;
+      let labelText = '';
+      let className = '';
+
       if (this.waveManager.isWaveActive) {
-        waveBtn.disabled = true;
+        disabled = true;
         const activeWaveNum = this.waveManager.currentWaveIndex + 1;
         const isCurrentBoss = activeWaveNum === 5 || activeWaveNum === 8 || activeWaveNum === 10 || (activeWaveNum > 10 && activeWaveNum % 3 === 0);
-        waveBtnLabel.innerText = isCurrentBoss ? '⚠️ BOSS EM ANDAMENTO' : 'Onda em Andamento...';
-        waveBtn.className = isCurrentBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn active';
+        labelText = isCurrentBoss ? '⚠️ BOSS EM ANDAMENTO' : 'Onda em Andamento...';
+        className = isCurrentBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn active';
       } else if (this.waveManager.isAutoMode) {
-        waveBtn.disabled = true;
+        disabled = true;
         const countdownSec = this.waveManager.getAutoCountdownSeconds();
-        waveBtnLabel.innerText = isNextBoss ? `⚠️ BOSS EM ${countdownSec}s` : `Auto em ${countdownSec}s...`;
-        waveBtn.className = isNextBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn primary';
+        labelText = isNextBoss ? `⚠️ BOSS EM ${countdownSec}s` : `Auto em ${countdownSec}s...`;
+        className = isNextBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn primary';
       } else {
-        waveBtn.disabled = false;
-        waveBtnLabel.innerText = isNextBoss ? `⚠️ Iniciar BOSS Onda ${nextWaveNum}` : `Iniciar Onda ${nextWaveNum}`;
-        waveBtn.className = isNextBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn primary';
+        disabled = false;
+        labelText = isNextBoss ? `⚠️ Iniciar BOSS Onda ${nextWaveNum}` : `Iniciar Onda ${nextWaveNum}`;
+        className = isNextBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn primary';
+      }
+
+      if (this.lastWaveDisabled !== disabled) {
+        this.waveBtnEl.disabled = disabled;
+        this.lastWaveDisabled = disabled;
+      }
+      if (this.lastWaveLabelText !== labelText) {
+        this.waveBtnLabelEl.innerText = labelText;
+        this.lastWaveLabelText = labelText;
+      }
+      if (this.lastWaveClassName !== className) {
+        this.waveBtnEl.className = className;
+        this.lastWaveClassName = className;
       }
     }
 
     // 2. Boss warning badge
-    const bossBadge = document.getElementById('hud-boss-badge');
-    if (bossBadge) {
+    if (!this.bossBadgeEl) {
+      this.bossBadgeEl = document.getElementById('hud-boss-badge');
+    }
+    if (this.bossBadgeEl) {
       const activeWaveNum = this.waveManager.currentWaveIndex + 1;
       const isCurrentBoss = activeWaveNum === 5 || activeWaveNum === 8 || activeWaveNum === 10 || (activeWaveNum > 10 && activeWaveNum % 3 === 0);
-      bossBadge.classList.toggle('hidden', !(this.waveManager.isWaveActive && isCurrentBoss));
+      const isHidden = !(this.waveManager.isWaveActive && isCurrentBoss);
+      if (this.lastBossBadgeHidden !== isHidden) {
+        this.bossBadgeEl.classList.toggle('hidden', isHidden);
+        this.lastBossBadgeHidden = isHidden;
+      }
     }
 
     // 3. Spells Cooldown text
-    const meteorCd = document.getElementById('meteor-chip-cd');
-    if (meteorCd) {
+    if (!this.meteorCdEl) {
+      this.meteorCdEl = document.getElementById('meteor-chip-cd');
+    }
+    if (this.meteorCdEl) {
       if (this.spellManager.meteorCooldownMs > 0) {
         const sec = Math.ceil(this.spellManager.meteorCooldownMs / 1000);
-        meteorCd.innerText = `${sec}s`;
-        meteorCd.classList.remove('hidden');
+        const text = `${sec}s`;
+        if (this.lastMeteorCdText !== text) {
+          this.meteorCdEl.innerText = text;
+          this.lastMeteorCdText = text;
+        }
+        if (this.lastMeteorCdHidden !== false) {
+          this.meteorCdEl.classList.remove('hidden');
+          this.lastMeteorCdHidden = false;
+        }
       } else {
-        meteorCd.classList.add('hidden');
+        if (this.lastMeteorCdHidden !== true) {
+          this.meteorCdEl.classList.add('hidden');
+          this.lastMeteorCdHidden = true;
+        }
       }
     }
 
-    const freezeCd = document.getElementById('freeze-chip-cd');
-    if (freezeCd) {
+    if (!this.freezeCdEl) {
+      this.freezeCdEl = document.getElementById('freeze-chip-cd');
+    }
+    if (this.freezeCdEl) {
       if (this.spellManager.freezeCooldownMs > 0) {
         const sec = Math.ceil(this.spellManager.freezeCooldownMs / 1000);
-        freezeCd.innerText = `${sec}s`;
-        freezeCd.classList.remove('hidden');
-        } else {
-        freezeCd.classList.add('hidden');
+        const text = `${sec}s`;
+        if (this.lastFreezeCdText !== text) {
+          this.freezeCdEl.innerText = text;
+          this.lastFreezeCdText = text;
+        }
+        if (this.lastFreezeCdHidden !== false) {
+          this.freezeCdEl.classList.remove('hidden');
+          this.lastFreezeCdHidden = false;
+        }
+      } else {
+        if (this.lastFreezeCdHidden !== true) {
+          this.freezeCdEl.classList.add('hidden');
+          this.lastFreezeCdHidden = true;
+        }
       }
     }
-
     // Safety check for End Game modal display
     if (this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') {
       this.updateEndGameModal();

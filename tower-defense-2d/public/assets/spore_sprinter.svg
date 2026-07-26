@@ -1,0 +1,461 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Glow Filters -->
+    <filter id="glow-heavy" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur1" />
+      <feGaussianBlur stdDeviation="25" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="glow-med" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feColorMatrix type="matrix" values="
+        1 0 0 0 0
+        0 1.5 0 0 0
+        0 0 1 0 0
+        0 0 0 1 0" result="boost"/>
+      <feMerge>
+        <feMergeNode in="boost" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="glow-sharp" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="shadow-dark" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="-3" dy="6" stdDeviation="5" flood-color="#020d08" flood-opacity="0.8" />
+    </filter>
+
+    <!-- Gradients -->
+    <!-- Ambient Background Aura -->
+    <radialGradient id="bgAura" cx="45%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#39ff14" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#00ff66" stop-opacity="0.15" />
+      <stop offset="80%" stop-color="#052e18" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Poison Mist Gradients -->
+    <radialGradient id="mistGrad1" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#bfff00" stop-opacity="0.6" />
+      <stop offset="50%" stop-color="#00ff66" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#022415" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="mistGrad2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00ffaa" stop-opacity="0.5" />
+      <stop offset="60%" stop-color="#39ff14" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#01140b" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Cap Base & Shell -->
+    <linearGradient id="capMain" x1="15%" y1="10%" x2="85%" y2="90%">
+      <stop offset="0%" stop-color="#abff00" />
+      <stop offset="20%" stop-color="#39ff14" />
+      <stop offset="50%" stop-color="#00aa44" />
+      <stop offset="80%" stop-color="#02472b" />
+      <stop offset="100%" stop-color="#011a10" />
+    </linearGradient>
+
+    <linearGradient id="capTopHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="30%" stop-color="#d4ff55" stop-opacity="0.6" />
+      <stop offset="70%" stop-color="#39ff14" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#00ff66" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="capRimGlow" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e1ff73" />
+      <stop offset="40%" stop-color="#39ff14" />
+      <stop offset="80%" stop-color="#00ff88" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#003311" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Under Cap Gills -->
+    <radialGradient id="gillsGrad" cx="30%" cy="70%" r="80%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="20%" stop-color="#ccff00" />
+      <stop offset="50%" stop-color="#00ff66" />
+      <stop offset="80%" stop-color="#044026" />
+      <stop offset="100%" stop-color="#01170e" />
+    </radialGradient>
+
+    <!-- Chitin & Legs -->
+    <linearGradient id="chitinDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a3328" />
+      <stop offset="50%" stop-color="#0a1a13" />
+      <stop offset="100%" stop-color="#020805" />
+    </linearGradient>
+
+    <linearGradient id="chitinRim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#66ff33" />
+      <stop offset="50%" stop-color="#00ff66" />
+      <stop offset="100%" stop-color="#003311" stop-opacity="0.1" />
+    </linearGradient>
+
+    <!-- Glowing Spores -->
+    <radialGradient id="sporeNode" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="30%" stop-color="#cdff33" />
+      <stop offset="65%" stop-color="#00ff66" />
+      <stop offset="100%" stop-color="#00bb44" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Eye Glowing Gradient -->
+    <radialGradient id="eyeGrad" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="40%" stop-color="#00ffff" />
+      <stop offset="75%" stop-color="#00aa66" />
+      <stop offset="100%" stop-color="#002b1a" />
+    </radialGradient>
+  </defs>
+
+  <!-- ==================== LAYER 0: AMBIENT AURA & BACKGROUND MIST ==================== -->
+  <g id="ambient-aura">
+    <!-- Huge background glow center-left tilted -->
+    <circle cx="240" cy="230" r="210" fill="url(#bgAura)" />
+    
+    <!-- Poison Mist Clouds (Behind) -->
+    <path d="M 310 110 C 370 70, 470 120, 450 190 C 430 250, 490 310, 420 370 C 350 420, 270 380, 220 430 C 160 480, 80 430, 90 360 C 50 310, 80 220, 150 190 Z" 
+          fill="url(#mistGrad1)" filter="url(#glow-heavy)" />
+    <path d="M 120 250 C 70 200, 90 110, 180 100 C 250 90, 310 40, 390 80 C 460 120, 430 220, 380 250 C 330 280, 360 360, 290 400 C 220 440, 150 360, 120 250 Z" 
+          fill="url(#mistGrad2)" filter="url(#glow-heavy)" opacity="0.7" />
+  </g>
+
+  <!-- ==================== LAYER 1: REAR LIMBS (IN SHADOW) ==================== -->
+  <g id="rear-limbs" filter="url(#shadow-dark)">
+    <!-- Rear Right Leg (Backwards extension) -->
+    <g id="rear-leg-right">
+      <!-- Coxa / Joint -->
+      <path d="M 320 290 L 370 270 L 385 285 L 330 305 Z" fill="url(#chitinDark)" />
+      <!-- Femur -->
+      <path d="M 370 270 L 440 220 L 455 235 L 385 285 Z" fill="url(#chitinDark)" />
+      <path d="M 370 270 L 440 220" stroke="url(#chitinRim)" stroke-width="2" filter="url(#glow-sharp)" />
+      <!-- Tibia (Spur) -->
+      <path d="M 440 220 L 485 310 L 470 320 L 430 235 Z" fill="url(#chitinDark)" />
+      <path d="M 440 220 L 485 310" stroke="url(#chitinRim)" stroke-width="1.5" />
+      <!-- Claw Tip -->
+      <path d="M 485 310 L 505 355 L 490 350 Z" fill="#00ff66" filter="url(#glow-sharp)" />
+    </g>
+
+    <!-- Rear Mid Leg (Planted Back) -->
+    <g id="mid-leg-right">
+      <path d="M 280 300 L 330 340 L 320 355 L 270 310 Z" fill="url(#chitinDark)" />
+      <path d="M 330 340 L 355 430 L 340 435 L 315 350 Z" fill="url(#chitinDark)" />
+      <path d="M 330 340 L 355 430" stroke="url(#chitinRim)" stroke-width="2" />
+      <!-- Claw -->
+      <path d="M 355 430 L 370 470 L 358 465 Z" fill="#39ff14" filter="url(#glow-sharp)" />
+    </g>
+
+    <!-- Rear Front Leg (Reaching Forward - Far side) -->
+    <g id="front-leg-right">
+      <path d="M 220 270 L 160 250 L 155 265 L 210 285 Z" fill="url(#chitinDark)" />
+      <path d="M 160 250 L 110 320 L 122 328 L 170 260 Z" fill="url(#chitinDark)" />
+      <path d="M 110 320 L 80 390 L 70 385 L 98 315 Z" fill="url(#chitinDark)" />
+      <path d="M 110 320 L 80 390" stroke="url(#chitinRim)" stroke-width="2" />
+    </g>
+  </g>
+
+  <!-- ==================== LAYER 2: TORSO & ABDOMEN ==================== -->
+  <g id="body-core" filter="url(#shadow-dark)">
+    <!-- Abdomen (Gaster) - Insectoid/Fungal Pod extending rearward -->
+    <path d="M 290 295 Q 350 305 385 360 Q 360 415 305 390 Q 275 370 280 330 Z" fill="url(#chitinDark)" stroke="#062b1b" stroke-width="2" />
+    
+    <!-- Glowing Abdomen Bands / Vents -->
+    <path d="M 310 315 Q 350 330 365 370" stroke="#39ff14" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#glow-med)" />
+    <path d="M 295 335 Q 330 350 340 385" stroke="#00ff66" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#glow-sharp)" />
+    <path d="M 285 355 Q 305 365 315 388" stroke="#abff00" stroke-width="2" fill="none" stroke-linecap="round" />
+
+    <!-- Thorax / Stalk Core -->
+    <path d="M 215 245 Q 260 255 285 295 Q 255 330 220 295 Q 200 270 215 245 Z" fill="url(#chitinDark)" />
+    
+    <!-- Thorax Bioluminescent Core Vent -->
+    <ellipse cx="245" cy="275" rx="14" ry="22" transform="rotate(-25 245 275)" fill="#00ff66" filter="url(#glow-heavy)" opacity="0.8" />
+    <ellipse cx="245" cy="275" rx="8" ry="14" transform="rotate(-25 245 275)" fill="#ffffff" filter="url(#glow-sharp)" />
+
+    <!-- Neck / Cap Attachment Joint -->
+    <path d="M 220 230 C 225 210, 255 205, 265 225 C 250 245, 230 245, 220 230 Z" fill="#0c261c" stroke="#39ff14" stroke-width="1.5" />
+  </g>
+
+  <!-- ==================== LAYER 3: UNDER-CAP GILLS (BIOLUMINESCENT FAN) ==================== -->
+  <g id="under-cap-gills" filter="url(#glow-med)">
+    <!-- Base Fill of Under-Cap -->
+    <path d="M 125 225 Q 210 265 330 250 Q 410 230 435 195 Q 370 175 250 185 Q 165 195 125 225 Z" 
+          fill="url(#gillsGrad)" />
+
+    <!-- Radiant Gill Lines -->
+    <g stroke="url(#capRimGlow)" stroke-width="1.8" opacity="0.85" stroke-linecap="round">
+      <!-- Fan originating from stalk attachment (~240, 215) -->
+      <path d="M 240 215 Q 180 220 130 225" />
+      <path d="M 240 215 Q 190 225 142 232" />
+      <path d="M 240 215 Q 200 232 158 240" />
+      <path d="M 240 215 Q 210 238 178 247" />
+      <path d="M 240 215 Q 225 242 200 252" />
+      <path d="M 240 215 Q 240 245 225 255" />
+      <path d="M 240 215 Q 255 245 250 256" />
+      <path d="M 240 215 Q 270 245 278 255" />
+      <path d="M 240 215 Q 285 242 308 253" />
+      <path d="M 240 215 Q 305 240 338 248" />
+      <path d="M 240 215 Q 325 235 365 242" />
+      <path d="M 240 215 Q 345 230 390 232" />
+      <path d="M 240 215 Q 365 220 412 218" />
+      <path d="M 240 215 Q 380 210 430 200" />
+      <!-- Short intermediate gills -->
+      <path d="M 180 227 Q 150 230 136 230" stroke-width="1" />
+      <path d="M 210 238 Q 185 244 165 246" stroke-width="1" />
+      <path d="M 270 244 Q 285 250 300 253" stroke-width="1" />
+      <path d="M 330 236 Q 360 242 380 243" stroke-width="1" />
+    </g>
+  </g>
+
+  <!-- ==================== LAYER 4: HEAD, EYES & MANDIBLES ==================== -->
+  <g id="head-assembly" filter="url(#shadow-dark)">
+    <!-- Insectoid Head Capsule (Tucked under cap front) -->
+    <path d="M 160 225 C 150 240, 165 265, 190 265 C 215 265, 225 240, 210 225 Z" fill="#081710" stroke="#1a4733" stroke-width="2" />
+    
+    <!-- Mandibles / Chelicerae -->
+    <!-- Left Pincer -->
+    <path d="M 168 258 Q 145 270 152 288 Q 162 290 174 268 Z" fill="url(#chitinDark)" stroke="#39ff14" stroke-width="1" />
+    <!-- Right Pincer -->
+    <path d="M 185 260 Q 170 280 180 298 Q 190 295 192 268 Z" fill="url(#chitinDark)" stroke="#39ff14" stroke-width="1" />
+
+    <!-- Glowing Bioluminescent Eyes (Cluster of 5 Sinister Eyes) -->
+    <!-- Main Eye Large Left -->
+    <ellipse cx="172" cy="240" rx="7" ry="10" transform="rotate(-15 172 240)" fill="url(#eyeGrad)" filter="url(#glow-sharp)" />
+    <circle cx="170" cy="238" r="2.5" fill="#ffffff" />
+    
+    <!-- Main Eye Large Right -->
+    <ellipse cx="187" cy="243" rx="6" ry="9" transform="rotate(-5 187 243)" fill="url(#eyeGrad)" filter="url(#glow-sharp)" />
+    <circle cx="185" cy="241" r="2" fill="#ffffff" />
+
+    <!-- Secondary Small Eyes -->
+    <circle cx="163" cy="247" r="3" fill="url(#eyeGrad)" filter="url(#glow-sharp)" />
+    <circle cx="162" cy="246" r="1" fill="#ffffff" />
+
+    <circle cx="196" cy="250" r="3.5" fill="url(#eyeGrad)" filter="url(#glow-sharp)" />
+    <circle cx="195" cy="249" r="1" fill="#ffffff" />
+
+    <circle cx="178" cy="251" r="2.5" fill="#abff00" filter="url(#glow-sharp)" />
+  </g>
+
+  <!-- ==================== LAYER 5: FOREGROUND LIMBS (DYNAMIC SPRINTER LEGS) ==================== -->
+  <g id="foreground-limbs" filter="url(#shadow-dark)">
+    <!-- FRONT LEG (Raptorial Blade - Reaching Far Left/Forward) -->
+    <g id="foreleg-left-main">
+      <!-- Shoulder / Coxa -->
+      <path d="M 210 260 L 165 280 L 155 265 L 205 245 Z" fill="url(#chitinDark)" stroke="url(#chitinRim)" stroke-width="1" />
+      
+      <!-- Femur (Heavy Armored Segment) -->
+      <path d="M 165 280 L 105 210 L 85 225 L 155 295 Z" fill="url(#chitinDark)" />
+      <path d="M 165 280 L 105 210" stroke="url(#chitinRim)" stroke-width="3" filter="url(#glow-sharp)" />
+      <!-- Spikes on Femur -->
+      <path d="M 140 250 L 130 235 L 148 245 Z" fill="#39ff14" />
+      <path d="M 125 233 L 115 218 L 132 228 Z" fill="#39ff14" />
+
+      <!-- Knee Bio-Node (Glowing Joint Orbs) -->
+      <circle cx="100" cy="215" r="7" fill="#39ff14" filter="url(#glow-med)" />
+      <circle cx="100" cy="215" r="3" fill="#ffffff" />
+
+      <!-- Tibia (Scythe/Blade Segment) -->
+      <path d="M 100 215 L 45 330 L 62 335 L 110 225 Z" fill="url(#chitinDark)" />
+      <path d="M 100 215 L 45 330" stroke="#00ff66" stroke-width="2.5" filter="url(#glow-sharp)" />
+
+      <!-- Ankle Joint Orb -->
+      <circle cx="50" cy="330" r="5" fill="#abff00" filter="url(#glow-sharp)" />
+
+      <!-- Tarsus (Pounce Claw Striking Ground) -->
+      <path d="M 50 330 L 20 440 L 30 442 L 60 335 Z" fill="url(#chitinDark)" />
+      <path d="M 50 330 L 20 440" stroke="url(#chitinRim)" stroke-width="2.5" filter="url(#glow-sharp)" />
+      <!-- Sharp Talon Point -->
+      <path d="M 20 440 Q 12 455 10 470 Q 22 460 30 442 Z" fill="#39ff14" filter="url(#glow-sharp)" />
+    </g>
+
+    <!-- MID LEG (Planted Center Power Leg) -->
+    <g id="mid-leg-left-main">
+      <!-- Coxa -->
+      <path d="M 255 285 L 230 330 L 245 335 L 270 290 Z" fill="url(#chitinDark)" />
+      
+      <!-- Femur -->
+      <path d="M 230 330 L 175 390 L 190 400 L 245 335 Z" fill="url(#chitinDark)" />
+      <path d="M 230 330 L 175 390" stroke="url(#chitinRim)" stroke-width="3" filter="url(#glow-sharp)" />
+      
+      <!-- Knee Node -->
+      <circle cx="182" cy="395" r="6" fill="#39ff14" filter="url(#glow-med)" />
+
+      <!-- Tibia / Foot -->
+      <path d="M 182 395 L 140 475 L 152 480 L 192 400 Z" fill="url(#chitinDark)" />
+      <path d="M 182 395 L 140 475" stroke="#00ffaa" stroke-width="2" />
+      <!-- Claw Tip -->
+      <path d="M 140 475 L 125 500 L 145 490 Z" fill="#39ff14" filter="url(#glow-sharp)" />
+    </g>
+
+    <!-- HIND LEG (Foreground Power Pusher) -->
+    <g id="hind-leg-left-main">
+      <!-- Coxa -->
+      <path d="M 300 310 L 350 300 L 360 315 L 310 325 Z" fill="url(#chitinDark)" />
+      
+      <!-- Massive Femur -->
+      <path d="M 350 300 L 435 345 L 425 365 L 345 315 Z" fill="url(#chitinDark)" />
+      <path d="M 350 300 L 435 345" stroke="url(#chitinRim)" stroke-width="3.5" filter="url(#glow-sharp)" />
+      
+      <!-- Armor Plate Highlight -->
+      <path d="M 370 310 L 420 338 L 410 350 L 365 320 Z" fill="#143d2b" stroke="#39ff14" stroke-width="1" />
+
+      <!-- Knee Joint Node & Heavy Spur -->
+      <circle cx="430" cy="355" r="8" fill="#39ff14" filter="url(#glow-med)" />
+      <circle cx="430" cy="355" r="3.5" fill="#ffffff" />
+      <path d="M 435 350 L 475 340 L 445 365 Z" fill="url(#chitinDark)" stroke="#39ff14" stroke-width="1.5" />
+
+      <!-- Tibia -->
+      <path d="M 430 355 L 465 450 L 450 455 L 420 365 Z" fill="url(#chitinDark)" />
+      <path d="M 430 355 L 465 450" stroke="url(#chitinRim)" stroke-width="2.5" filter="url(#glow-sharp)" />
+
+      <!-- Foot / Digits -->
+      <path d="M 465 450 L 490 495 L 475 490 L 455 455 Z" fill="#062617" stroke="#39ff14" stroke-width="1.5" />
+      <path d="M 490 495 L 505 505 L 485 500 Z" fill="#39ff14" filter="url(#glow-sharp)" />
+    </g>
+  </g>
+
+  <!-- ==================== LAYER 6: SPORE CAP (MAIN HERO ELEMENT) ==================== -->
+  <g id="main-spore-cap" filter="url(#shadow-dark)">
+    <!-- Smooth Aerodynamic Swept Mushroom Cap -->
+    <!-- Base Outer Shell Path -->
+    <path d="M 95 210 
+             C 80 160, 130 95, 215 65 
+             C 300 35, 410 50, 465 105 
+             C 495 135, 485 180, 440 205 
+             C 380 235, 260 240, 160 230 
+             C 120 226, 100 222, 95 210 Z" 
+          fill="url(#capMain)" stroke="#114a30" stroke-width="3" />
+
+    <!-- Cap Top Specular / Neon Highlight Overlay -->
+    <path d="M 120 180 
+             C 105 140, 145 90, 220 68 
+             C 295 46, 395 58, 445 105 
+             C 410 80, 310 60, 225 80 
+             C 155 98, 125 140, 120 180 Z" 
+          fill="url(#capTopHighlight)" />
+
+    <!-- Luminescent Rim Contour Line (Bottom edge glowing border) -->
+    <path d="M 95 210 C 130 225, 220 232, 310 228 C 380 225, 435 208, 465 180" 
+          fill="none" stroke="url(#capRimGlow)" stroke-width="5" stroke-linecap="round" filter="url(#glow-sharp)" />
+    <path d="M 95 210 C 130 225, 220 232, 310 228 C 380 225, 435 208, 465 180" 
+          fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.8" />
+
+    <!-- Glowing Bioluminescent Veins / Neural Lines on Cap -->
+    <g fill="none" stroke-linecap="round" filter="url(#glow-sharp)">
+      <!-- Front Sweep Veins -->
+      <path d="M 105 205 Q 140 170 185 150 T 270 115" stroke="#39ff14" stroke-width="3" />
+      <path d="M 140 170 Q 165 140 210 120" stroke="#abff00" stroke-width="2" />
+      <path d="M 185 150 Q 215 175 250 165" stroke="#00ff66" stroke-width="1.8" />
+      
+      <!-- Center Main Branch -->
+      <path d="M 170 215 Q 230 170 320 135 T 430 110" stroke="#39ff14" stroke-width="3.5" />
+      <path d="M 230 170 Q 275 140 310 110" stroke="#ffffff" stroke-width="1.5" />
+      <path d="M 320 135 Q 360 160 400 150" stroke="#00ff66" stroke-width="2" />
+
+      <!-- Rear Sweep Veins -->
+      <path d="M 260 225 Q 330 190 400 165 T 465 140" stroke="#39ff14" stroke-width="2.5" />
+      <path d="M 330 190 Q 375 200 420 185" stroke="#abff00" stroke-width="1.5" />
+    </g>
+
+    <!-- Bioluminescent Spore Pustules / Nodes on Cap Shell -->
+    <!-- Node Cluster 1 (Front Top) -->
+    <ellipse cx="170" cy="135" rx="10" ry="7" transform="rotate(-20 170 135)" fill="url(#sporeNode)" filter="url(#glow-sharp)" />
+    <circle cx="168" cy="133" r="3" fill="#ffffff" />
+    
+    <!-- Node Cluster 2 (Center Large) -->
+    <ellipse cx="265" cy="110" rx="15" ry="9" transform="rotate(-15 265 110)" fill="url(#sporeNode)" filter="url(#glow-med)" />
+    <circle cx="262" cy="108" r="4.5" fill="#ffffff" />
+    <circle cx="272" cy="112" r="2.5" fill="#abff00" />
+
+    <!-- Node Cluster 3 (Mid Top) -->
+    <ellipse cx="230" cy="80" rx="9" ry="5" transform="rotate(-25 230 80)" fill="url(#sporeNode)" filter="url(#glow-sharp)" />
+
+    <!-- Node Cluster 4 (Back Top Ridge) -->
+    <ellipse cx="360" cy="95" rx="13" ry="7" transform="rotate(-10 360 95)" fill="url(#sporeNode)" filter="url(#glow-med)" />
+    <circle cx="358" cy="93" r="3.5" fill="#ffffff" />
+
+    <!-- Node Cluster 5 (Rear Edge) -->
+    <ellipse cx="435" cy="130" rx="11" ry="6" transform="rotate(15 435 130)" fill="url(#sporeNode)" filter="url(#glow-sharp)" />
+    <circle cx="433" cy="129" r="2.5" fill="#ffffff" />
+
+    <!-- Smaller Scattered Bio-Dots -->
+    <circle cx="130" cy="160" r="3" fill="#39ff14" filter="url(#glow-sharp)" />
+    <circle cx="195" cy="100" r="2.5" fill="#abff00" />
+    <circle cx="310" cy="85" r="3.5" fill="#00ff66" filter="url(#glow-sharp)" />
+    <circle cx="320" cy="160" r="4" fill="#39ff14" filter="url(#glow-sharp)" />
+    <circle cx="390" cy="135" r="3" fill="#abff00" />
+    <circle cx="210" cy="195" r="3.5" fill="#ffffff" filter="url(#glow-sharp)" />
+    <circle cx="285" cy="180" r="4.5" fill="#39ff14" filter="url(#glow-sharp)" />
+    <circle cx="370" cy="175" r="2.5" fill="#00ff66" />
+  </g>
+
+  <!-- ==================== LAYER 7: FOREGROUND PARTICLES, MIST & SPEED EFFECTS ==================== -->
+  <g id="foreground-effects">
+    <!-- Toxic Spore Vents Smoke (Puffing from Cap Top Nodes) -->
+    <path d="M 265 102 C 260 70, 230 50, 240 20 C 255 45, 285 55, 275 95 Z" 
+          fill="url(#mistGrad1)" filter="url(#glow-med)" opacity="0.8" />
+    <path d="M 360 88 C 370 60, 390 45, 420 25 C 410 50, 395 65, 375 90 Z" 
+          fill="url(#mistGrad2)" filter="url(#glow-med)" opacity="0.7" />
+
+    <!-- Dripping Bioluminescent Spore Liquid (From Cap Tip & Gills) -->
+    <!-- Front Tip Drip -->
+    <path d="M 96 212 Q 92 235 95 245 Q 99 235 98 214 Z" fill="#39ff14" filter="url(#glow-sharp)" />
+    <circle cx="95" cy="250" r="2.5" fill="#ffffff" filter="url(#glow-sharp)" />
+    <circle cx="94" cy="262" r="1.5" fill="#abff00" />
+
+    <!-- Mid Gill Drip -->
+    <path d="M 215 255 Q 212 275 214 285 Q 218 273 218 256 Z" fill="#00ff66" filter="url(#glow-sharp)" />
+    <circle cx="214" cy="291" r="2" fill="#39ff14" filter="url(#glow-sharp)" />
+
+    <!-- Rear Edge Drip -->
+    <path d="M 430 205 Q 435 225 433 240 Q 428 223 425 204 Z" fill="#abff00" filter="url(#glow-sharp)" />
+    <circle cx="433" cy="246" r="2" fill="#ffffff" />
+
+    <!-- Floating High-Speed Spore Orbs & Dust Trail (Trailing to the Right & Up) -->
+    <g fill="url(#sporeNode)" filter="url(#glow-sharp)">
+      <!-- Large Floating Spores -->
+      <circle cx="460" cy="80" r="6" />
+      <circle cx="490" cy="120" r="4.5" />
+      <circle cx="420" cy="40" r="5" />
+      <circle cx="330" cy="30" r="4" />
+      <circle cx="150" cy="45" r="5.5" />
+      <circle cx="70" cy="160" r="4" />
+      
+      <!-- Medium & Small Floating Particles -->
+      <circle cx="475" cy="95" r="2.5" fill="#ffffff" />
+      <circle cx="440" cy="55" r="2" fill="#abff00" />
+      <circle cx="500" cy="150" r="3" fill="#39ff14" />
+      <circle cx="380" cy="25" r="1.5" fill="#ffffff" />
+      <circle cx="290" cy="15" r="2.5" fill="#00ff66" />
+      <circle cx="180" cy="30" r="2" fill="#abff00" />
+      <circle cx="110" cy="80" r="3" fill="#39ff14" />
+      <circle cx="50" cy="210" r="2" fill="#ffffff" />
+      <circle cx="30" cy="320" r="3.5" />
+      <circle cx="100" cy="420" r="2.5" fill="#39ff14" />
+      <circle cx="380" cy="460" r="3" fill="#00ff66" />
+      <circle cx="490" cy="420" r="2" fill="#abff00" />
+    </g>
+
+    <!-- Dynamic Sprint / Motion Streak Lines -->
+    <g stroke="url(#capRimGlow)" stroke-linecap="round" opacity="0.6" filter="url(#glow-sharp)">
+      <path d="M 450 160 L 505 145" stroke-width="2" />
+      <path d="M 470 190 L 510 182" stroke-width="1.5" />
+      <path d="M 430 100 L 485 80" stroke-width="2" />
+      <path d="M 380 50 L 440 30" stroke-width="1.5" />
+      <path d="M 100 450 L 60 470" stroke-width="2" stroke="#39ff14" />
+      <path d="M 470 460 L 500 480" stroke-width="2.5" stroke="#39ff14" />
+    </g>
+  </g>
+</svg>

@@ -1,13 +1,295 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-        <defs>
-          <radialGradient id="aura" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#ea80fc" stop-opacity="0.8"/>
-            <stop offset="100%" stop-color="#4a148c" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <circle cx="256" cy="256" r="230" fill="url(#aura)"/>
-        <circle cx="256" cy="256" r="180" fill="#11111a" stroke="#e040fb" stroke-width="12"/>
-        <circle cx="190" cy="210" r="24" fill="#ff1744"/>
-        <circle cx="322" cy="210" r="24" fill="#ff1744"/>
-        <path d="M180 320 Q256 380 332 320" fill="none" stroke="#ff1744" stroke-width="10"/>
-      </svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Filters for Glows and Energy -->
+    <filter id="glow-heavy" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur1" />
+      <feGaussianBlur stdDeviation="6" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="glow-intense" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur1" />
+      <feGaussianBlur stdDeviation="2" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="eye-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComponentTransfer in="blur" result="boost">
+        <feFuncA type="linear" slope="2.5" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="boost" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Gradients -->
+    <radialGradient id="bg-aura" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#ff0055" stop-opacity="0.6" />
+      <stop offset="35%" stop-color="#7900ff" stop-opacity="0.4" />
+      <stop offset="70%" stop-color="#2a004f" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#05020a" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="core-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="25%" stop-color="#ff2a6d" />
+      <stop offset="60%" stop-color="#9a00ff" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="obsidian-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181524" />
+      <stop offset="50%" stop-color="#0c0a14" />
+      <stop offset="100%" stop-color="#040306" />
+    </linearGradient>
+
+    <linearGradient id="obsidian-mid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2c2440" />
+      <stop offset="50%" stop-color="#161224" />
+      <stop offset="100%" stop-color="#08060f" />
+    </linearGradient>
+
+    <linearGradient id="obsidian-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a3b6e" />
+      <stop offset="50%" stop-color="#251d38" />
+      <stop offset="100%" stop-color="#100b1a" />
+    </linearGradient>
+
+    <linearGradient id="crimson-energy" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff0055" />
+      <stop offset="50%" stop-color="#ff2a00" />
+      <stop offset="100%" stop-color="#880022" />
+    </linearGradient>
+
+    <linearGradient id="purple-energy" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4b0082" />
+      <stop offset="50%" stop-color="#a200ff" />
+      <stop offset="100%" stop-color="#ff00d4" />
+    </linearGradient>
+
+    <linearGradient id="horn-grad-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#08060c" />
+      <stop offset="60%" stop-color="#1f192e" />
+      <stop offset="100%" stop-color="#9a00ff" />
+    </linearGradient>
+
+    <linearGradient id="horn-grad-right" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#08060c" />
+      <stop offset="60%" stop-color="#1f192e" />
+      <stop offset="100%" stop-color="#9a00ff" />
+    </linearGradient>
+
+    <linearGradient id="blade-edge" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00ffff" />
+      <stop offset="50%" stop-color="#d400ff" />
+      <stop offset="100%" stop-color="#ff0055" />
+    </linearGradient>
+  </defs>
+
+  <!-- BACKGROUND AURA & POWER EFFECTS -->
+  <g id="background-effects">
+    <!-- Outer Radial Aura Void -->
+    <circle cx="256" cy="240" r="230" fill="url(#bg-aura)" />
+
+    <!-- Jagged Dark Energy Waves (Backdrop Flames) -->
+    <path d="M 256 30 C 200 80 120 60 70 120 C 130 150 100 220 50 260 C 120 270 110 350 70 420 C 140 390 180 460 256 490 C 332 460 372 390 442 420 C 402 350 392 270 462 260 C 412 220 382 150 442 120 C 392 60 312 80 256 30 Z" fill="url(#purple-energy)" opacity="0.25" filter="url(#glow-heavy)" />
+    
+    <path d="M 256 60 C 210 110 140 90 95 145 C 145 175 120 235 75 270 C 135 280 125 350 95 405 C 155 380 195 440 256 465 C 317 440 357 380 417 405 C 387 350 377 280 437 270 C 392 235 367 175 417 145 C 372 90 302 110 256 60 Z" fill="url(#crimson-energy)" opacity="0.35" filter="url(#glow-heavy)" />
+  </g>
+
+  <!-- WINGS OF SHADOW & OBSIDIAN BLADES -->
+  <g id="wings">
+    <!-- Left Wing Outer -->
+    <path d="M 220 240 L 110 130 L 130 180 L 50 160 L 80 220 L 20 240 L 70 280 L 30 330 L 100 330 L 60 390 L 140 360 L 180 420 L 210 330 Z" fill="url(#obsidian-dark)" stroke="#7900ff" stroke-width="1.5" />
+    <path d="M 220 240 L 110 130 L 130 180 L 50 160 L 80 220 L 70 280 L 100 330 L 140 360 Z" fill="url(#obsidian-mid)" />
+    <!-- Left Wing Energy Highlights -->
+    <path d="M 110 130 L 130 180 L 50 160 L 80 220" fill="none" stroke="#ff0055" stroke-width="2" filter="url(#glow-intense)" />
+    <path d="M 50 160 L 20 240 L 70 280 L 30 330 L 100 330" fill="none" stroke="#a200ff" stroke-width="1.5" />
+
+    <!-- Right Wing Outer -->
+    <path d="M 292 240 L 402 130 L 382 180 L 462 160 L 432 220 L 492 240 L 442 280 L 482 330 L 412 330 L 452 390 L 372 360 L 332 420 L 302 330 Z" fill="url(#obsidian-dark)" stroke="#7900ff" stroke-width="1.5" />
+    <path d="M 292 240 L 402 130 L 382 180 L 462 160 L 432 220 L 442 280 L 412 330 L 372 360 Z" fill="url(#obsidian-mid)" />
+    <!-- Right Wing Energy Highlights -->
+    <path d="M 402 130 L 382 180 L 462 160 L 432 220" fill="none" stroke="#ff0055" stroke-width="2" filter="url(#glow-intense)" />
+    <path d="M 462 160 L 492 240 L 442 280 L 482 330 L 412 330" fill="none" stroke="#a200ff" stroke-width="1.5" />
+  </g>
+
+  <!-- MAIN BODY / LOWER ROBES & TAIL SHADOWS -->
+  <g id="lower-body">
+    <!-- Tattered Shadow Skirt / Waist Armor Layer -->
+    <path d="M 170 340 L 130 450 L 180 430 L 210 480 L 256 420 L 302 480 L 332 430 L 382 450 L 342 340 Z" fill="url(#obsidian-dark)" />
+    <path d="M 190 350 L 150 430 L 190 410 L 215 450 L 256 390 L 297 450 L 322 410 L 362 430 L 322 350 Z" fill="url(#obsidian-mid)" />
+    
+    <!-- Outer Crimson Skirt Glow Lines -->
+    <path d="M 130 450 L 180 430 L 210 480 L 256 420 L 302 480 L 332 430 L 382 450" fill="none" stroke="url(#crimson-energy)" stroke-width="3" filter="url(#glow-intense)" />
+  </g>
+
+  <!-- HORNS & CROWN OF SHADOWS (BACK LAYER) -->
+  <g id="horns-back">
+    <!-- Massive Outer Left Horn -->
+    <path d="M 210 130 C 180 70 120 40 40 30 C 70 70 110 110 170 150 Z" fill="url(#horn-grad-left)" stroke="#ff0055" stroke-width="1" />
+    <path d="M 210 130 C 180 70 120 40 40 30 C 80 55 125 75 170 150 Z" fill="url(#obsidian-light)" opacity="0.4" />
+
+    <!-- Massive Outer Right Horn -->
+    <path d="M 302 130 C 332 70 392 40 472 30 C 442 70 402 110 342 150 Z" fill="url(#horn-grad-right)" stroke="#ff0055" stroke-width="1" />
+    <path d="M 302 130 C 332 70 392 40 472 30 C 432 55 387 75 342 150 Z" fill="url(#obsidian-light)" opacity="0.4" />
+
+    <!-- Inner Secondary Horns -->
+    <path d="M 225 120 C 205 75 170 50 110 40 C 140 70 170 100 195 135 Z" fill="url(#obsidian-dark)" stroke="#a200ff" stroke-width="1" />
+    <path d="M 287 120 C 307 75 342 50 402 40 C 372 70 342 100 317 135 Z" fill="url(#obsidian-dark)" stroke="#a200ff" stroke-width="1" />
+  </g>
+
+  <!-- TORSO / CHEST ARMOR & CORE -->
+  <g id="torso">
+    <!-- Base Chest Silhouette -->
+    <path d="M 160 210 L 200 340 L 256 370 L 312 340 L 352 210 L 256 230 Z" fill="url(#obsidian-dark)" />
+
+    <!-- Abdomen Segmented Plates -->
+    <path d="M 205 310 L 256 335 L 307 310 L 297 335 L 256 355 L 215 335 Z" fill="url(#obsidian-light)" stroke="#5900b3" stroke-width="1" />
+    <path d="M 210 285 L 256 305 L 302 285 L 292 310 L 256 325 L 220 310 Z" fill="url(#obsidian-mid)" stroke="#5900b3" stroke-width="1" />
+    <path d="M 215 260 L 256 275 L 297 260 L 287 285 L 256 295 L 225 285 Z" fill="url(#obsidian-dark)" stroke="#5900b3" stroke-width="1" />
+
+    <!-- Pectoral Armor Plates -->
+    <path d="M 170 215 L 256 245 L 245 285 L 180 255 Z" fill="url(#obsidian-mid)" stroke="#9a00ff" stroke-width="1.5" />
+    <path d="M 342 215 L 256 245 L 267 285 L 332 255 Z" fill="url(#obsidian-mid)" stroke="#9a00ff" stroke-width="1.5" />
+
+    <path d="M 175 218 L 245 243 L 238 273 L 185 250 Z" fill="url(#obsidian-light)" />
+    <path d="M 337 218 L 267 243 L 274 273 L 327 250 Z" fill="url(#obsidian-light)" />
+
+    <!-- Glowing Demonic Chest Core (The Dark Heart) -->
+    <polygon points="256,240 280,270 256,300 232,270" fill="#000000" />
+    <polygon points="256,245 273,270 256,293 239,270" fill="url(#crimson-energy)" filter="url(#glow-intense)" />
+    <circle cx="256" cy="270" r="16" fill="url(#core-glow)" filter="url(#glow-intense)" />
+    
+    <!-- Energy Fissures / Cracks on Chest -->
+    <path d="M 256 270 L 220 240 M 256 270 L 292 240 M 256 270 L 230 310 M 256 270 L 282 310 M 256 300 L 256 345" stroke="#ff0055" stroke-width="2" stroke-linecap="round" filter="url(#glow-intense)" />
+    <path d="M 256 270 L 210 270 M 256 270 L 302 270" stroke="#ffaa00" stroke-width="1.5" stroke-linecap="round" filter="url(#glow-intense)" />
+  </g>
+
+  <!-- PAULDRONS (SHOULDER ARMOR) -->
+  <g id="pauldrons">
+    <!-- Left Pauldron (Layered Jagged Spikes) -->
+    <!-- Base/Back Spike -->
+    <path d="M 180 210 L 90 150 L 130 210 L 70 220 L 140 250 Z" fill="url(#obsidian-dark)" stroke="#7900ff" stroke-width="1" />
+    <!-- Main Guard Plate -->
+    <path d="M 195 190 L 110 130 L 145 215 L 105 245 L 175 270 L 205 220 Z" fill="url(#obsidian-mid)" stroke="#ff0055" stroke-width="1.5" />
+    <!-- Front Plate Highlights -->
+    <path d="M 195 190 L 135 150 L 155 210 L 125 235 L 175 255 Z" fill="url(#obsidian-light)" />
+    <path d="M 195 190 L 110 130" stroke="#00ffff" stroke-width="1.5" filter="url(#glow-intense)" />
+    <path d="M 145 215 L 105 245" stroke="#ff0055" stroke-width="1.5" filter="url(#glow-intense)" />
+
+    <!-- Right Pauldron (Layered Jagged Spikes) -->
+    <!-- Base/Back Spike -->
+    <path d="M 332 210 L 422 150 L 382 210 L 442 220 L 372 250 Z" fill="url(#obsidian-dark)" stroke="#7900ff" stroke-width="1" />
+    <!-- Main Guard Plate -->
+    <path d="M 317 190 L 402 130 L 367 215 L 407 245 L 337 270 L 307 220 Z" fill="url(#obsidian-mid)" stroke="#ff0055" stroke-width="1.5" />
+    <!-- Front Plate Highlights -->
+    <path d="M 317 190 L 377 150 L 357 210 L 387 235 L 337 255 Z" fill="url(#obsidian-light)" />
+    <path d="M 317 190 L 402 130" stroke="#00ffff" stroke-width="1.5" filter="url(#glow-intense)" />
+    <path d="M 367 215 L 407 245" stroke="#ff0055" stroke-width="1.5" filter="url(#glow-intense)" />
+  </g>
+
+  <!-- ARMS AND GAUNTLETS -->
+  <g id="arms">
+    <!-- Left Arm & Claw -->
+    <path d="M 155 260 L 110 310 L 80 290 L 60 340 L 95 350 L 130 310 L 160 280 Z" fill="url(#obsidian-dark)" stroke="#7900ff" stroke-width="1" />
+    <path d="M 110 310 L 60 340 L 40 330 L 30 345 L 65 355 L 45 365 L 75 365 L 95 350 Z" fill="url(#obsidian-mid)" stroke="#ff0055" stroke-width="1" />
+    <!-- Left Hand Energy Spell / Orb -->
+    <circle cx="45" cy="350" r="25" fill="url(#core-glow)" filter="url(#glow-heavy)" />
+    <circle cx="45" cy="350" r="12" fill="#ffffff" filter="url(#glow-intense)" />
+    <!-- Energy Swirls around left hand -->
+    <path d="M 20 340 Q 45 310 70 340 T 30 370" fill="none" stroke="#ff0055" stroke-width="2" filter="url(#glow-intense)" />
+    <path d="M 30 365 Q 55 385 65 355" fill="none" stroke="#00ffff" stroke-width="1.5" filter="url(#glow-intense)" />
+
+    <!-- Right Arm & Claw -->
+    <path d="M 357 260 L 402 310 L 432 290 L 452 340 L 417 350 L 382 310 L 352 280 Z" fill="url(#obsidian-dark)" stroke="#7900ff" stroke-width="1" />
+    <path d="M 402 310 L 452 340 L 472 330 L 482 345 L 447 355 L 467 365 L 437 365 L 417 350 Z" fill="url(#obsidian-mid)" stroke="#ff0055" stroke-width="1" />
+    <!-- Right Hand Lightning Claws -->
+    <path d="M 452 340 L 495 335 M 482 345 L 505 355 M 467 365 L 490 380" stroke="#00ffff" stroke-width="2" stroke-linecap="round" filter="url(#glow-intense)" />
+  </g>
+
+  <!-- HEAD, HELMET & DEMONIC FACE -->
+  <g id="head">
+    <!-- Neck Guard / Gorget -->
+    <path d="M 210 190 L 256 220 L 302 190 L 280 170 L 256 185 L 232 170 Z" fill="url(#obsidian-dark)" stroke="#7900ff" stroke-width="1" />
+
+    <!-- Shadow Void Face Inner -->
+    <path d="M 215 130 L 256 100 L 297 130 L 285 185 L 256 205 L 227 185 Z" fill="#040208" />
+
+    <!-- Helmet Jaw / Fangs Guard -->
+    <path d="M 210 140 L 225 185 L 242 165 L 256 200 L 270 165 L 287 185 L 302 140 L 282 195 L 256 215 L 230 195 Z" fill="url(#obsidian-mid)" stroke="#9a00ff" stroke-width="1.5" />
+    <path d="M 225 185 L 242 165 L 256 200 L 270 165 L 287 185" fill="none" stroke="#ff0055" stroke-width="1.5" filter="url(#glow-intense)" />
+
+    <!-- Forehead Plate / Crown Base -->
+    <path d="M 200 125 L 256 80 L 312 125 L 290 135 L 256 110 L 222 135 Z" fill="url(#obsidian-light)" stroke="#ff0055" stroke-width="1.5" />
+
+    <!-- Central Horn Spikes on Crown -->
+    <path d="M 256 80 L 242 110 L 256 102 L 270 110 Z" fill="url(#crimson-energy)" />
+    <path d="M 256 35 L 242 85 L 256 75 L 270 85 Z" fill="url(#obsidian-light)" stroke="#00ffff" stroke-width="1" filter="url(#glow-intense)" />
+
+    <!-- Crown Side Spikes -->
+    <path d="M 220 110 L 195 70 L 210 100 Z" fill="url(#obsidian-mid)" stroke="#ff0055" stroke-width="1" />
+    <path d="M 292 110 L 317 70 L 302 100 Z" fill="url(#obsidian-mid)" stroke="#ff0055" stroke-width="1" />
+
+    <!-- GLOWING DEMONIC EYES (4 Eyes Concept) -->
+    <!-- Primary Eyes (Large Lower Pair) -->
+    <polygon points="230,145 250,152 248,157 226,152" fill="#ffffff" filter="url(#eye-glow)" />
+    <polygon points="230,145 250,152 248,157 226,152" fill="#ff0044" filter="url(#glow-intense)" />
+    <polygon points="233,147 247,151 245,154 231,150" fill="#ffff00" />
+
+    <polygon points="282,145 262,152 264,157 286,152" fill="#ffffff" filter="url(#eye-glow)" />
+    <polygon points="282,145 262,152 264,157 286,152" fill="#ff0044" filter="url(#glow-intense)" />
+    <polygon points="279,147 265,151 267,154 281,150" fill="#ffff00" />
+
+    <!-- Secondary Eyes (Slanted Upper Pair) -->
+    <polygon points="234,133 248,138 246,141 232,137" fill="#ff0055" filter="url(#eye-glow)" />
+    <polygon points="235,134 246,137 245,139 234,136" fill="#ffffff" />
+
+    <polygon points="278,133 264,138 266,141 280,137" fill="#ff0055" filter="url(#eye-glow)" />
+    <polygon points="277,134 266,137 267,139 278,136" fill="#ffffff" />
+
+    <!-- Nose/Face Central Rune -->
+    <line x1="256" y1="120" x2="256" y2="155" stroke="#ff0055" stroke-width="2" filter="url(#glow-intense)" />
+    <line x1="250" y1="130" x2="262" y2="130" stroke="#ff0055" stroke-width="1.5" filter="url(#glow-intense)" />
+  </g>
+
+  <!-- FOREGROUND FLOATING ENERGY SHARDS & PARTICLES -->
+  <g id="foreground-particles">
+    <!-- Floating Obsidian Shards -->
+    <!-- Left Top Shard -->
+    <polygon points="110,90 120,70 125,95 115,105" fill="url(#obsidian-light)" stroke="#00ffff" stroke-width="1" filter="url(#glow-intense)" />
+    <!-- Right Top Shard -->
+    <polygon points="402,90 392,70 387,95 397,105" fill="url(#obsidian-light)" stroke="#00ffff" stroke-width="1" filter="url(#glow-intense)" />
+    <!-- Bottom Left Shard -->
+    <polygon points="90,410 105,390 100,425 85,420" fill="url(#obsidian-mid)" stroke="#ff0055" stroke-width="1" />
+    <!-- Bottom Right Shard -->
+    <polygon points="422,410 407,390 412,425 427,420" fill="url(#obsidian-mid)" stroke="#ff0055" stroke-width="1" />
+
+    <!-- Glowing Magic Sparks (Red & Cyan Particles) -->
+    <circle cx="150" cy="120" r="2.5" fill="#ff0055" filter="url(#glow-intense)" />
+    <circle cx="360" cy="120" r="2" fill="#00ffff" filter="url(#glow-intense)" />
+    <circle cx="80" cy="200" r="1.5" fill="#ff2a00" filter="url(#glow-intense)" />
+    <circle cx="430" cy="200" r="3" fill="#ff00d4" filter="url(#glow-intense)" />
+    <circle cx="190" cy="50" r="2" fill="#00ffff" filter="url(#glow-intense)" />
+    <circle cx="320" cy="45" r="1.5" fill="#ff0055" filter="url(#glow-intense)" />
+    <circle cx="120" cy="300" r="2" fill="#ffaa00" filter="url(#glow-intense)" />
+    <circle cx="390" cy="300" r="2.5" fill="#00ffff" filter="url(#glow-intense)" />
+    <circle cx="200" cy="450" r="1.5" fill="#ff0055" filter="url(#glow-intense)" />
+    <circle cx="310" cy="460" r="2" fill="#a200ff" filter="url(#glow-intense)" />
+    <circle cx="256" cy="485" r="2.5" fill="#ff0055" filter="url(#glow-intense)" />
+
+    <!-- High-Light Rim Overlay on Armor Shoulders & Chest -->
+    <path d="M 195 190 L 170 215 L 256 245 L 342 215 L 317 190" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.6" filter="url(#glow-intense)" />
+    <path d="M 230 195 L 256 215 L 282 195" fill="none" stroke="#00ffff" stroke-width="1.5" filter="url(#glow-intense)" />
+  </g>
+</svg>

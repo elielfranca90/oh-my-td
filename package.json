@@ -8,6 +8,6 @@
     "build": "cd tower-defense-2d && npm install && npm run build",
     "preview": "cd tower-defense-2d && npm run preview",
     "test": "cd tower-defense-2d && npm test",
-    "generate-asset": "tsx scripts/generate-asset.ts"
+    "generate-asset": "npx tsx scripts/generate-asset.ts"
   }
 }

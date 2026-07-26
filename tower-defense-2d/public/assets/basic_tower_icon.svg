@@ -1,0 +1,389 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Filters for Glows and Shadows -->
+    <filter id="glow-intense" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="blur1" />
+      <feGaussianBlur stdDeviation="20" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="glow-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="drop-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="8" flood-color="#020617" flood-opacity="0.8" />
+    </filter>
+
+    <filter id="ambient-cyan-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="15" result="blur" />
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0.2
+        0 0 0 0 0.75
+        0 0 0 0 1
+        0 0 0 0.8 0" />
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Gradients -->
+    <!-- Card Background -->
+    <radialGradient id="bg-grad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="55%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </radialGradient>
+
+    <linearGradient id="bg-card-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="30%" stop-color="#1e40af" />
+      <stop offset="70%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+
+    <!-- Stone Gradients -->
+    <linearGradient id="stone-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8" />
+      <stop offset="50%" stop-color="#64748b" />
+      <stop offset="100%" stop-color="#334155" />
+    </linearGradient>
+
+    <linearGradient id="stone-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#475569" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+
+    <linearGradient id="stone-rim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+
+    <!-- Wood Gradients -->
+    <linearGradient id="wood-body-left" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#45241c" />
+      <stop offset="40%" stop-color="#6e392c" />
+      <stop offset="100%" stop-color="#8c4a39" />
+    </linearGradient>
+
+    <linearGradient id="wood-body-right" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8c4a39" />
+      <stop offset="60%" stop-color="#5c3025" />
+      <stop offset="100%" stop-color="#361a13" />
+    </linearGradient>
+
+    <linearGradient id="wood-plank-light" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a75d49" />
+      <stop offset="100%" stop-color="#5c3025" />
+    </linearGradient>
+
+    <!-- Gold Accent Gradients -->
+    <linearGradient id="gold-trim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="35%" stop-color="#eab308" />
+      <stop offset="75%" stop-color="#ca8a04" />
+      <stop offset="100%" stop-color="#854d0e" />
+    </linearGradient>
+
+    <!-- Iron Metal Gradients -->
+    <linearGradient id="iron-metal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#334155" />
+      <stop offset="25%" stop-color="#64748b" />
+      <stop offset="50%" stop-color="#94a3b8" />
+      <stop offset="75%" stop-color="#475569" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+
+    <!-- Sapphire Energy Core Gradients -->
+    <radialGradient id="sapphire-orb" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="18%" stop-color="#e0f2fe" />
+      <stop offset="40%" stop-color="#38bdf8" />
+      <stop offset="70%" stop-color="#0284c7" />
+      <stop offset="92%" stop-color="#0369a1" />
+      <stop offset="100%" stop-color="#0c4a6e" />
+    </radialGradient>
+
+    <radialGradient id="orb-halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="1" />
+      <stop offset="40%" stop-color="#0284c7" stop-opacity="0.6" />
+      <stop offset="75%" stop-color="#0369a1" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#0c4a6e" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="energy-beam" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.8" />
+      <stop offset="30%" stop-color="#38bdf8" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Crystal Shard Gradient -->
+    <linearGradient id="crystal-shard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2fe" />
+      <stop offset="30%" stop-color="#38bdf8" />
+      <stop offset="70%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#075985" />
+    </linearGradient>
+  </defs>
+
+  <!-- ================= BACKGROUND CONTAINER ================= -->
+  <g id="card-frame">
+    <!-- Outer Icon Base -->
+    <rect x="20" y="20" width="472" height="472" rx="90" fill="url(#bg-grad)" stroke="url(#bg-card-border)" stroke-width="8" filter="url(#drop-shadow)" />
+    <rect x="28" y="28" width="456" height="456" rx="82" fill="none" stroke="#0284c7" stroke-width="2" opacity="0.4" />
+
+    <!-- UI Geometric Reticle / Mana Aura Backdrop -->
+    <circle cx="256" cy="230" r="175" fill="none" stroke="#0284c7" stroke-width="1.5" opacity="0.25" stroke-dasharray="12 8" />
+    <circle cx="256" cy="230" r="155" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.2" />
+    <polygon points="256,40 264,55 248,55" fill="#38bdf8" opacity="0.4" />
+    <polygon points="256,420 264,405 248,405" fill="#38bdf8" opacity="0.2" />
+    <polygon points="420,230 405,238 405,222" fill="#38bdf8" opacity="0.2" />
+    <polygon points="92,230 107,238 107,222" fill="#38bdf8" opacity="0.2" />
+  </g>
+
+  <!-- Ground Shadow under Pedestal -->
+  <ellipse cx="256" cy="445" rx="145" ry="26" fill="#020617" opacity="0.8" filter="url(#glow-soft)" />
+
+  <!-- ================= TOWER BASE (STONE PEDESTAL) ================= -->
+  <g id="stone-pedestal" filter="url(#drop-shadow)">
+    <!-- Base Step 1 (Lowest) -->
+    <path d="M 120 440 L 148 405 L 364 405 L 392 440 Z" fill="url(#stone-dark)" />
+    <path d="M 120 440 L 148 405 L 256 405 L 256 445 Z" fill="url(#stone-light)" opacity="0.3" />
+    <!-- Front Bevel Thickness -->
+    <path d="M 120 440 L 392 440 L 384 448 L 128 448 Z" fill="#0f172a" />
+    <path d="M 148 405 L 364 405" stroke="#cbd5e1" stroke-width="2" opacity="0.5" stroke-linecap="round" />
+
+    <!-- Base Step 2 (Middle Tier) -->
+    <path d="M 144 405 L 166 372 L 346 372 L 368 405 Z" fill="url(#stone-light)" />
+    <path d="M 256 372 L 346 372 L 368 405 L 256 405 Z" fill="#1e293b" opacity="0.25" />
+    <!-- Step 2 Highlight Edge -->
+    <path d="M 144 405 L 166 372 L 346 372" fill="none" stroke="#94a3b8" stroke-width="1.5" opacity="0.6" />
+
+    <!-- Base Step 3 (Pedestal Top Plate) -->
+    <path d="M 166 372 L 182 350 L 330 350 L 346 372 Z" fill="url(#stone-rim)" />
+    <path d="M 182 350 L 330 350" stroke="#f8fafc" stroke-width="2" opacity="0.8" />
+
+    <!-- Gold Corner Brackets on Pedestal -->
+    <!-- Left Bracket -->
+    <path d="M 144 405 L 156 388 L 170 388 L 158 405 Z" fill="url(#gold-trim)" />
+    <circle cx="157" cy="396" r="2" fill="#451a03" />
+    <!-- Right Bracket -->
+    <path d="M 368 405 L 356 388 L 342 388 L 354 405 Z" fill="url(#gold-trim)" />
+    <circle cx="355" cy="396" r="2" fill="#451a03" />
+  </g>
+
+  <!-- ================= TOWER SHAFT (WOODEN TURRET) ================= -->
+  <g id="wooden-body">
+    <!-- Main Tapered Wood Shaft Structure -->
+    <!-- Left Shaded Side -->
+    <path d="M 182 350 L 198 235 L 256 235 L 256 350 Z" fill="url(#wood-body-left)" />
+    <!-- Right Lit Side -->
+    <path d="M 256 350 L 256 235 L 314 235 L 330 350 Z" fill="url(#wood-body-right)" />
+
+    <!-- Individual Wood Planks Overlay Details -->
+    <!-- Plank 1 (Left) -->
+    <path d="M 182 350 L 198 235 L 216 235 L 204 350 Z" fill="url(#wood-plank-light)" opacity="0.4" />
+    <!-- Plank 2 (Center Right) -->
+    <path d="M 256 350 L 256 235 L 284 235 L 292 350 Z" fill="#a75d49" opacity="0.25" />
+
+    <!-- Vertical Plank Seam Lines -->
+    <path d="M 204 350 L 216 235 M 230 350 L 238 235 M 256 350 L 256 235 M 282 350 L 276 235 M 306 350 L 296 235" stroke="#1c0d0a" stroke-width="2" opacity="0.7" />
+
+    <!-- Inner Ambient Energy Glow Cast on Wood Shaft Base -->
+    <path d="M 198 235 L 314 235 L 302 300 L 210 300 Z" fill="url(#energy-beam)" opacity="0.5" />
+
+    <!-- Lower Iron Reinforcement Band -->
+    <g id="iron-band-lower">
+      <path d="M 177 332 L 335 332 L 331 316 L 181 316 Z" fill="url(#iron-metal)" filter="url(#drop-shadow)" />
+      <path d="M 177 316 L 335 316" stroke="#cbd5e1" stroke-width="1.5" opacity="0.7" />
+      <path d="M 177 332 L 335 332" stroke="#0f172a" stroke-width="1.5" />
+      <!-- Gold Trim Edges -->
+      <path d="M 177 332 L 335 332" stroke="url(#gold-trim)" stroke-width="2" opacity="0.8" />
+      <path d="M 181 316 L 331 316" stroke="url(#gold-trim)" stroke-width="2" opacity="0.8" />
+      <!-- Rivets -->
+      <circle cx="192" cy="324" r="2.5" fill="#e2e8f0" />
+      <circle cx="192" cy="325" r="2.5" fill="#0f172a" opacity="0.5" />
+      <circle cx="234" cy="324" r="2.5" fill="#e2e8f0" />
+      <circle cx="278" cy="324" r="2.5" fill="#e2e8f0" />
+      <circle cx="320" cy="324" r="2.5" fill="#e2e8f0" />
+    </g>
+
+    <!-- Upper Iron Reinforcement Band -->
+    <g id="iron-band-upper">
+      <path d="M 194 266 L 318 266 L 314 252 L 198 252 Z" fill="url(#iron-metal)" filter="url(#drop-shadow)" />
+      <path d="M 194 252 L 318 252" stroke="#cbd5e1" stroke-width="1.5" opacity="0.7" />
+      <!-- Gold Trim Edges -->
+      <path d="M 194 266 L 318 266" stroke="url(#gold-trim)" stroke-width="1.5" />
+      <path d="M 198 252 L 314 252" stroke="url(#gold-trim)" stroke-width="1.5" />
+      <!-- Rivets -->
+      <circle cx="208" cy="259" r="2" fill="#e2e8f0" />
+      <circle cx="240" cy="259" r="2" fill="#e2e8f0" />
+      <circle cx="272" cy="259" r="2" fill="#e2e8f0" />
+      <circle cx="304" cy="259" r="2" fill="#e2e8f0" />
+    </g>
+
+    <!-- Archer Sentry Window / Mana Slit -->
+    <g id="archer-window">
+      <!-- Window Frame Outer -->
+      <rect x="242" y="270" width="28" height="48" rx="14" fill="#1e293b" stroke="url(#gold-trim)" stroke-width="2" filter="url(#drop-shadow)" />
+      <!-- Dark Interior -->
+      <rect x="246" y="274" width="20" height="40" rx="10" fill="#020617" />
+      <!-- Inner Cyan Mana Light -->
+      <rect x="251" y="278" width="10" height="32" rx="5" fill="#38bdf8" filter="url(#glow-intense)" />
+      <rect x="254" y="282" width="4" height="24" rx="2" fill="#ffffff" />
+    </g>
+
+    <!-- Archer Crossbow / Crest Motif on Front -->
+    <path d="M 256 242 L 264 249 L 259 249 L 259 255 L 253 255 L 253 249 L 248 249 Z" fill="url(#gold-trim)" filter="url(#glow-soft)" />
+  </g>
+
+  <!-- ================= TOWER TOP (WATCHTOWER BALCONY) ================= -->
+  <g id="watchtower-turret" filter="url(#drop-shadow)">
+    <!-- Support Corbels / Wooden Brackets under balcony -->
+    <g id="corbels">
+      <path d="M 192 235 L 180 205 L 195 205 L 204 235 Z" fill="#361a13" />
+      <path d="M 180 205 L 195 205 L 204 235 Z" fill="url(#gold-trim)" opacity="0.6" />
+
+      <path d="M 228 235 L 222 205 L 234 205 L 237 235 Z" fill="#361a13" />
+      <path d="M 284 235 L 278 205 L 290 205 L 293 235 Z" fill="#361a13" />
+
+      <path d="M 320 235 L 308 205 L 323 205 L 332 235 Z" fill="#361a13" />
+      <path d="M 308 205 L 323 205 L 332 235 Z" fill="url(#gold-trim)" opacity="0.6" />
+    </g>
+
+    <!-- Balcony Main Floor Base Rim -->
+    <path d="M 152 205 L 168 185 L 344 185 L 360 205 Z" fill="url(#stone-light)" />
+    <path d="M 256 185 L 344 185 L 360 205 L 256 205 Z" fill="url(#stone-dark)" opacity="0.4" />
+    <!-- Under Rim Lip -->
+    <path d="M 152 205 L 360 205 L 354 213 L 158 213 Z" fill="#0f172a" />
+    <path d="M 152 205 L 360 205" stroke="#f8fafc" stroke-width="2" opacity="0.7" />
+
+    <!-- Wooden Parapet / Battlements Structure -->
+    <!-- Back Wall Shadow Inner -->
+    <path d="M 172 185 L 340 185 L 334 165 L 178 165 Z" fill="#1c0d0a" />
+
+    <!-- Left Battlement Post -->
+    <path d="M 162 185 L 166 148 L 200 148 L 206 185 Z" fill="url(#wood-body-left)" />
+    <path d="M 166 148 L 200 148 L 200 185 L 166 185 Z" fill="url(#wood-plank-light)" opacity="0.3" />
+    <path d="M 162 185 L 206 185 L 200 189 L 164 189 Z" fill="#1c0d0a" />
+    <!-- Left Post Sapphire Crystal Cap -->
+    <polygon points="183,135 194,148 172,148" fill="url(#crystal-shard)" />
+    <polygon points="183,135 194,148 183,146" fill="#e0f2fe" />
+    <path d="M 166 148 L 200 148" stroke="url(#gold-trim)" stroke-width="2" />
+
+    <!-- Right Battlement Post -->
+    <path d="M 306 185 L 312 148 L 346 148 L 350 185 Z" fill="url(#wood-body-right)" />
+    <path d="M 312 148 L 346 148 L 346 185 L 312 185 Z" fill="url(#wood-plank-light)" opacity="0.15" />
+    <!-- Right Post Sapphire Crystal Cap -->
+    <polygon points="329,135 340,148 318,148" fill="url(#crystal-shard)" />
+    <polygon points="329,135 340,148 329,146" fill="#e0f2fe" />
+    <path d="M 312 148 L 346 148" stroke="url(#gold-trim)" stroke-width="2" />
+
+    <!-- Front Center Low Parapet Wall -->
+    <path d="M 214 185 L 218 162 L 294 162 L 298 185 Z" fill="url(#wood-body-left)" />
+    <path d="M 256 162 L 294 162 L 298 185 L 256 185 Z" fill="url(#wood-body-right)" />
+    <path d="M 218 162 L 294 162" stroke="url(#gold-trim)" stroke-width="2" />
+    <!-- Decorative Center Shield Crest -->
+    <path d="M 256 160 L 267 172 C 267 183 256 190 256 190 C 256 190 245 183 245 172 Z" fill="url(#gold-trim)" stroke="#451a03" stroke-width="1" />
+    <path d="M 256 163 L 263 171 C 263 179 256 184 256 184 Z" fill="#fef08a" opacity="0.6" />
+    <circle cx="256" cy="173" r="3" fill="#0284c7" />
+  </g>
+
+  <!-- ================= LIGHT BEAM & CORE PEDESTAL CROWN ================= -->
+  <g id="orb-support-crown">
+    <!-- Glowing Energy Cone Downward Cast -->
+    <polygon points="256,120 220,165 292,165" fill="url(#energy-beam)" />
+
+    <!-- Stone/Gold Sentry Focus Cup (Base for Orb) -->
+    <ellipse cx="256" cy="165" rx="30" ry="8" fill="#0f172a" />
+    <path d="M 226 165 C 226 180 286 180 286 165 C 286 155 226 155 226 165 Z" fill="url(#iron-metal)" />
+    <ellipse cx="256" cy="163" rx="30" ry="7" fill="url(#gold-trim)" />
+    <ellipse cx="256" cy="163" rx="24" ry="5" fill="#020617" />
+  </g>
+
+  <!-- ================= SAPPHIRE ENERGY ORB (MAIN FOCAL POINT) ================= -->
+  <g id="sapphire-sentry-orb">
+    <!-- Prongs - Back Pair -->
+    <path d="M 234 162 C 222 140 226 115 238 100 C 242 112 236 135 240 162 Z" fill="#334155" />
+    <path d="M 278 162 C 290 140 286 115 274 100 C 270 112 276 135 272 162 Z" fill="#1e293b" />
+
+    <!-- Background Intense Halo Glow -->
+    <circle cx="256" cy="118" r="85" fill="url(#orb-halo)" filter="url(#glow-intense)" opacity="0.85" />
+    <circle cx="256" cy="118" r="55" fill="#38bdf8" filter="url(#ambient-cyan-glow)" opacity="0.6" />
+
+    <!-- Floating Mana Rings (Tilted Orbital Rings) -->
+    <ellipse cx="256" cy="118" rx="65" ry="20" fill="none" stroke="#7dd3fc" stroke-width="3" transform="rotate(-18 256 118)" filter="url(#glow-soft)" opacity="0.9" />
+    <ellipse cx="256" cy="118" rx="65" ry="20" fill="none" stroke="#0284c7" stroke-width="1.5" transform="rotate(-18 256 118)" opacity="0.7" />
+
+    <ellipse cx="256" cy="118" rx="58" ry="16" fill="none" stroke="#38bdf8" stroke-width="2.5" transform="rotate(25 256 118)" filter="url(#glow-soft)" opacity="0.8" />
+
+    <!-- Spherical Core -->
+    <circle cx="256" cy="118" r="38" fill="url(#sapphire-orb)" filter="url(#drop-shadow)" />
+
+    <!-- Inner Core Pure White Energy Flare -->
+    <circle cx="244" cy="106" r="14" fill="#ffffff" filter="url(#glow-soft)" opacity="0.7" />
+    <circle cx="256" cy="118" r="18" fill="#e0f2fe" filter="url(#glow-intense)" opacity="0.5" />
+
+    <!-- Specular Arc Highlights (Glassy Finish) -->
+    <path d="M 230 102 A 28 28 0 0 1 270 94" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" filter="url(#glow-soft)" />
+    <path d="M 234 108 A 22 22 0 0 1 254 97" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.8" />
+    <circle cx="276" cy="132" r="3.5" fill="#7dd3fc" filter="url(#glow-soft)" />
+    <circle cx="268" cy="138" r="1.5" fill="#ffffff" />
+
+    <!-- Prongs - Front Pair (Grasping Orb) -->
+    <!-- Front Left Prong -->
+    <g id="front-prong-left">
+      <path d="M 226 164 C 212 142 216 110 232 92 C 235 92 236 96 233 104 C 223 120 222 142 232 164 Z" fill="url(#gold-trim)" filter="url(#drop-shadow)" />
+      <path d="M 228 164 C 218 142 221 114 232 96 C 233 99 232 106 226 120 C 222 135 225 152 230 164 Z" fill="#fef08a" opacity="0.6" />
+      <circle cx="228" cy="148" r="2" fill="#38bdf8" filter="url(#glow-soft)" />
+    </g>
+
+    <!-- Front Right Prong -->
+    <g id="front-prong-right">
+      <path d="M 286 164 C 300 142 296 110 280 92 C 277 92 276 96 279 104 C 289 120 290 142 280 164 Z" fill="url(#gold-trim)" filter="url(#drop-shadow)" />
+      <path d="M 284 164 C 294 142 291 114 280 96 C 279 99 280 106 286 120 C 290 135 287 152 282 164 Z" fill="#ca8a04" />
+      <circle cx="284" cy="148" r="2" fill="#38bdf8" filter="url(#glow-soft)" />
+    </g>
+  </g>
+
+  <!-- ================= MAGICAL PARTICLES & RAYS ================= -->
+  <g id="particles" filter="url(#glow-intense)">
+    <!-- Floating Sparkles / Mana Crystals -->
+    <polygon points="190,90 194,96 190,102 186,96" fill="#7dd3fc" opacity="0.8" />
+    <polygon points="320,80 323,85 320,90 317,85" fill="#e0f2fe" opacity="0.9" />
+    <polygon points="210,140 213,144 210,148 207,144" fill="#38bdf8" opacity="0.7" />
+    <polygon points="305,130 307,133 305,136 303,133" fill="#7dd3fc" opacity="0.8" />
+
+    <circle cx="200" cy="115" r="1.5" fill="#ffffff" />
+    <circle cx="312" cy="105" r="2" fill="#ffffff" />
+    <circle cx="270" cy="72" r="1.5" fill="#38bdf8" />
+    <circle cx="240" cy="68" r="2.5" fill="#e0f2fe" />
+  </g>
+
+  <!-- ================= UI BADGE / ICON CREST (BASIC TIER) ================= -->
+  <g id="ui-tier-badge" filter="url(#drop-shadow)">
+    <!-- Bottom Centered Banner Plate -->
+    <path d="M 206 442 L 220 428 L 292 428 L 306 442 L 292 468 L 220 468 Z" fill="url(#stone-dark)" stroke="url(#gold-trim)" stroke-width="2.5" />
+    <path d="M 222 432 L 290 432 L 298 442 L 290 464 L 222 464 L 214 442 Z" fill="#0f172a" />
+
+    <!-- Ribbon Wing Details -->
+    <path d="M 206 442 L 188 436 L 194 456 L 206 458 Z" fill="url(#gold-trim)" />
+    <path d="M 306 442 L 324 436 L 318 456 L 306 458 Z" fill="url(#gold-trim)" />
+
+    <!-- Center Gem (Level 1 / Basic Sentry Emblem) -->
+    <polygon points="256,435 267,446 256,458 245,446" fill="url(#crystal-shard)" stroke="#ffffff" stroke-width="1" filter="url(#glow-soft)" />
+    <polygon points="256,438 263,446 256,454 249,446" fill="#e0f2fe" />
+  </g>
+
+  <!-- Outer Rim Lighting / Highlight Polish -->
+  <rect x="20" y="20" width="472" height="472" rx="90" fill="none" stroke="#e0f2fe" stroke-width="1.5" opacity="0.3" />
+</svg>
