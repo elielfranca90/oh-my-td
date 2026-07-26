@@ -119,7 +119,7 @@ export class AudioManager {
     }
 
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume().catch(() => {});
+      return false;
     }
 
     return this.ctx.state === 'running';

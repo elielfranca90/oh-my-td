@@ -184,6 +184,23 @@ export class Game2D {
     window.addEventListener('click', unlockAudio, { passive: true });
     window.addEventListener('keydown', unlockAudio, { passive: true });
     window.addEventListener('touchstart', unlockAudio, { passive: true });
+    // Sync UI Top Bar & Action Toolbar width & height with canvas DOM element size
+    const syncCanvasWidth = () => {
+      const rect = this.canvas.getBoundingClientRect();
+      if (rect.width > 0) {
+        document.documentElement.style.setProperty('--canvas-width', `${Math.round(rect.width)}px`);
+      }
+      if (rect.height > 0) {
+        document.documentElement.style.setProperty('--canvas-height', `${Math.round(rect.height)}px`);
+      }
+    };
+    syncCanvasWidth();
+    window.addEventListener('resize', syncCanvasWidth);
+    window.addEventListener('orientationchange', syncCanvasWidth);
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(syncCanvasWidth);
+      ro.observe(this.canvas);
+    }
 
     // Keyboard Hotkeys
     window.addEventListener('keydown', (e) => {
@@ -215,8 +232,17 @@ export class Game2D {
     });
 
     // Mouse & Mobile Tap Click Handler
+    let lastTouchTime = 0;
     const handleTap = (e: MouseEvent | TouchEvent) => {
       if (this.gameState.status !== 'PLAYING' || this.gameState.isPaused) return;
+
+      // Prevent duplicate synthetic click event right after a touch event
+      if (e.type === 'click' && Date.now() - lastTouchTime < 300) {
+        return;
+      }
+      if (e.type === 'touchend') {
+        lastTouchTime = Date.now();
+      }
 
       const { x, y } = this.getCanvasMousePosition(e);
 
