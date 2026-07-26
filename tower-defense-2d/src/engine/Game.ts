@@ -97,7 +97,8 @@ export class Game2D {
       this.audioManager,
       this.particleManager,
       this.talentManager,
-      this.analyticsManager
+      this.analyticsManager,
+      this.achievementManager
     );
     this.enemyManager = new EnemyManager2D(
       this.mapManager,
@@ -388,6 +389,13 @@ export class Game2D {
       // Award Stars & High Score Check on Match End
       if ((this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') && !this.hasAwardedStars) {
         this.hasAwardedStars = true;
+        if (this.gameState.status === 'VICTORY') {
+          if (this.currentSavedChallengeMode === 'TURBO_GOLD') {
+            this.achievementManager.addProgress('WAR_ECONOMY_MASTER', 1);
+          } else if (this.currentSavedChallengeMode === 'NO_SPELLS') {
+            this.achievementManager.addProgress('NO_POWERS_CHALLENGER', 1);
+          }
+        }
         const wavesCompleted = Math.max(1, this.waveManager.currentWaveIndex + 1);
         const starsEarned = Math.floor(wavesCompleted / 2) + (this.gameState.status === 'VICTORY' ? 5 : 0);
         this.talentManager.earnStars(starsEarned);

@@ -6,7 +6,7 @@ import { Game2D } from '../engine/Game';
 import { GameState } from '../engine/GameState';
 import type { MapId } from '../engine/MapManager';
 import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
-import { TalentManager } from '../engine/TalentManager';
+import { TalentManager, type TalentData } from '../engine/TalentManager';
 import type { Tower2D } from '../engine/Tower';
 import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager } from '../engine/WaveManager';
@@ -301,6 +301,14 @@ export class UIManager {
                 <span>⚡ Channeling (<span id="cd-lvl">0/2</span>)</span>
                 <button id="talent-cd-btn" class="btn talent-btn">Upgrade (3★)</button>
               </div>
+              <div class="talent-item">
+                <span>🔧 Repair Eng. (<span id="repair-lvl">0/2</span>)</span>
+                <button id="talent-repair-btn" class="btn talent-btn">Upgrade (3★)</button>
+              </div>
+              <div class="talent-item">
+                <span>🎯 Critical Focus (<span id="crit-lvl">0/2</span>)</span>
+                <button id="talent-crit-btn" class="btn talent-btn">Upgrade (3★)</button>
+              </div>
             </div>
             <button id="close-talents-btn" class="btn primary modal-restart-btn">Fechar</button>
           </div>
@@ -327,12 +335,58 @@ export class UIManager {
               <div class="changelog-item latest">
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
-                  <strong class="version-tag">v2.0</strong>
-                  <span class="changelog-title">UI 2.0 DOM Overlay na Área Superior</span>
+                  <strong class="version-tag">v2.2</strong>
+                  <span class="changelog-title">Árvore de Talentos & Novas Conquistas</span>
                 </div>
                 <ul class="changelog-bullets">
-                  <li><strong>Barra de Ações Superior Fixa:</strong> Posicionada na área preta acima do mapa, garantindo 100% de visibilidade e zero sobreposição dos tiles.</li>
-                  <li><strong>Desacoplamento Event-Driven:</strong> Pub/Sub (EventBus) garantindo 0 reflows e 0 mutações DOM no Game Loop.</li>
+                  <li><strong>Novos Talentos:</strong> Engenharia de Reparo (até 50% de desconto nos reparos) e Foco Crítico (até +20% de chance crítica).</li>
+                  <li><strong>4 Novas Badges:</strong> Engenheiro de Campo, Matador do Pesadelo, Mestre da Guerra e Puro Talento (+20★ em recompensas).</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
+                  <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v2.1</strong>
+                  <span class="changelog-title">Interface Responsiva Mobile</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Layout Adaptado para Telas Pequenas:</strong> Compatibilidade completa para smartphones (Galaxy, iPhone) e tablets (iPad).</li>
+                  <li><strong>Otimização de Espaço sem Colisão:</strong> Distribuição inteligente dos menus e controles nas áreas livres acima e abaixo do mapa.</li>
+                  <li><strong>Navegação por Toque:</strong> Scroll horizontal fluido para seleção de torres e poderes.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
+                  <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v2.0</strong>
+                  <span class="changelog-title">Sistema de Reparo & Modo Morte Certa</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Reparo de Torres:</strong> Opção de reparar a vida das torres danificadas diretamente pelo menu de inspeção.</li>
+                  <li><strong>Modo Morte Certa:</strong> Desafio de altíssima dificuldade com a presença exclusiva do chefe Black Mega Boss.</li>
+                  <li><strong>Interface Overlay 2.0:</strong> Interface reformulada com alto desempenho e clareza visual.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
+                  <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v1.9</strong>
+                  <span class="changelog-title">Visual & Animações de Sprites</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Sprites de Torres:</strong> Ilustrações customizadas para as torres Básica, Gelo, Prisma Solar, Canhão e Artilharia.</li>
+                  <li><strong>Animações de Inimigos:</strong> Sprites detalhados para tropas terrestres, corredores, tanques e chefes.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
+                  <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v1.8</strong>
+                  <span class="changelog-title">Poderes Arcanos & Rebalanceamento</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Poderes de Apogeu:</strong> Invocação de Meteoro e Congelamento Global integrados com indicador visual de recarga.</li>
+                  <li><strong>Ajustes de Economia:</strong> Rebalanceamento de ouro inicial (70g) e progressão de upgrades.</li>
                 </ul>
               </div>
             </div>
@@ -592,6 +646,18 @@ export class UIManager {
         this.updateTalentsModal();
       }
     });
+
+    document.getElementById('talent-repair-btn')?.addEventListener('click', () => {
+      if (this.talentManager.upgradeTalent('repairLvl')) {
+        this.updateTalentsModal();
+      }
+    });
+
+    document.getElementById('talent-crit-btn')?.addEventListener('click', () => {
+      if (this.talentManager.upgradeTalent('critLvl')) {
+        this.updateTalentsModal();
+      }
+    });
   }
 
   // --- REACTION HANDLERS ---
@@ -807,17 +873,32 @@ export class UIManager {
     const starsVal = document.getElementById('modal-stars-val');
     if (starsVal) starsVal.innerText = `${this.talentManager.stars}★`;
 
-    const dmgLvl = document.getElementById('dmg-lvl');
-    if (dmgLvl) dmgLvl.innerText = `${this.talentManager.talents.damageLvl}/3`;
+    const updateItem = (type: keyof TalentData, idPrefix: string) => {
+      const maxLvl = this.talentManager.getTalentMaxLvl(type);
+      const currentLvl = this.talentManager.talents[type];
 
-    const goldLvl = document.getElementById('gold-lvl');
-    if (goldLvl) goldLvl.innerText = `${this.talentManager.talents.goldLvl}/2`;
+      const lvlEl = document.getElementById(`${idPrefix}-lvl`);
+      if (lvlEl) lvlEl.innerText = `${currentLvl}/${maxLvl}`;
 
-    const hpLvl = document.getElementById('hp-lvl');
-    if (hpLvl) hpLvl.innerText = `${this.talentManager.talents.hpLvl}/2`;
+      const btnEl = document.getElementById(`talent-${idPrefix}-btn`) as HTMLButtonElement;
+      if (btnEl) {
+        if (currentLvl >= maxLvl) {
+          btnEl.innerText = 'MAX';
+          btnEl.disabled = true;
+        } else {
+          const cost = this.talentManager.getTalentCost(type);
+          btnEl.innerText = `Upgrade (${cost}★)`;
+          btnEl.disabled = this.talentManager.stars < cost;
+        }
+      }
+    };
 
-    const cdLvl = document.getElementById('cd-lvl');
-    if (cdLvl) cdLvl.innerText = `${this.talentManager.talents.cdLvl}/2`;
+    updateItem('damageLvl', 'dmg');
+    updateItem('goldLvl', 'gold');
+    updateItem('hpLvl', 'hp');
+    updateItem('cdLvl', 'cd');
+    updateItem('repairLvl', 'repair');
+    updateItem('critLvl', 'crit');
   }
 
   private openAchievementsModal() {

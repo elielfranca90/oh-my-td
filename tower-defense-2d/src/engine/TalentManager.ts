@@ -3,6 +3,8 @@ export interface TalentData {
   goldLvl: number;
   hpLvl: number;
   cdLvl: number;
+  repairLvl: number;
+  critLvl: number;
 }
 
 export class TalentManager {
@@ -12,6 +14,8 @@ export class TalentManager {
     goldLvl: 0,
     hpLvl: 0,
     cdLvl: 0,
+    repairLvl: 0,
+    critLvl: 0,
   };
 
   private readonly STARS_KEY = 'td2d_stars_v1';
@@ -36,6 +40,8 @@ export class TalentManager {
           goldLvl: parsed.goldLvl || 0,
           hpLvl: parsed.hpLvl || 0,
           cdLvl: parsed.cdLvl || 0,
+          repairLvl: parsed.repairLvl || 0,
+          critLvl: parsed.critLvl || 0,
         };
       }
     } catch {
@@ -75,6 +81,13 @@ export class TalentManager {
     return this.talents.cdLvl * 0.15; // -15%, -30%
   }
 
+  public getRepairDiscount(): number {
+    return this.talents.repairLvl * 0.25; // 25%, 50%
+  }
+
+  public getCritChance(): number {
+    return this.talents.critLvl * 0.10; // 10%, 20%
+  }
   // Talent Upgrade Costs
   public getTalentCost(type: keyof TalentData): number {
     const current = this.talents[type];
@@ -87,13 +100,27 @@ export class TalentManager {
         return current === 0 ? 2 : 4;
       case 'cdLvl':
         return current === 0 ? 3 : 5;
+      case 'repairLvl':
+        return current === 0 ? 3 : 5;
+      case 'critLvl':
+        return current === 0 ? 3 : 5;
       default:
         return 999;
     }
   }
 
   public getTalentMaxLvl(type: keyof TalentData): number {
-    return type === 'damageLvl' ? 3 : 2;
+    switch (type) {
+      case 'damageLvl':
+        return 3;
+      case 'goldLvl':
+      case 'hpLvl':
+      case 'cdLvl':
+      case 'repairLvl':
+      case 'critLvl':
+      default:
+        return 2;
+    }
   }
 
   public upgradeTalent(type: keyof TalentData): boolean {
