@@ -63,6 +63,7 @@ export class EnemyManager2D {
           if (enemy.data.type === 'RUNNER') this.achievementManager.addProgress('RUNNER_HUNTER', 1);
           if (enemy.data.type === 'SHIELDED' || enemy.data.maxShieldHp > 0) this.achievementManager.addProgress('SHIELD_BREAKER', 1);
           if (enemy.data.type === 'BOSS' || enemy.data.type === 'BLACK_MEGA_BOSS') this.achievementManager.addProgress('BOSS_SLAYER', 1);
+          if (enemy.data.type === 'BLACK_MEGA_BOSS') this.achievementManager.addProgress('BLACK_BOSS_VANQUISHER', 1);
         }
 
         // Boss Death Reinforcements: Spawn 2 Runners!

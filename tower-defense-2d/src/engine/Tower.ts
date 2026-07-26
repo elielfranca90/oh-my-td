@@ -1,5 +1,5 @@
 import { SpriteManager } from './SpriteManager';
-
+import { TalentManager } from './TalentManager';
 import type { ITower2D, TargetingStrategy, TowerType, Vector2D } from '../types';
 
 export class Tower2D {
@@ -91,13 +91,20 @@ export class Tower2D {
     return this.data.isDestroyed;
   }
 
-  public getRepairCost(): number {
+  public getRepairCost(talentManager?: TalentManager): number {
+    let cost = 0;
     if (this.data.isDestroyed) {
       // 30% cheaper than new tower cost
-      return Math.ceil(this.data.cost * 0.7);
+      cost = Math.ceil(this.data.cost * 0.7);
+    } else {
+      const missingHpRatio = (this.data.maxHp - this.data.hp) / this.data.maxHp;
+      cost = Math.max(5, Math.ceil(this.data.cost * 0.7 * missingHpRatio));
     }
-    const missingHpRatio = (this.data.maxHp - this.data.hp) / this.data.maxHp;
-    return Math.max(5, Math.ceil(this.data.cost * 0.7 * missingHpRatio));
+    if (talentManager) {
+      const discount = talentManager.getRepairDiscount();
+      cost = Math.max(1, Math.floor(cost * (1 - discount)));
+    }
+    return cost;
   }
 
   public repair(): boolean {

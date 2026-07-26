@@ -1,4 +1,5 @@
 import type { TowerType } from '../types';
+import { AchievementManager } from './AchievementManager';
 import { EventBus } from './EventBus';
 import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
@@ -19,8 +20,8 @@ export class TowerManager2D {
   private audioManager: AudioManager;
   private particleManager?: ParticleManager;
   private talentManager?: TalentManager;
+  private achievementManager?: AchievementManager;
   private analyticsManager?: AnalyticsManager;
-
   public selectedBuildType: TowerType = 'BASIC';
   public selectedTower: Tower2D | null = null;
   public sproutTiles: { x: number; y: number }[] = [];
@@ -32,7 +33,8 @@ export class TowerManager2D {
     audioManager: AudioManager,
     particleManager?: ParticleManager,
     talentManager?: TalentManager,
-    analyticsManager?: AnalyticsManager
+    analyticsManager?: AnalyticsManager,
+    achievementManager?: AchievementManager
   ) {
     this.mapManager = mapManager;
     this.projectileManager = projectileManager;
@@ -41,6 +43,7 @@ export class TowerManager2D {
     this.particleManager = particleManager;
     this.talentManager = talentManager;
     this.analyticsManager = analyticsManager;
+    this.achievementManager = achievementManager;
   }
 
   public setParticleManager(pm: ParticleManager) {
@@ -146,7 +149,7 @@ export class TowerManager2D {
 
   public repairSelectedTower(): boolean {
     if (!this.selectedTower) return false;
-    const cost = this.selectedTower.getRepairCost();
+    const cost = this.selectedTower.getRepairCost(this.talentManager);
     if (this.selectedTower.data.hp >= this.selectedTower.data.maxHp && !this.selectedTower.data.isDestroyed) return false;
 
     if (this.gameState.spendGold(cost)) {
@@ -154,6 +157,9 @@ export class TowerManager2D {
         this.analyticsManager.recordGoldSpent(cost);
       }
       this.selectedTower.repair();
+      if (this.achievementManager) {
+        this.achievementManager.addProgress('FIELD_ENGINEER', 1);
+      }
       EventBus.getInstance().emit('tower:select', this.selectedTower);
       return true;
     }
@@ -253,9 +259,11 @@ export class TowerManager2D {
         let splashRadius: number | undefined;
         let isCrit = false;
 
+        const extraCritChance = this.talentManager ? this.talentManager.getCritChance() : 0;
+
         if (tower.data.type === 'BASIC') {
-          // 20% Critical Hit chance (2x damage)
-          if (Math.random() < 0.20) {
+          // 20% Base Critical Hit chance + Talent Crit Chance
+          if (Math.random() < (0.20 + extraCritChance)) {
             damage *= 2;
             isCrit = true;
             color = '#ffea00';
@@ -267,18 +275,24 @@ export class TowerManager2D {
           if ((target.data.type === 'TANK' || target.data.type === 'BOSS') && targetHpRatio >= 0.5) {
             damage *= 2;
             isCrit = true;
+          } else if (extraCritChance > 0 && Math.random() < extraCritChance) {
+            damage *= 2;
+            isCrit = true;
           }
           color = '#ff5722';
           speed = 6;
           radius = 7;
           this.audioManager.playCannonShot();
         } else if (tower.data.type === 'ARTILLERY') {
+          if (extraCritChance > 0 && Math.random() < extraCritChance) {
+            damage *= 2;
+            isCrit = true;
+          }
           color = '#ea80fc';
           speed = 5;
           radius = 9;
           splashRadius = tower.data.splashRadius;
           this.audioManager.playArtilleryShot();
-
           // Spawn Napalm Fire Patch on impact location
           if (this.particleManager) {
             this.particleManager.triggerImpactExplosion(target.data.position.x, target.data.position.y, true);
