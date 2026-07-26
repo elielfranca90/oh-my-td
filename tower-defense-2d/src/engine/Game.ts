@@ -340,7 +340,7 @@ export class Game2D {
       const rawDelta = currentTime - this.lastTime;
       this.lastTime = currentTime;
 
-      const deltaTimeMs = rawDelta * this.gameSpeedMultiplier;
+      const deltaTimeMs = rawDelta;
 
       // Determine BGM track: BOSS vs MAP-SPECIFIC TRACK
       const enemies = this.enemyManager.getEnemies();
@@ -366,24 +366,31 @@ export class Game2D {
 
       // 1. Update logic (only if active and NOT paused)
       if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
-        this.waveManager.updateAutoCountdown(deltaTimeMs);
-        this.enemyManager.update(deltaTimeMs, this.towerManager.getTowers());
-        this.towerManager.update(this.enemyManager.getEnemies());
-        this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
-        this.spellManager.update(deltaTimeMs);
-        this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
+        const steps = Math.max(1, Math.min(4, this.gameSpeedMultiplier));
+        for (let step = 0; step < steps; step++) {
+          if (this.gameState.status !== 'PLAYING') break;
+
+          this.waveManager.updateAutoCountdown(deltaTimeMs);
+          this.enemyManager.update(deltaTimeMs, this.towerManager.getTowers());
+          this.towerManager.update(this.enemyManager.getEnemies());
+          this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
+          this.spellManager.update(deltaTimeMs);
+          this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
+
+          // Check Endless Survivor Achievement
+          if (this.waveManager.isEndlessMode) {
+            this.achievementManager.setProgress('ENDLESS_SURVIVOR', activeWaveNum);
+          }
+
+          // Check Victory
+          if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
+            this.gameState.setStatus('VICTORY');
+            break;
+          }
+        }
+
         this.achievementManager.update();
         this.fxManager.update();
-
-        // Check Endless Survivor Achievement
-        if (this.waveManager.isEndlessMode) {
-          this.achievementManager.setProgress('ENDLESS_SURVIVOR', activeWaveNum);
-        }
-
-        // Check Victory
-        if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
-          this.gameState.setStatus('VICTORY');
-        }
       }
 
       // Award Stars & High Score Check on Match End
