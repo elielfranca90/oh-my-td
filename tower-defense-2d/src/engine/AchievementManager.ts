@@ -1,3 +1,5 @@
+import type { DatabaseManager } from './DatabaseManager';
+
 import { TalentManager } from './TalentManager';
 
 export interface Achievement {
@@ -21,8 +23,17 @@ export interface ToastNotification {
 
 export class AchievementManager {
   private talentManager: TalentManager;
+  private db: DatabaseManager | null = null;
   private readonly STORAGE_KEY = 'td2d_achievements_v1';
 
+  constructor(talentManager: TalentManager, db?: DatabaseManager) {
+    this.talentManager = talentManager;
+    this.db = db || null;
+    this.loadAchievements();
+    if (this.db) {
+      this.syncWithRemote();
+    }
+  }
   public achievements: Record<string, Achievement> = {
     FIRST_BLOOD: {
       id: 'FIRST_BLOOD',
@@ -138,10 +149,6 @@ export class AchievementManager {
 
   public activeToasts: ToastNotification[] = [];
 
-  constructor(talentManager: TalentManager) {
-    this.talentManager = talentManager;
-    this.loadAchievements();
-  }
 
   private loadAchievements() {
     try {
@@ -160,7 +167,60 @@ export class AchievementManager {
     }
   }
 
-  public saveAchievements() {
+  public setDatabaseManager(db: DatabaseManager) {
+    this.db = db;
+    this.syncWithRemote();
+  }
+
+  public async syncWithRemote() {
+    if (!this.db || !this.db.isConnected()) return;
+    const remote = await this.db.fetchRemoteAchievements();
+    if (remote) {
+      let localChanged = false;
+      let localHadHigher = false;
+
+      for (const id of Object.keys(this.achievements)) {
+        const localAch = this.achievements[id];
+        const remoteAch = remote[id];
+
+        if (remoteAch) {
+          if (!localAch.unlocked && remoteAch.unlocked) {
+            localAch.unlocked = true;
+            localChanged = true;
+          } else if (localAch.unlocked && !remoteAch.unlocked) {
+            localHadHigher = true;
+          }
+
+          if (remoteAch.progress > localAch.progress) {
+            localAch.progress = remoteAch.progress;
+            localChanged = true;
+          } else if (localAch.progress > remoteAch.progress) {
+            localHadHigher = true;
+          }
+        } else if (localAch.unlocked || localAch.progress > 0) {
+          localHadHigher = true;
+        }
+      }
+
+      if (localChanged) {
+        this.saveLocalAchievements();
+      }
+
+      if (localHadHigher) {
+        for (const id of Object.keys(this.achievements)) {
+          const ach = this.achievements[id];
+          this.db.queueAchievementSync(id, ach.progress, ach.unlocked);
+        }
+      }
+    } else {
+      for (const id of Object.keys(this.achievements)) {
+        const ach = this.achievements[id];
+        this.db.queueAchievementSync(id, ach.progress, ach.unlocked);
+      }
+    }
+  }
+
+  private saveLocalAchievements() {
     try {
       const data: Record<string, { unlocked: boolean; progress: number }> = {};
       for (const id of Object.keys(this.achievements)) {
@@ -172,6 +232,16 @@ export class AchievementManager {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
     } catch {
       // Ignore
+    }
+  }
+
+  public saveAchievements() {
+    this.saveLocalAchievements();
+    if (this.db) {
+      for (const id of Object.keys(this.achievements)) {
+        const ach = this.achievements[id];
+        this.db.queueAchievementSync(id, ach.progress, ach.unlocked);
+      }
     }
   }
 

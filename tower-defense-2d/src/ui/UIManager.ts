@@ -34,6 +34,8 @@ export class UIManager {
   private talentsOverlayEl!: HTMLElement;
   private achievementsOverlayEl!: HTMLElement;
   private changelogOverlayEl!: HTMLElement;
+  private leaderboardOverlayEl!: HTMLElement;
+  private profileOverlayEl!: HTMLElement;
   private storeStateEl!: HTMLElement;
   private inspectorStateEl!: HTMLElement;
   // Cached DOM Elements for 60fps Loop Optimization
@@ -51,6 +53,9 @@ export class UIManager {
   private lastMeteorCdHidden: boolean | null = null;
   private lastFreezeCdText = '';
   private lastFreezeCdHidden: boolean | null = null;
+  private unbindEvents: Array<() => void> = [];
+  private activeParentModal: HTMLElement | null = null;
+
 
   constructor(
     gameState: GameState,
@@ -109,6 +114,12 @@ export class UIManager {
             </button>
           </div>
           <div class="hud-right-controls">
+            <button id="main-leaderboard-btn" class="hud-btn highlight-btn" title="Placar Global (🏆)" aria-label="Placar Global">
+              🏆<span class="hud-btn-text"> Placar Global</span>
+            </button>
+            <button id="main-profile-btn" class="hud-btn highlight-btn" title="Perfil de Jogador (👤)" aria-label="Perfil">
+              👤<span class="hud-btn-text"> Perfil</span>
+            </button>
             <button id="changelog-btn" class="hud-btn changelog-gift-btn" title="Últimas Atualizações (🎁)" aria-label="Novidades">
               🎁<span class="changelog-btn-text"> Novidades</span>
             </button>
@@ -270,7 +281,9 @@ export class UIManager {
                 <div class="meta-game-grid">
                   <button id="settings-talents-btn" class="btn secondary">🌟 Skill Tree</button>
                   <button id="settings-badges-btn" class="btn secondary">🏆 Badges</button>
-                  <button id="settings-restart-btn" class="btn danger">🔄 Novo Jogo</button>
+                  <button id="settings-profile-btn" class="btn secondary">👤 Perfil</button>
+                  <button id="settings-leaderboard-btn" class="btn secondary">🏆 Placar Global</button>
+                  <button id="settings-restart-btn" class="btn danger" style="grid-column: span 2;">🔄 Novo Jogo</button>
                 </div>
               </div>
             </div>
@@ -394,6 +407,48 @@ export class UIManager {
           </div>
         </div>
 
+        <!-- LEADERBOARD MODAL -->
+        <div id="leaderboard-modal-overlay" class="modal-overlay hidden pointer-events-auto">
+          <div class="modal-card leaderboard-modal-card">
+            <div class="modal-header">
+              <h1>🏆 Placar Global Top 20</h1>
+              <button id="close-leaderboard-btn" class="close-icon-btn">✖</button>
+            </div>
+            <div id="leaderboard-content">
+              <p>Carregando placar...</p>
+            </div>
+            <button id="close-leaderboard-bottom-btn" class="btn primary modal-restart-btn" style="margin-top: 12px;">Fechar</button>
+          </div>
+        </div>
+
+        <!-- PROFILE MODAL -->
+        <div id="profile-modal-overlay" class="modal-overlay hidden pointer-events-auto">
+          <div class="modal-card profile-modal-card">
+            <div class="modal-header">
+              <h1>👤 Perfil do Jogador</h1>
+              <button id="close-profile-btn" class="close-icon-btn">✖</button>
+            </div>
+            <div class="profile-content">
+              <div class="setting-item">
+                <span>Nome de Jogador:</span>
+                <input type="text" id="profile-username-input" class="profile-input" placeholder="Digite seu nome..." maxlength="20" />
+              </div>
+              <div class="setting-item">
+                <span>Avatar:</span>
+                <select id="profile-avatar-select" class="profile-select">
+                  <option value="default_avatar">🛡️ Guerreiro</option>
+                  <option value="solar_prism">☀️ Mago Solar</option>
+                  <option value="mega_boss">👹 Mega Boss</option>
+                  <option value="frost_wizard">❄️ Mago de Gelo</option>
+                </select>
+              </div>
+              <div id="profile-status-msg" class="profile-status-msg"></div>
+              <button id="profile-save-btn" class="btn success" style="width: 100%; padding: 10px; font-weight: bold;">Salvar Alterações</button>
+            </div>
+            <button id="close-profile-bottom-btn" class="btn secondary modal-restart-btn">Fechar</button>
+          </div>
+        </div>
+
         <!-- END GAME ANALYTICS MODAL -->
         <div id="modal-overlay" class="modal-overlay hidden pointer-events-auto">
           <div class="modal-card analytics-modal">
@@ -407,7 +462,10 @@ export class UIManager {
               <div class="analytics-row"><span>🪙 Gold Earned / Spent:</span><strong id="modal-gold">0g / 0g</strong></div>
               <div class="analytics-row"><span>⚔️ Modo:</span><strong id="modal-challenge">Padrão</strong></div>
             </div>
-            <button id="restart-btn" class="btn primary modal-restart-btn">Jogar Novamente</button>
+            <div class="endgame-btns-row" style="display: flex; gap: 8px; margin-top: 12px;">
+              <button id="endgame-leaderboard-btn" class="btn secondary" style="flex: 1;">🏆 Placar Global</button>
+              <button id="restart-btn" class="btn primary" style="flex: 1;">Jogar Novamente</button>
+            </div>
           </div>
         </div>
       </div>
@@ -418,6 +476,9 @@ export class UIManager {
     this.talentsOverlayEl = document.getElementById('talents-modal-overlay')!;
     this.achievementsOverlayEl = document.getElementById('achievements-modal-overlay')!;
     this.changelogOverlayEl = document.getElementById('changelog-modal-overlay')!;
+    this.leaderboardOverlayEl = document.getElementById('leaderboard-modal-overlay')!;
+    this.profileOverlayEl = document.getElementById('profile-modal-overlay')!;
+
 
     this.storeStateEl = document.getElementById('store-state')!;
     this.inspectorStateEl = document.getElementById('inspector-state')!;
@@ -426,23 +487,71 @@ export class UIManager {
   }
 
   private subscribeToEvents() {
+    this.cleanupEvents();
     const bus = EventBus.getInstance();
 
-    bus.on('gold:change', (gold: number) => this.onGoldChanged(gold));
-    bus.on('hp:change', (data: { current: number; max: number }) => this.onHpChanged(data));
-    bus.on('wave:change', (data: { current: number; max: number; isEndless: boolean }) => this.onWaveChanged(data));
-    bus.on('tower:select', (tower: Tower2D | null) => this.onTowerSelected(tower));
-    bus.on('tower:buildType', (type: TowerType) => this.onBuildTypeChanged(type));
-    bus.on('spell:select', (spell: ActiveSpell) => this.onSpellSelected(spell));
-    bus.on('status:change', () => this.updateEndGameModal());
-    bus.on('pause:change', (isPaused: boolean) => this.onPauseChanged(isPaused));
-    bus.on('challenge:change', (mode: ChallengeMode) => this.onChallengeChanged(mode));
+    this.unbindEvents = [
+      bus.on('gold:change', (gold: number) => this.onGoldChanged(gold)),
+      bus.on('hp:change', (data: { current: number; max: number }) => this.onHpChanged(data)),
+      bus.on('wave:change', (data: { current: number; max: number; isEndless: boolean }) => this.onWaveChanged(data)),
+      bus.on('tower:select', (tower: Tower2D | null) => this.onTowerSelected(tower)),
+      bus.on('tower:buildType', (type: TowerType) => this.onBuildTypeChanged(type)),
+      bus.on('spell:select', (spell: ActiveSpell) => this.onSpellSelected(spell)),
+      bus.on('status:change', () => this.updateEndGameModal()),
+      bus.on('pause:change', (isPaused: boolean) => this.onPauseChanged(isPaused)),
+      bus.on('challenge:change', (mode: ChallengeMode) => this.onChallengeChanged(mode)),
+    ];
 
     // Initial populate
     this.onGoldChanged(this.gameState.gold);
     this.onHpChanged({ current: this.gameState.baseHp, max: this.gameState.maxBaseHp });
     this.onWaveChanged({ current: this.waveManager.currentWaveIndex + 1, max: 10, isEndless: this.waveManager.isEndlessMode });
     this.onChallengeChanged(this.gameState.challengeMode);
+  }
+
+  public destroy() {
+    this.cleanupEvents();
+  }
+
+  private cleanupEvents() {
+    this.unbindEvents.forEach((unbind) => unbind());
+    this.unbindEvents = [];
+  }
+
+  public closeAllModals() {
+    this.overlayEl?.classList.add('hidden');
+    this.settingsOverlayEl?.classList.add('hidden');
+    this.talentsOverlayEl?.classList.add('hidden');
+    this.achievementsOverlayEl?.classList.add('hidden');
+    this.changelogOverlayEl?.classList.add('hidden');
+    this.leaderboardOverlayEl?.classList.add('hidden');
+    this.profileOverlayEl?.classList.add('hidden');
+  }
+
+  private openSubModal(targetModal: HTMLElement) {
+    let parent: HTMLElement | null = null;
+    if (!this.settingsOverlayEl.classList.contains('hidden')) {
+      parent = this.settingsOverlayEl;
+    } else if (!this.overlayEl.classList.contains('hidden')) {
+      parent = this.overlayEl;
+    }
+    this.closeAllModals();
+    this.activeParentModal = parent;
+    targetModal.classList.remove('hidden');
+  }
+
+  public dismissModal() {
+    const parent = this.activeParentModal;
+    this.closeAllModals();
+    this.activeParentModal = null;
+    if (parent) {
+      parent.classList.remove('hidden');
+    } else {
+      if (this.gameState.isPaused) {
+        this.gameState.isPaused = false;
+        EventBus.getInstance().emit('pause:change', false);
+      }
+    }
   }
 
   private setupUIEvents() {
@@ -452,31 +561,29 @@ export class UIManager {
 
     // Settings Toggle & Close
     document.getElementById('settings-toggle-btn')?.addEventListener('click', () => {
+      this.closeAllModals();
+      this.activeParentModal = null;
       this.gameState.isPaused = true;
       EventBus.getInstance().emit('pause:change', true);
       this.syncSettingsControls();
       this.settingsOverlayEl.classList.remove('hidden');
     });
     document.getElementById('settings-close-btn')?.addEventListener('click', () => {
-      this.settingsOverlayEl.classList.add('hidden');
-      this.gameState.isPaused = false;
-      EventBus.getInstance().emit('pause:change', false);
+      this.dismissModal();
     });
 
     document.getElementById('settings-resume-btn')?.addEventListener('click', () => {
-      this.settingsOverlayEl.classList.add('hidden');
-      this.gameState.isPaused = false;
-      EventBus.getInstance().emit('pause:change', false);
+      this.dismissModal();
     });
 
     // Settings Sub-Modals
     document.getElementById('settings-talents-btn')?.addEventListener('click', () => {
       this.updateTalentsModal();
-      this.talentsOverlayEl.classList.remove('hidden');
+      this.openSubModal(this.talentsOverlayEl);
     });
 
     document.getElementById('close-talents-btn')?.addEventListener('click', () => {
-      this.talentsOverlayEl.classList.add('hidden');
+      this.dismissModal();
     });
 
     document.getElementById('settings-badges-btn')?.addEventListener('click', () => {
@@ -484,22 +591,80 @@ export class UIManager {
     });
 
     document.getElementById('close-achievements-btn')?.addEventListener('click', () => {
-      this.achievementsOverlayEl.classList.add('hidden');
+      this.dismissModal();
     });
 
     document.getElementById('settings-changelog-btn')?.addEventListener('click', () => {
-      this.changelogOverlayEl.classList.remove('hidden');
+      this.openSubModal(this.changelogOverlayEl);
+    });
+
+    document.getElementById('changelog-btn')?.addEventListener('click', () => {
+      this.openSubModal(this.changelogOverlayEl);
     });
 
     document.getElementById('close-changelog-btn')?.addEventListener('click', () => {
-      this.changelogOverlayEl.classList.add('hidden');
+      this.dismissModal();
+    });
+
+    // Profile & Leaderboard Events
+    document.getElementById('main-profile-btn')?.addEventListener('click', () => {
+      this.openProfileModal();
+    });
+    document.getElementById('settings-profile-btn')?.addEventListener('click', () => {
+      this.openProfileModal();
+    });
+    document.getElementById('close-profile-btn')?.addEventListener('click', () => {
+      this.dismissModal();
+    });
+    document.getElementById('close-profile-bottom-btn')?.addEventListener('click', () => {
+      this.dismissModal();
+    });
+    document.getElementById('profile-save-btn')?.addEventListener('click', () => {
+      this.saveProfile();
+    });
+
+    document.getElementById('main-leaderboard-btn')?.addEventListener('click', () => {
+      this.openLeaderboardModal();
+    });
+    document.getElementById('settings-leaderboard-btn')?.addEventListener('click', () => {
+      this.openLeaderboardModal();
+    });
+    document.getElementById('endgame-leaderboard-btn')?.addEventListener('click', () => {
+      this.openLeaderboardModal();
+    });
+    document.getElementById('close-leaderboard-btn')?.addEventListener('click', () => {
+      this.dismissModal();
+    });
+    document.getElementById('close-leaderboard-bottom-btn')?.addEventListener('click', () => {
+      this.dismissModal();
     });
 
     document.getElementById('settings-restart-btn')?.addEventListener('click', () => {
       if (window.confirm('Reiniciar a partida atual? Todo o progresso da onda será perdido.')) {
-        this.settingsOverlayEl.classList.add('hidden');
+        this.closeAllModals();
+        this.activeParentModal = null;
         this.onRestartCallback();
       }
+    });
+
+    // Backdrop Click Listeners for all modal overlays
+    const modalOverlays = [
+      this.overlayEl,
+      this.settingsOverlayEl,
+      this.talentsOverlayEl,
+      this.achievementsOverlayEl,
+      this.changelogOverlayEl,
+      this.leaderboardOverlayEl,
+      this.profileOverlayEl,
+    ];
+
+    modalOverlays.forEach((overlay) => {
+      if (!overlay) return;
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          this.dismissModal();
+        }
+      });
     });
 
     // Audio & Settings Sliders
@@ -902,6 +1067,7 @@ export class UIManager {
   }
 
   private openAchievementsModal() {
+    this.openSubModal(this.achievementsOverlayEl);
     const grid = document.getElementById('achievements-grid');
     const summary = document.getElementById('achievements-summary');
     if (!grid || !summary) return;
@@ -1084,5 +1250,127 @@ export class UIManager {
     if (this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') {
       this.updateEndGameModal();
     }
+  }
+
+  private async openProfileModal() {
+    this.openSubModal(this.profileOverlayEl);
+    const statusMsg = document.getElementById('profile-status-msg');
+    if (statusMsg) {
+      statusMsg.innerText = '';
+      statusMsg.className = 'profile-status-msg';
+    }
+
+    const db = this.game.databaseManager;
+    if (db) {
+      const profile = await db.getProfile();
+      if (profile) {
+        const usernameInput = document.getElementById('profile-username-input') as HTMLInputElement;
+        const avatarSelect = document.getElementById('profile-avatar-select') as HTMLSelectElement;
+        if (usernameInput) usernameInput.value = profile.username || '';
+        if (avatarSelect) avatarSelect.value = profile.avatarId || 'default_avatar';
+      }
+    }
+  }
+
+  private async saveProfile() {
+    const usernameInput = document.getElementById('profile-username-input') as HTMLInputElement;
+    const avatarSelect = document.getElementById('profile-avatar-select') as HTMLSelectElement;
+    const statusMsg = document.getElementById('profile-status-msg');
+
+    if (!usernameInput || !avatarSelect) return;
+    const username = usernameInput.value.trim();
+    const avatarId = avatarSelect.value;
+
+    if (!username) {
+      if (statusMsg) {
+        statusMsg.innerText = 'Digite um nome de usuário válido.';
+        statusMsg.className = 'profile-status-msg error';
+      }
+      return;
+    }
+
+    const db = this.game.databaseManager;
+    if (!db) return;
+
+    if (statusMsg) {
+      statusMsg.innerText = 'Salvando...';
+      statusMsg.className = 'profile-status-msg';
+    }
+
+    const res = await db.updateProfile(username, avatarId);
+    if (res.success) {
+      if (statusMsg) {
+        statusMsg.innerText = 'Perfil atualizado com sucesso!';
+        statusMsg.className = 'profile-status-msg success';
+      }
+    } else {
+      if (statusMsg) {
+        statusMsg.innerText = res.error || 'Erro ao salvar perfil.';
+        statusMsg.className = 'profile-status-msg error';
+      }
+    }
+  }
+  private async openLeaderboardModal() {
+    this.openSubModal(this.leaderboardOverlayEl);
+    const content = document.getElementById('leaderboard-content');
+    if (!content) return;
+
+    content.innerHTML = '<p style="text-align: center; padding: 20px;">⌛ Carregando placar global...</p>';
+
+    const db = this.game.databaseManager;
+    if (!db || !db.isConnected()) {
+      content.innerHTML = '<p style="text-align: center; color: #ff5252; padding: 20px;">⚠️ Placar indisponível no modo offline. Conecte-se ao Supabase para visualizar o ranking.</p>';
+      return;
+    }
+
+    const list = await db.getTop20Leaderboard();
+    if (list.length === 0) {
+      content.innerHTML = '<p style="text-align: center; color: #aaa; padding: 20px;">Nenhum registro encontrado no placar ainda. Seja o primeiro!</p>';
+      return;
+    }
+
+    const avatarIcons: Record<string, string> = {
+      default_avatar: '🛡️',
+      solar_prism: '☀️',
+      mega_boss: '👹',
+      frost_wizard: '❄️',
+    };
+
+    const rowsHtml = list
+      .map((entry, index) => {
+        const rank = index + 1;
+        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}`;
+        const rankClass = rank <= 3 ? `rank-${rank}` : '';
+        const icon = avatarIcons[entry.avatar_id] || '🛡️';
+        return `
+          <tr>
+            <td class="rank-col ${rankClass}">${medal}</td>
+            <td><strong>${icon} ${entry.username || 'Anônimo'}</strong></td>
+            <td><span style="font-size:0.75rem; background:#334; padding:2px 6px; border-radius:4px;">${entry.challenge_mode}</span></td>
+            <td style="color:#ffca28; font-weight:bold;">Onda ${entry.wave_reached}</td>
+            <td>⚔️ ${entry.total_kills}</td>
+            <td>🪙 ${entry.gold_earned}g</td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    content.innerHTML = `
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th style="width: 40px; text-align: center;">#</th>
+            <th>Jogador</th>
+            <th>Modo</th>
+            <th>Maior Onda</th>
+            <th>Kills</th>
+            <th>Ouro</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
   }
 }

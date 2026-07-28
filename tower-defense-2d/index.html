@@ -145,6 +145,14 @@
       .hud-btn:hover { background: rgba(255, 255, 255, 0.16); }
       .hud-btn:active { transform: scale(0.95); }
       .hud-btn.active { background: #e040fb; border-color: #ea80fc; }
+      .hud-btn.highlight-btn {
+        border: 1px solid #ffca28;
+        box-shadow: 0 0 8px rgba(255, 202, 40, 0.4);
+      }
+      .hud-btn.highlight-btn:hover {
+        background: rgba(255, 202, 40, 0.2);
+        box-shadow: 0 0 12px rgba(255, 202, 40, 0.6);
+      }
 
       /* 2. FIXED RED ZONE ACTION TOOLBAR (Just below top bar, above map) */
 .action-toolbar {
@@ -684,6 +692,55 @@
 
       .hidden { display: none !important; }
 
+      /* LEADERBOARD & PROFILE MODALS */
+      .leaderboard-modal-card { max-width: 600px; max-height: 85vh; overflow-y: auto; }
+      .profile-modal-card { max-width: 420px; }
+      .profile-input, .profile-select {
+        background: #252538;
+        color: #ffffff;
+        border: 1px solid #444466;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .profile-content {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+      .profile-status-msg {
+        font-size: 0.85rem;
+        font-weight: 600;
+        min-height: 1.2em;
+      }
+      .profile-status-msg.error { color: #ff5252; }
+      .profile-status-msg.success { color: #69f0ae; }
+      .leaderboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        margin-top: 8px;
+        margin-bottom: 16px;
+      }
+      .leaderboard-table th {
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffca28;
+        padding: 8px;
+        text-align: left;
+      }
+      .leaderboard-table td {
+        padding: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .leaderboard-table tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+      .leaderboard-table .rank-col { width: 40px; font-weight: 700; text-align: center; color: #40c4ff; }
+      .leaderboard-table .rank-1 { color: #ffd700; font-size: 1rem; }
+      .leaderboard-table .rank-2 { color: #c0c0c0; font-size: 0.95rem; }
+      .leaderboard-table .rank-3 { color: #cd7f32; font-size: 0.9rem; }
 /* MOBILE RESPONSIVE LAYOUT (<= 768px) */
 @media (max-width: 768px) {
   .ui-wrapper { padding: 4px; }
@@ -728,7 +785,8 @@
 }
 
 @media (max-width: 600px) {
-  .changelog-btn-text {
+  .changelog-btn-text,
+  .hud-btn-text {
     display: none;
   }
 }
