@@ -2,6 +2,7 @@ import type { ChallengeMode } from '../types';
 import { UIManager } from '../ui/UIManager';
 import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
+import { DatabaseManager } from './DatabaseManager';
 import { AudioManager, type BGMTrack } from './AudioManager';
 import { EnemyManager2D } from './EnemyManager';
 import { FXManager } from './FXManager';
@@ -23,6 +24,7 @@ export class Game2D {
   public talentManager!: TalentManager;
   public achievementManager!: AchievementManager;
   public analyticsManager!: AnalyticsManager;
+  public databaseManager!: DatabaseManager;
   public mapManager!: MapManager2D;
   private enemyManager!: EnemyManager2D;
   private projectileManager!: ProjectileManager2D;
@@ -42,6 +44,7 @@ export class Game2D {
   private currentSavedChallengeMode: ChallengeMode = 'NORMAL';
 
   constructor() {
+    this.databaseManager = new DatabaseManager();
     const gameArea = document.getElementById('game-area');
     if (!gameArea) throw new Error('Game area container not found');
 
@@ -64,8 +67,8 @@ export class Game2D {
     }
 
     this.analyticsManager = new AnalyticsManager();
-    this.talentManager = new TalentManager();
-    this.achievementManager = new AchievementManager(this.talentManager);
+    this.talentManager = new TalentManager(this.databaseManager);
+    this.achievementManager = new AchievementManager(this.talentManager, this.databaseManager);
     this.gameState = new GameState(this.talentManager, this.currentSavedChallengeMode);
     this.gameState.setStatus('PLAYING');
     this.waveManager = new WaveManager();
@@ -108,6 +111,10 @@ export class Game2D {
       this.analyticsManager,
       this.achievementManager
     );
+
+    if (this.uiManager) {
+      this.uiManager.destroy();
+    }
 
     this.hasAwardedStars = false;
 
@@ -234,17 +241,28 @@ export class Game2D {
 
     // Mouse & Mobile Tap Click Handler
     let lastTouchTime = 0;
+
+    // Global touch listener to record DOM UI taps and prevent synthetic click bleed-through to canvas
+    window.addEventListener(
+      'touchend',
+      (e) => {
+        if (e.target !== this.canvas) {
+          lastTouchTime = Date.now();
+        }
+      },
+      { passive: true }
+    );
+
     const handleTap = (e: MouseEvent | TouchEvent) => {
       if (this.gameState.status !== 'PLAYING' || this.gameState.isPaused) return;
 
-      // Prevent duplicate synthetic click event right after a touch event
-      if (e.type === 'click' && Date.now() - lastTouchTime < 300) {
+      // Prevent duplicate synthetic click event right after a touch event on UI or canvas
+      if (e.type === 'click' && Date.now() - lastTouchTime < 400) {
         return;
       }
       if (e.type === 'touchend') {
         lastTouchTime = Date.now();
       }
-
       const { x, y } = this.getCanvasMousePosition(e);
 
       // Handle Meteor Spell Casting
@@ -407,6 +425,19 @@ export class Game2D {
         const starsEarned = Math.floor(wavesCompleted / 2) + (this.gameState.status === 'VICTORY' ? 5 : 0);
         this.talentManager.earnStars(starsEarned);
         this.analyticsManager.checkHighScore(wavesCompleted);
+        if (this.databaseManager) {
+          const mapId = this.mapManager?.currentMapId || 'MAP_1';
+          const challengeMode = this.currentSavedChallengeMode;
+          const goldEarned = this.analyticsManager.goldEarned;
+          const totalKills = this.analyticsManager.getTotalKills();
+          this.databaseManager.queueRunRecord(
+            mapId,
+            challengeMode,
+            wavesCompleted,
+            goldEarned,
+            totalKills
+          );
+        }
       }
 
       // Update UI

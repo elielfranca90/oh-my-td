@@ -1,3 +1,5 @@
+import type { DatabaseManager } from './DatabaseManager';
+
 export interface TalentData {
   damageLvl: number;
   goldLvl: number;
@@ -17,12 +19,16 @@ export class TalentManager {
     repairLvl: 0,
     critLvl: 0,
   };
-
   private readonly STARS_KEY = 'td2d_stars_v1';
   private readonly TALENTS_KEY = 'td2d_talents_v1';
+  private db: DatabaseManager | null = null;
 
-  constructor() {
+  constructor(db?: DatabaseManager) {
+    this.db = db || null;
     this.loadData();
+    if (this.db) {
+      this.syncWithRemote();
+    }
   }
 
   private loadData() {
@@ -49,12 +55,63 @@ export class TalentManager {
     }
   }
 
-  public saveData() {
+  public setDatabaseManager(db: DatabaseManager) {
+    this.db = db;
+    this.syncWithRemote();
+  }
+
+  public async syncWithRemote() {
+    if (!this.db || !this.db.isConnected()) return;
+    const remote = await this.db.fetchRemotePlayerState();
+    if (remote) {
+      const mergedStars = Math.max(this.stars, remote.stars);
+      const mergedDamage = Math.max(this.talents.damageLvl, remote.talents.damageLvl);
+      const mergedGold = Math.max(this.talents.goldLvl, remote.talents.goldLvl);
+      const mergedHp = Math.max(this.talents.hpLvl, remote.talents.hpLvl);
+      const mergedCd = Math.max(this.talents.cdLvl, remote.talents.cdLvl);
+      const mergedRepair = Math.max(this.talents.repairLvl, remote.talents.repairLvl);
+      const mergedCrit = Math.max(this.talents.critLvl, remote.talents.critLvl);
+
+      const localHadHigher =
+        this.stars > remote.stars ||
+        this.talents.damageLvl > remote.talents.damageLvl ||
+        this.talents.goldLvl > remote.talents.goldLvl ||
+        this.talents.hpLvl > remote.talents.hpLvl ||
+        this.talents.cdLvl > remote.talents.cdLvl ||
+        this.talents.repairLvl > remote.talents.repairLvl ||
+        this.talents.critLvl > remote.talents.critLvl;
+
+      this.stars = mergedStars;
+      this.talents.damageLvl = mergedDamage;
+      this.talents.goldLvl = mergedGold;
+      this.talents.hpLvl = mergedHp;
+      this.talents.cdLvl = mergedCd;
+      this.talents.repairLvl = mergedRepair;
+      this.talents.critLvl = mergedCrit;
+
+      this.saveLocalData();
+
+      if (localHadHigher) {
+        this.db.queuePlayerStateSync(this.stars, this.talents);
+      }
+    } else {
+      this.db.queuePlayerStateSync(this.stars, this.talents);
+    }
+  }
+
+  private saveLocalData() {
     try {
       localStorage.setItem(this.STARS_KEY, this.stars.toString());
       localStorage.setItem(this.TALENTS_KEY, JSON.stringify(this.talents));
     } catch {
       // Ignore
+    }
+  }
+
+  public saveData() {
+    this.saveLocalData();
+    if (this.db) {
+      this.db.queuePlayerStateSync(this.stars, this.talents);
     }
   }
 

@@ -1,0 +1,486 @@
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { TalentData } from './TalentManager';
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  avatarId: string;
+}
+
+export interface LeaderboardEntry {
+  username: string;
+  avatar_id: string;
+  wave_reached: number;
+  gold_earned: number;
+  total_kills: number;
+  map_id: string;
+  challenge_mode: string;
+  created_at: string;
+}
+
+export interface PendingRun {
+  mapId: string;
+  challengeMode: string;
+  waveReached: number;
+  goldEarned: number;
+  totalKills: number;
+}
+
+export interface PendingSyncQueue {
+  playerState?: {
+    stars: number;
+    talents: TalentData;
+  };
+  achievements?: Record<string, { progress: number; unlocked: boolean }>;
+  pendingRuns?: PendingRun[];
+}
+
+/**
+ * DatabaseManager handles connection and operations with Supabase.
+ * Implements a Local-First Outbox Pattern for background synchronization.
+ */
+export class DatabaseManager {
+  public client: SupabaseClient | null = null;
+  private userId: string | null = null;
+  private readonly QUEUE_KEY = 'td2d_sync_queue_v1';
+  private isSyncing = false;
+  private authDisabled = false;
+  private syncPromise: Promise<void> | null = null;
+  constructor() {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.warn(
+        '[DatabaseManager] Supabase environment variables missing. Operating in local-offline mode.'
+      );
+      this.client = null;
+      return;
+    }
+
+    try {
+      this.client = createClient(supabaseUrl, supabaseAnonKey);
+      console.log('[DatabaseManager] Supabase client successfully initialized.');
+      // Attempt silent auth in background
+      this.ensureAuth().catch((err) => {
+        console.warn('[DatabaseManager] Anonymous auth warning:', err);
+      });
+    } catch (error) {
+      console.error('[DatabaseManager] Failed to initialize Supabase client:', error);
+      this.client = null;
+    }
+  }
+
+  public isConnected(): boolean {
+    return this.client !== null;
+  }
+
+  /**
+   * Ensures the user is authenticated (silently via anonymous auth if needed).
+   */
+  public async ensureAuth(): Promise<string | null> {
+    if (!this.client || this.authDisabled) return null;
+    if (this.userId) return this.userId;
+
+    try {
+      const { data: sessionData } = await this.client.auth.getSession();
+      if (sessionData?.session?.user) {
+        this.userId = sessionData.session.user.id;
+        this.flushSyncQueue();
+        return this.userId;
+      }
+
+      const { data, error } = await this.client.auth.signInAnonymously();
+      if (error) throw error;
+
+      if (data?.user) {
+        this.userId = data.user.id;
+        console.log('[DatabaseManager] Anonymous session established:', this.userId);
+        this.flushSyncQueue();
+        return this.userId;
+      }
+    } catch (err: unknown) {
+      const errorObj = err as { message?: string; code?: string; status?: number } | null;
+      if (
+        errorObj?.message?.includes('Anonymous sign-ins are disabled') ||
+        errorObj?.code === 'anonymous_provider_disabled'
+      ) {
+        this.authDisabled = true;
+        console.warn(
+          '[DatabaseManager] ⚠️ Logins anônimos estão desativados no projeto Supabase.\n' +
+          'Para habilitar: acesse o Supabase Dashboard -> Authentication -> Providers -> Anonymous Sign-ins e ative a opção (lembre-se de clicar em SAVE no fim da página).'
+        );
+      } else if (errorObj?.status === 422) {
+        this.authDisabled = true;
+        console.warn(
+          `[DatabaseManager] ⚠️ Erro 422 ao autenticar anonimamente: ${errorObj.message || 'Unprocessable Content'}.\n` +
+          'Verifique no Supabase se clicou em SAVE após ativar Anonymous Sign-ins ou se "Allow new users to sign up" está ativado em Authentication -> Settings.'
+        );
+      } else {
+        console.warn('[DatabaseManager] Auth check failed:', err);
+      }
+    }
+    return null;
+  }
+
+  public getUserId(): string | null {
+    return this.userId;
+  }
+
+  /**
+   * Fetches user profile from Supabase.
+   */
+  public async getProfile(): Promise<UserProfile | null> {
+    if (!this.client) return null;
+    const uid = await this.ensureAuth();
+    if (!uid) return null;
+
+    try {
+      const { data, error } = await this.client
+        .from('profiles')
+        .select('id, username, avatar_id')
+        .eq('id', uid)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        return {
+          id: data.id,
+          username: data.username,
+          avatarId: data.avatar_id,
+        };
+      }
+    } catch (err) {
+      console.warn('[DatabaseManager] Failed to fetch profile:', err);
+    }
+    return null;
+  }
+
+  /**
+   * Updates user profile in Supabase.
+   */
+  public async updateProfile(
+    username: string,
+    avatarId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!this.client) {
+      return { success: false, error: 'Database disconnected (offline mode)' };
+    }
+
+    const uid = await this.ensureAuth();
+    if (!uid) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    try {
+      const { error } = await this.client
+        .from('profiles')
+        .update({
+          username,
+          avatar_id: avatarId,
+        })
+        .eq('id', uid);
+
+      if (error) {
+        if (error.code === '23505') {
+          return { success: false, error: 'Este nome de usuário já está em uso.' };
+        }
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro ao atualizar perfil';
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * Enqueues player state (stars and talents) for background sync.
+   */
+  public queuePlayerStateSync(stars: number, talents: TalentData): void {
+    const queue = this.loadQueue();
+    queue.playerState = { stars, talents: { ...talents } };
+    this.saveQueue(queue);
+    this.flushSyncQueue();
+  }
+
+  /**
+   * Enqueues achievement progress for background sync.
+   */
+  public queueAchievementSync(achievementId: string, progress: number, unlocked: boolean): void {
+    const queue = this.loadQueue();
+    if (!queue.achievements) queue.achievements = {};
+    queue.achievements[achievementId] = { progress, unlocked };
+    this.saveQueue(queue);
+    this.flushSyncQueue();
+  }
+
+  /**
+   * Enqueues a completed run record for background sync.
+   */
+  public queueRunRecord(
+    mapId: string,
+    challengeMode: string,
+    waveReached: number,
+    goldEarned: number,
+    totalKills: number
+  ): void {
+    const queue = this.loadQueue();
+    if (!queue.pendingRuns) queue.pendingRuns = [];
+    queue.pendingRuns.push({
+      mapId,
+      challengeMode,
+      waveReached,
+      goldEarned,
+      totalKills,
+    });
+    this.saveQueue(queue);
+    this.flushSyncQueue();
+  }
+
+  /**
+   * Fetches remote player state (stars & talents) from Supabase.
+   */
+  public async fetchRemotePlayerState(): Promise<{ stars: number; talents: TalentData } | null> {
+    if (!this.client) return null;
+    const uid = await this.ensureAuth();
+    if (!uid) return null;
+
+    try {
+      const { data, error } = await this.client
+        .from('player_state')
+        .select('*')
+        .eq('player_id', uid)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        return {
+          stars: data.stars ?? 0,
+          talents: {
+            damageLvl: data.talent_damage_lvl ?? 0,
+            goldLvl: data.talent_gold_lvl ?? 0,
+            hpLvl: data.talent_hp_lvl ?? 0,
+            cdLvl: data.talent_cd_lvl ?? 0,
+            repairLvl: data.talent_repair_lvl ?? 0,
+            critLvl: data.talent_crit_lvl ?? 0,
+          },
+        };
+      }
+    } catch (err) {
+      console.warn('[DatabaseManager] Failed to fetch player state:', err);
+    }
+    return null;
+  }
+
+  /**
+   * Fetches remote achievements from Supabase.
+   */
+  public async fetchRemoteAchievements(): Promise<Record<string, { progress: number; unlocked: boolean }> | null> {
+    if (!this.client) return null;
+    const uid = await this.ensureAuth();
+    if (!uid) return null;
+
+    try {
+      const { data, error } = await this.client
+        .from('player_achievements')
+        .select('achievement_id, progress, unlocked_at')
+        .eq('player_id', uid);
+
+      if (error) throw error;
+      if (data) {
+        const result: Record<string, { progress: number; unlocked: boolean }> = {};
+        for (const item of data) {
+          result[item.achievement_id] = {
+            progress: item.progress ?? 0,
+            unlocked: item.unlocked_at !== null,
+          };
+        }
+        return result;
+      }
+    } catch (err) {
+      console.warn('[DatabaseManager] Failed to fetch achievements:', err);
+    }
+    return null;
+  }
+
+  /**
+   * Fetches Top 20 Leaderboard entries from the Supabase view.
+   */
+  public async getTop20Leaderboard(): Promise<LeaderboardEntry[]> {
+    if (!this.client) return [];
+
+    try {
+      const { data, error } = await this.client
+        .from('top_20_leaderboard')
+        .select('*');
+
+      if (error) throw error;
+      return (data as LeaderboardEntry[]) || [];
+    } catch (err) {
+      console.warn('[DatabaseManager] Failed to fetch leaderboard:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Processes the local outbox sync queue and sends pending items to Supabase.
+   */
+  public async flushSyncQueue(): Promise<void> {
+    if (!this.client) return;
+    if (this.isSyncing) {
+      return this.syncPromise || Promise.resolve();
+    }
+
+    this.isSyncing = true;
+    this.syncPromise = (async () => {
+      try {
+        const uid = await this.ensureAuth();
+        if (!uid) return;
+
+        let hasMoreToSync = true;
+        while (hasMoreToSync) {
+          const queue = this.loadQueue();
+          let syncedPlayerState = false;
+          const syncedAchievements: string[] = [];
+          let syncedRunCount = 0;
+
+          // 1. Sync Player State
+          if (queue.playerState) {
+            const { stars, talents } = queue.playerState;
+            const { error } = await this.client.from('player_state').upsert({
+              player_id: uid,
+              stars,
+              talent_damage_lvl: talents.damageLvl,
+              talent_gold_lvl: talents.goldLvl,
+              talent_hp_lvl: talents.hpLvl,
+              talent_cd_lvl: talents.cdLvl,
+              talent_repair_lvl: talents.repairLvl,
+              talent_crit_lvl: talents.critLvl,
+              updated_at: new Date().toISOString(),
+            });
+
+            if (!error) syncedPlayerState = true;
+            else console.warn('[DatabaseManager] PlayerState sync failed:', error.message);
+          }
+
+          // 2. Sync Achievements
+          if (queue.achievements && Object.keys(queue.achievements).length > 0) {
+            const achievementIds = Object.keys(queue.achievements);
+            for (const id of achievementIds) {
+              const item = queue.achievements[id];
+              const { error } = await this.client.from('player_achievements').upsert({
+                player_id: uid,
+                achievement_id: id,
+                progress: item.progress,
+                unlocked_at: item.unlocked ? new Date().toISOString() : null,
+                updated_at: new Date().toISOString(),
+              });
+
+              if (!error) syncedAchievements.push(id);
+              else console.warn('[DatabaseManager] Achievement sync failed for', id, error.message);
+            }
+          }
+
+          // 3. Sync Pending Runs
+          if (queue.pendingRuns && queue.pendingRuns.length > 0) {
+            for (const run of queue.pendingRuns) {
+              const { error } = await this.client.from('runs').insert({
+                player_id: uid,
+                map_id: run.mapId,
+                challenge_mode: run.challengeMode,
+                wave_reached: run.waveReached,
+                gold_earned: run.goldEarned,
+                total_kills: run.totalKills,
+              });
+
+              if (error) {
+                console.warn('[DatabaseManager] Run record sync failed:', error.message);
+                break;
+              } else {
+                syncedRunCount++;
+              }
+            }
+          }
+
+          const didSyncAnything = syncedPlayerState || syncedAchievements.length > 0 || syncedRunCount > 0;
+          if (didSyncAnything) {
+            this.updateQueueAfterSync(syncedPlayerState, syncedAchievements, syncedRunCount);
+          }
+
+          const recheckQueue = this.loadQueue();
+          const hasRemainingItems =
+            !!recheckQueue.playerState ||
+            !!(recheckQueue.achievements && Object.keys(recheckQueue.achievements).length > 0) ||
+            !!(recheckQueue.pendingRuns && recheckQueue.pendingRuns.length > 0);
+
+          if (!didSyncAnything || !hasRemainingItems) {
+            hasMoreToSync = false;
+          }
+        }
+      } catch (err) {
+        console.warn('[DatabaseManager] Error during flushSyncQueue:', err);
+      } finally {
+        this.isSyncing = false;
+        this.syncPromise = null;
+      }
+    })();
+
+    return this.syncPromise;
+  }
+
+  private updateQueueAfterSync(syncedPlayerState: boolean, syncedAchievements: string[], syncedRunCount: number): void {
+    const currentQueue = this.loadQueue();
+
+    if (syncedPlayerState) {
+      delete currentQueue.playerState;
+    }
+
+    if (syncedAchievements.length > 0 && currentQueue.achievements) {
+      syncedAchievements.forEach((id) => {
+        delete currentQueue.achievements![id];
+      });
+    }
+    if (currentQueue.achievements && Object.keys(currentQueue.achievements).length === 0) {
+      delete currentQueue.achievements;
+    }
+
+    if (syncedRunCount > 0 && currentQueue.pendingRuns) {
+      currentQueue.pendingRuns.splice(0, syncedRunCount);
+      if (currentQueue.pendingRuns.length === 0) {
+        delete currentQueue.pendingRuns;
+      }
+    }
+
+    this.saveQueue(currentQueue);
+  }
+
+  private loadQueue(): PendingSyncQueue {
+    try {
+      const data = localStorage.getItem(this.QUEUE_KEY);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } catch {
+      // Ignore
+    }
+    return {};
+  }
+
+  private saveQueue(queue: PendingSyncQueue): void {
+    try {
+      const hasPlayerState = !!queue.playerState;
+      const hasAchievements = !!(queue.achievements && Object.keys(queue.achievements).length > 0);
+      const hasRuns = !!(queue.pendingRuns && queue.pendingRuns.length > 0);
+
+      if (!hasPlayerState && !hasAchievements && !hasRuns) {
+        localStorage.removeItem(this.QUEUE_KEY);
+      } else {
+        localStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));
+      }
+    } catch {
+      // Ignore
+    }
+  }
+}
