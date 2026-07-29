@@ -1,4 +1,5 @@
 import type { Vector2D } from '../types';
+import { Rng } from './Rng';
 import { SpriteManager } from './SpriteManager';
 
 export const TileType = {
@@ -135,7 +136,8 @@ export class MapManager2D {
    * Só entram tiles adjacentes ao caminho: um sprout longe da rota seria um
    * bônus decorativo que o jogador nunca teria motivo para usar.
    */
-  public pickSproutTiles(count = 4): { x: number; y: number }[] {
+  public pickSproutTiles(count = 4, rng?: Rng): { x: number; y: number }[] {
+    const random = rng || new Rng(Date.now());
     const candidates: { x: number; y: number }[] = [];
 
     for (let y = 0; y < this.rows; y++) {
@@ -148,7 +150,7 @@ export class MapManager2D {
     // Fisher-Yates parcial: embaralha só o necessário para tirar `count`.
     const picked: { x: number; y: number }[] = [];
     for (let i = 0; i < Math.min(count, candidates.length); i++) {
-      const j = i + Math.floor(Math.random() * (candidates.length - i));
+      const j = i + random.int(candidates.length - i);
       [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
       picked.push(candidates[i]);
     }

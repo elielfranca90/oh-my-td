@@ -1,4 +1,5 @@
 import { EventBus } from './EventBus';
+import { Rng } from './Rng';
 
 import type { EnemyType } from '../types';
 
@@ -253,6 +254,11 @@ export class WaveManager {
   public isMorteCerta = false;
   private spawnQueue: { type: EnemyType; delay: number }[] = [];
   private timer = 0;
+  private rng: Rng;
+
+  constructor(rng?: Rng) {
+    this.rng = rng || new Rng(Date.now());
+  }
 
   public setAutoMode(enabled: boolean) {
     this.isAutoMode = enabled;
@@ -316,7 +322,7 @@ export class WaveManager {
     let total = 0;
     for (const entry of pool) total += entry.weight;
 
-    let roll = Math.random() * total;
+    let roll = this.rng.next() * total;
     for (const entry of pool) {
       roll -= entry.weight;
       if (roll < 0) return entry.type;

@@ -8,6 +8,7 @@ import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { GameState } from './GameState';
 import { MapManager2D } from './MapManager';
+import { Rng } from './Rng';
 import { WaveManager } from './WaveManager';
 
 export class EnemyManager2D {
@@ -19,6 +20,9 @@ export class EnemyManager2D {
   private analyticsManager?: AnalyticsManager;
   private achievementManager?: AchievementManager;
   private spawnToggle = false;
+  private rng: Rng;
+  /** Contador de IDs: `enemy-${Date.now()}-${Math.random()}` não era reproduzível. */
+  private nextEnemyId = 1;
 
   constructor(
     mapManager: MapManager2D,
@@ -26,7 +30,8 @@ export class EnemyManager2D {
     waveManager: WaveManager,
     audioManager: AudioManager,
     analyticsManager?: AnalyticsManager,
-    achievementManager?: AchievementManager
+    achievementManager?: AchievementManager,
+    rng?: Rng
   ) {
     this.mapManager = mapManager;
     this.gameState = gameState;
@@ -34,6 +39,7 @@ export class EnemyManager2D {
     this.audioManager = audioManager;
     this.analyticsManager = analyticsManager;
     this.achievementManager = achievementManager;
+    this.rng = rng || new Rng(Date.now());
   }
 
   private attackTimer = 0;
@@ -120,7 +126,16 @@ export class EnemyManager2D {
   private spawnReinforcements(waypointIndex: number, position: Vector2D) {
     for (let r = 0; r < 2; r++) {
       const waypoints = this.mapManager.getWaypoints(0);
-      const runner = new Enemy2D(waypoints, 'RUNNER', `runner-boss-${Date.now()}-${r}`);
+      const runner = new Enemy2D(
+        waypoints,
+        'RUNNER',
+        `runner-boss-${this.nextEnemyId++}`,
+        1.0,
+        0,
+        1.0,
+        1.0,
+        this.rng
+      );
       runner.data.waypointIndex = waypointIndex;
       runner.data.position = { x: position.x + (r * 12 - 6), y: position.y + (r * 12 - 6) };
       this.enemies.push(runner);
@@ -158,11 +173,12 @@ export class EnemyManager2D {
     const enemy = new Enemy2D(
       waypoints,
       type,
-      `enemy-${Date.now()}-${Math.random()}`,
+      `enemy-${this.nextEnemyId++}`,
       hpMultiplier,
       pathIndex,
       speedMultiplier,
-      goldMultiplier
+      goldMultiplier,
+      this.rng
     );
     this.enemies.push(enemy);
   }

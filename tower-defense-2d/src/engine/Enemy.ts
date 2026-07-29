@@ -1,4 +1,5 @@
 import { MegaBossSpriteRenderer } from './MegaBossSpriteRenderer';
+import { Rng } from './Rng';
 import { SpriteManager } from './SpriteManager';
 
 import type { EnemyType, IEnemy2D, Vector2D } from '../types';
@@ -11,6 +12,7 @@ export class Enemy2D {
   public isRegenerating = false;
   private hasTriggeredSpore = false;
   private mossRegenTimer = 0;
+  private rng: Rng;
 
   constructor(
     waypoints: Vector2D[],
@@ -19,8 +21,12 @@ export class Enemy2D {
     hpMultiplier = 1.0,
     pathIndex = 0,
     speedMultiplier = 1.0,
-    goldMultiplier = 1.0
+    goldMultiplier = 1.0,
+    rng?: Rng
   ) {
+    // Sem RNG injetado cai numa semente de relógio: comportamento idêntico ao
+    // anterior para quem constrói o inimigo solto (testes, spawn avulso).
+    this.rng = rng || new Rng(Date.now());
     const config = this.getEnemyConfig(type);
     this.baseDamage = config.baseDamage;
     this.pathIndex = pathIndex;
@@ -76,7 +82,7 @@ export class Enemy2D {
 
   public takeDamage(amount: number, isLightShot = false): number {
     // 1. Check Dodge (Runner)
-    if (this.data.dodgeChance > 0 && Math.random() < this.data.dodgeChance) {
+    if (this.data.dodgeChance > 0 && this.rng.chance(this.data.dodgeChance)) {
       return -1; // Dodged!
     }
 

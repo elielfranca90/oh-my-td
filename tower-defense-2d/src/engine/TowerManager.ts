@@ -9,6 +9,7 @@ import { GameState } from './GameState';
 import { MapManager2D } from './MapManager';
 import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
+import { Rng } from './Rng';
 import { TalentManager } from './TalentManager';
 import { Tower2D } from './Tower';
 
@@ -22,6 +23,9 @@ export class TowerManager2D {
   private talentManager?: TalentManager;
   private achievementManager?: AchievementManager;
   private analyticsManager?: AnalyticsManager;
+  private rng: Rng;
+  /** Contador de IDs: `tower-${Date.now()}` colidia ao erguer duas no mesmo ms. */
+  private nextTowerId = 1;
   public selectedBuildType: TowerType = 'BASIC';
   public selectedTower: Tower2D | null = null;
   public sproutTiles: { x: number; y: number }[] = [];
@@ -34,7 +38,8 @@ export class TowerManager2D {
     particleManager?: ParticleManager,
     talentManager?: TalentManager,
     analyticsManager?: AnalyticsManager,
-    achievementManager?: AchievementManager
+    achievementManager?: AchievementManager,
+    rng?: Rng
   ) {
     this.mapManager = mapManager;
     this.projectileManager = projectileManager;
@@ -44,6 +49,7 @@ export class TowerManager2D {
     this.talentManager = talentManager;
     this.analyticsManager = analyticsManager;
     this.achievementManager = achievementManager;
+    this.rng = rng || new Rng(Date.now());
   }
 
   public setParticleManager(pm: ParticleManager) {
@@ -88,7 +94,7 @@ export class TowerManager2D {
       this.analyticsManager.recordGoldSpent(cost);
     }
 
-    const tower = new Tower2D(gridX, gridY, this.mapManager.tileSize, this.selectedBuildType, `tower-${Date.now()}`);
+    const tower = new Tower2D(gridX, gridY, this.mapManager.tileSize, this.selectedBuildType, `tower-${this.nextTowerId++}`);
 
     // Check Overgrowth Sprout Twist (+25% range bonus)
     const isSproutTile = this.sproutTiles.some(s => s.x === gridX && s.y === gridY);
@@ -265,7 +271,7 @@ export class TowerManager2D {
 
         if (tower.data.type === 'BASIC') {
           // 20% Base Critical Hit chance + Talent Crit Chance
-          if (Math.random() < (0.20 + extraCritChance)) {
+          if (this.rng.chance(0.20 + extraCritChance)) {
             damage *= 2;
             isCrit = true;
             color = '#ffea00';
@@ -277,7 +283,7 @@ export class TowerManager2D {
           if ((target.data.type === 'TANK' || target.data.type === 'BOSS') && targetHpRatio >= 0.5) {
             damage *= 2;
             isCrit = true;
-          } else if (extraCritChance > 0 && Math.random() < extraCritChance) {
+          } else if (this.rng.chance(extraCritChance)) {
             damage *= 2;
             isCrit = true;
           }
@@ -286,7 +292,7 @@ export class TowerManager2D {
           radius = 7;
           this.audioManager.playCannonShot();
         } else if (tower.data.type === 'ARTILLERY') {
-          if (extraCritChance > 0 && Math.random() < extraCritChance) {
+          if (this.rng.chance(extraCritChance)) {
             damage *= 2;
             isCrit = true;
           }

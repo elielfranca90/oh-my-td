@@ -11,6 +11,7 @@ import { MapManager2D, type MapId } from './MapManager';
 import { MegaBossSpriteRenderer } from './MegaBossSpriteRenderer';
 import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
+import { Rng } from './Rng';
 import { SpellManager } from './SpellManager';
 import { TalentManager } from './TalentManager';
 import { TowerManager2D } from './TowerManager';
@@ -56,6 +57,15 @@ export class Game2D {
 
   public gameSpeedMultiplier = 1; // 1x, 2x, 4x
 
+  /**
+   * Semente da partida atual. Toda a aleatoriedade que decide o jogo (esquiva,
+   * crítico, composição endless, tiles Sprout) sai deste RNG, então informar a
+   * mesma semente reproduz a partida — base para depurar um bug relatado e para
+   * o harness de balanceamento comparar builds.
+   */
+  public runSeed = 0;
+  private rng!: Rng;
+
   private mousePos: { x: number; y: number } | null = null;
   private hoveredGrid: { x: number; y: number } | null = null;
   private lastTime = 0;
@@ -90,12 +100,16 @@ export class Game2D {
       this.audioManager.stopBGM();
     }
 
+    // Uma semente por partida, compartilhada por todos os managers.
+    this.runSeed = Date.now() >>> 0;
+    this.rng = new Rng(this.runSeed);
+
     this.analyticsManager = new AnalyticsManager();
     this.talentManager = new TalentManager(this.databaseManager);
     this.achievementManager = new AchievementManager(this.talentManager, this.databaseManager);
     this.gameState = new GameState(this.talentManager, this.currentSavedChallengeMode);
     this.gameState.setStatus('PLAYING');
-    this.waveManager = new WaveManager();
+    this.waveManager = new WaveManager(this.rng);
     if (this.currentSavedChallengeMode === 'MORTE_CERTA') {
       this.waveManager.isMorteCerta = true;
       this.waveManager.setEndlessMode(true);
@@ -125,7 +139,8 @@ export class Game2D {
       this.particleManager,
       this.talentManager,
       this.analyticsManager,
-      this.achievementManager
+      this.achievementManager,
+      this.rng
     );
     this.enemyManager = new EnemyManager2D(
       this.mapManager,
@@ -133,11 +148,12 @@ export class Game2D {
       this.waveManager,
       this.audioManager,
       this.analyticsManager,
-      this.achievementManager
+      this.achievementManager,
+      this.rng
     );
 
     // Overgrowth Sprout: sorteia os tiles bonificados desta partida.
-    this.towerManager.sproutTiles = this.mapManager.pickSproutTiles(4);
+    this.towerManager.sproutTiles = this.mapManager.pickSproutTiles(4, this.rng);
 
     if (this.uiManager) {
       this.uiManager.destroy();
