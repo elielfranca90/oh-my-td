@@ -468,6 +468,54 @@
         transform: none !important;
       }
 
+      /* WAVE COMPOSITION PREVIEW */
+      .wave-preview {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+        max-width: 260px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .wave-preview.danger {
+        border-color: rgba(255, 23, 68, 0.65);
+        background: rgba(70, 0, 0, 0.45);
+      }
+
+      .wave-preview-title {
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #b0bec5;
+        margin-right: 2px;
+      }
+
+      .wave-preview.danger .wave-preview-title { color: #ff8a80; }
+
+      .wave-preview-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        line-height: 1;
+        padding: 3px 5px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.09);
+        color: #eceff1;
+        white-space: nowrap;
+      }
+
+      .wave-preview-chip.boss {
+        background: rgba(255, 23, 68, 0.22);
+        color: #ff8a80;
+      }
+
       /* BUTTON UTILITIES */
       .btn {
         background: rgba(255, 255, 255, 0.08);

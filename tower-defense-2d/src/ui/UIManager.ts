@@ -9,8 +9,8 @@ import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
 import { TalentManager, type TalentData } from '../engine/TalentManager';
 import type { Tower2D } from '../engine/Tower';
 import { TowerManager2D } from '../engine/TowerManager';
-import { WaveManager } from '../engine/WaveManager';
-import type { ChallengeMode, TowerType } from '../types';
+import { WaveManager, type EndlessArchetype, type WavePreview } from '../engine/WaveManager';
+import type { ChallengeMode, EnemyType, TowerType } from '../types';
 
 export class UIManager {
   private gameState: GameState;
@@ -42,12 +42,14 @@ export class UIManager {
   private waveBtnEl: HTMLButtonElement | null = null;
   private waveBtnLabelEl: HTMLElement | null = null;
   private bossBadgeEl: HTMLElement | null = null;
+  private wavePreviewEl: HTMLElement | null = null;
   private meteorCdEl: HTMLElement | null = null;
   private freezeCdEl: HTMLElement | null = null;
 
   private lastWaveDisabled: boolean | null = null;
   private lastWaveLabelText = '';
   private lastWaveClassName = '';
+  private lastWavePreviewKey = '';
   private lastBossBadgeHidden: boolean | null = null;
   private lastMeteorCdText = '';
   private lastMeteorCdHidden: boolean | null = null;
@@ -214,6 +216,8 @@ export class UIManager {
             <button id="btn-speed-4x" class="speed-btn">4x</button>
             <button id="btn-auto-mode" class="auto-toggle-btn">⚡ Auto</button>
           </div>
+
+          <div id="hud-wave-preview" class="wave-preview hidden"></div>
 
           <button id="btn-next-wave" class="start-wave-main-btn">
             <span id="start-wave-label">Iniciar Onda 1</span>
@@ -1141,10 +1145,76 @@ export class UIManager {
     }
   }
 
+  /** Ícone de cada tipo na faixa de preview, alinhado à cor do inimigo em jogo. */
+  private static readonly ENEMY_ICONS: Record<EnemyType, string> = {
+    STANDARD: '🔴',
+    RUNNER: '🟠',
+    SPORE_SPRINTER: '🟢',
+    SHIELDED: '🔵',
+    TANK: '🟣',
+    MOSS_GIANT: '🌲',
+    BOSS: '💀',
+    BLACK_MEGA_BOSS: '☠️',
+  };
+
+  private static readonly ARCHETYPE_LABELS: Record<EndlessArchetype, string> = {
+    SWARM: 'Enxame',
+    ARMORED: 'Blindada',
+    RUSH: 'Investida',
+    MIXED: 'Mista',
+    BOSS_RUSH: 'Chefes',
+  };
+
+  /**
+   * Faixa compacta com a composição da próxima onda. Sem isso o jogador só sabe
+   * o número da onda, e num TD planejar a defesa é o jogo — a única estratégia
+   * possível passava a ser morrer e reiniciar.
+   */
+  private renderWavePreview(preview: WavePreview) {
+    if (!this.wavePreviewEl) return;
+
+    const titulo = preview.archetype
+      ? `Onda ${preview.waveNumber} · ${UIManager.ARCHETYPE_LABELS[preview.archetype]}`
+      : `Onda ${preview.waveNumber}`;
+
+    const chips = preview.entries
+      .map(entry => {
+        const isBoss = entry.type === 'BOSS' || entry.type === 'BLACK_MEGA_BOSS';
+        const icon = UIManager.ENEMY_ICONS[entry.type] || '❔';
+        return `<span class="wave-preview-chip${isBoss ? ' boss' : ''}">${icon} ${entry.count}</span>`;
+      })
+      .join('');
+
+    this.wavePreviewEl.className = `wave-preview${preview.hasBoss ? ' danger' : ''}`;
+    this.wavePreviewEl.innerHTML = `<span class="wave-preview-title">${titulo}</span>${chips}`;
+  }
+
   public update() {
     if (!this.waveBtnEl) {
       this.waveBtnEl = document.getElementById('btn-next-wave') as HTMLButtonElement;
       this.waveBtnLabelEl = document.getElementById('start-wave-label');
+    }
+    if (!this.wavePreviewEl) {
+      this.wavePreviewEl = document.getElementById('hud-wave-preview');
+    }
+
+    // Preview da próxima onda: só recalcula quando a onda alvo muda, para não
+    // remontar HTML a 60fps.
+    if (this.wavePreviewEl) {
+      const previewKey = this.waveManager.isWaveActive
+        ? 'active'
+        : `w${this.waveManager.currentWaveIndex + 1}`;
+
+      if (this.lastWavePreviewKey !== previewKey) {
+        this.lastWavePreviewKey = previewKey;
+        const preview = this.waveManager.isWaveActive ? null : this.waveManager.getNextWavePreview();
+        if (preview) {
+          this.renderWavePreview(preview);
+        } else {
+          this.wavePreviewEl.className = 'wave-preview hidden';
+          this.wavePreviewEl.innerHTML = '';
+        }
+      }
     }
 
     if (this.waveBtnEl && this.waveBtnLabelEl) {

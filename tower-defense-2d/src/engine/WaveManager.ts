@@ -2,9 +2,37 @@ import { EventBus } from './EventBus';
 
 import type { EnemyType } from '../types';
 
+/**
+ * Identidade de uma onda do modo endless. Antes toda onda acima da 10 era um
+ * sorteio uniforme entre os mesmos tipos com delay constante, então
+ * estatisticamente todas eram a mesma onda — sem pico, sem alívio, sem leitura.
+ */
+export type EndlessArchetype = 'SWARM' | 'ARMORED' | 'RUSH' | 'MIXED' | 'BOSS_RUSH';
+
+interface ArchetypeSpec {
+  pool: { type: EnemyType; weight: number }[];
+  countScale: number;
+  delayScale: number;
+  extraBosses: number;
+}
+
 export interface WaveConfig {
   waveNumber: number;
   enemies: { type: EnemyType; delay: number }[];
+  archetype?: EndlessArchetype;
+}
+
+export interface WavePreviewEntry {
+  type: EnemyType;
+  count: number;
+}
+
+export interface WavePreview {
+  waveNumber: number;
+  entries: WavePreviewEntry[];
+  totalEnemies: number;
+  hasBoss: boolean;
+  archetype?: EndlessArchetype;
 }
 
 export class WaveManager {
@@ -136,6 +164,85 @@ export class WaveManager {
     },
   ];
 
+  /**
+   * Pesos e ritmo de cada arquétipo. `countScale`/`delayScale` são aplicados
+   * sobre a curva base da onda, então a progressão de dificuldade continua
+   * vindo do número da onda — o arquétipo só muda a *forma* da pressão.
+   */
+  private static readonly ARCHETYPES: Record<EndlessArchetype, ArchetypeSpec> = {
+    // Muitos inimigos baratos e rápidos: pressiona cobertura de área.
+    SWARM: {
+      pool: [
+        { type: 'STANDARD', weight: 5 },
+        { type: 'RUNNER', weight: 4 },
+        { type: 'SPORE_SPRINTER', weight: 3 },
+      ],
+      countScale: 1.45,
+      delayScale: 0.7,
+      extraBosses: 0,
+    },
+    // Poucos alvos muito duros: pressiona dano concentrado e anti-armadura.
+    ARMORED: {
+      pool: [
+        { type: 'TANK', weight: 4 },
+        { type: 'MOSS_GIANT', weight: 3 },
+        { type: 'SHIELDED', weight: 3 },
+        { type: 'STANDARD', weight: 1 },
+      ],
+      countScale: 0.7,
+      delayScale: 1.35,
+      extraBosses: 0,
+    },
+    // Fila apertada de inimigos velozes: pressiona lentidão e alcance.
+    RUSH: {
+      pool: [
+        { type: 'RUNNER', weight: 6 },
+        { type: 'SPORE_SPRINTER', weight: 4 },
+        { type: 'STANDARD', weight: 1 },
+      ],
+      countScale: 1.15,
+      delayScale: 0.55,
+      extraBosses: 0,
+    },
+    MIXED: {
+      pool: [
+        { type: 'STANDARD', weight: 1 },
+        { type: 'RUNNER', weight: 1 },
+        { type: 'TANK', weight: 1 },
+        { type: 'SHIELDED', weight: 1 },
+        { type: 'SPORE_SPRINTER', weight: 1 },
+        { type: 'MOSS_GIANT', weight: 1 },
+      ],
+      countScale: 1.0,
+      delayScale: 1.0,
+      extraBosses: 0,
+    },
+    BOSS_RUSH: {
+      pool: [
+        { type: 'TANK', weight: 3 },
+        { type: 'MOSS_GIANT', weight: 2 },
+        { type: 'SHIELDED', weight: 2 },
+        { type: 'RUNNER', weight: 2 },
+        { type: 'STANDARD', weight: 1 },
+      ],
+      countScale: 0.8,
+      delayScale: 1.1,
+      extraBosses: 1,
+    },
+  };
+
+  /** Ordem canônica do preview: mantém a faixa de ícones estável entre ondas. */
+  private static readonly PREVIEW_ORDER: EnemyType[] = [
+    'STANDARD',
+    'RUNNER',
+    'SPORE_SPRINTER',
+    'SHIELDED',
+    'TANK',
+    'MOSS_GIANT',
+    'BOSS',
+    'BLACK_MEGA_BOSS',
+  ];
+
   public currentWaveIndex = -1;
   public isWaveActive = false;
 
@@ -160,20 +267,32 @@ export class WaveManager {
     EventBus.getInstance().emit('wave:endlessMode', this.isEndlessMode);
   }
 
+  /**
+   * Garante que a config da onda `index` exista, gerando as ondas endless que
+   * faltarem. Deixar a geração aqui (em vez de dentro do startNextWave) permite
+   * ao preview mostrar exatamente a onda que vai ser jogada, sem sortear duas
+   * vezes composições diferentes.
+   */
+  private ensureWaveConfig(index: number): WaveConfig | null {
+    if (index < 0) return null;
+    if (index < this.waves.length) return this.waves[index];
+    if (!this.isEndlessMode) return null;
+
+    while (this.waves.length <= index) {
+      this.waves.push(this.generateEndlessWave(this.waves.length + 1));
+    }
+    return this.waves[index];
+  }
+
   public startNextWave(): boolean {
     if (this.isWaveActive) return false;
 
     const nextIndex = this.currentWaveIndex + 1;
-
-    // Check if we need to procedurally generate endless waves
-    if (nextIndex >= this.waves.length) {
-      if (!this.isEndlessMode) return false;
-      const newWave = this.generateEndlessWave(nextIndex + 1);
-      this.waves.push(newWave);
-    }
+    const config = this.ensureWaveConfig(nextIndex);
+    if (!config) return false;
 
     this.currentWaveIndex = nextIndex;
-    this.spawnQueue = [...this.waves[this.currentWaveIndex].enemies];
+    this.spawnQueue = [...config.enemies];
     this.isWaveActive = true;
     this.timer = 0;
     EventBus.getInstance().emit('wave:start', { currentWave: this.currentWaveIndex + 1, isEndless: this.isEndlessMode });
@@ -181,18 +300,46 @@ export class WaveManager {
     return true;
   }
 
-  private generateEndlessWave(waveNum: number): WaveConfig {
-    const enemyTypes: EnemyType[] = ['STANDARD', 'RUNNER', 'TANK', 'SHIELDED', 'SPORE_SPRINTER', 'MOSS_GIANT'];
-    const count = 12 + Math.floor((waveNum - 10) * 2);
-    const enemies: { type: EnemyType; delay: number }[] = [];
-    const baseDelay = Math.max(250, 750 - (waveNum - 10) * 25);
+  /**
+   * Arquétipo da onda endless. É função pura do número da onda, então o jogador
+   * consegue aprender o ritmo em vez de reagir a sorteio puro. Múltiplos de 3
+   * caem em BOSS_RUSH para casar com o que a HUD e a BGM já tratam como onda de
+   * chefe (`waveNum % 3 === 0`).
+   */
+  public getEndlessArchetype(waveNum: number): EndlessArchetype {
+    if (waveNum % 3 === 0) return 'BOSS_RUSH';
+    const cycle: EndlessArchetype[] = ['SWARM', 'ARMORED', 'RUSH', 'MIXED'];
+    return cycle[Math.max(0, waveNum - 11) % cycle.length];
+  }
 
+  private pickWeighted(pool: { type: EnemyType; weight: number }[]): EnemyType {
+    let total = 0;
+    for (const entry of pool) total += entry.weight;
+
+    let roll = Math.random() * total;
+    for (const entry of pool) {
+      roll -= entry.weight;
+      if (roll < 0) return entry.type;
+    }
+    return pool[pool.length - 1].type;
+  }
+
+  private generateEndlessWave(waveNum: number): WaveConfig {
+    const archetype = this.getEndlessArchetype(waveNum);
+    const spec = WaveManager.ARCHETYPES[archetype];
+
+    // A curva base continua vindo do número da onda; o arquétipo só a modula.
+    const baseCount = 12 + Math.floor((waveNum - 10) * 2);
+    const count = Math.max(4, Math.round(baseCount * spec.countScale));
+    const baseDelay = Math.max(250, 750 - (waveNum - 10) * 25);
+    const delay = Math.max(160, Math.round(baseDelay * spec.delayScale));
+
+    const enemies: { type: EnemyType; delay: number }[] = [];
     for (let i = 0; i < count; i++) {
-      const randomType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
-      enemies.push({ type: randomType, delay: baseDelay });
+      enemies.push({ type: this.pickWeighted(spec.pool), delay });
     }
 
-    const bossCount = Math.floor((waveNum - 10) / 3) + 1;
+    const bossCount = Math.floor((waveNum - 10) / 3) + 1 + spec.extraBosses;
     for (let b = 0; b < bossCount; b++) {
       enemies.push({ type: 'BOSS', delay: 1800 });
     }
@@ -202,6 +349,48 @@ export class WaveManager {
     return {
       waveNumber: waveNum,
       enemies,
+      archetype,
+    };
+  }
+
+  /**
+   * Aplica as trocas de tipo do modo Morte Certa. Extraído para que spawn e
+   * preview usem exatamente a mesma regra — um preview que mente é pior que
+   * nenhum preview.
+   */
+  private resolveSpawnType(type: EnemyType, waveNum: number): EnemyType {
+    if (type === 'BLACK_MEGA_BOSS' && !this.isMorteCerta) return 'BOSS';
+    if (waveNum === 10 && this.isMorteCerta && type === 'BOSS') return 'BLACK_MEGA_BOSS';
+    return type;
+  }
+
+  /**
+   * Composição da próxima onda agrupada por tipo, para a HUD. Retorna `null`
+   * durante uma onda ativa ou quando a campanha acabou sem endless.
+   */
+  public getNextWavePreview(): WavePreview | null {
+    if (this.isWaveActive) return null;
+    const config = this.ensureWaveConfig(this.currentWaveIndex + 1);
+    if (!config) return null;
+
+    const counts = new Map<EnemyType, number>();
+    for (const enemy of config.enemies) {
+      const type = this.resolveSpawnType(enemy.type, config.waveNumber);
+      counts.set(type, (counts.get(type) || 0) + 1);
+    }
+
+    const entries: WavePreviewEntry[] = [];
+    for (const type of WaveManager.PREVIEW_ORDER) {
+      const count = counts.get(type);
+      if (count) entries.push({ type, count });
+    }
+
+    return {
+      waveNumber: config.waveNumber,
+      entries,
+      totalEnemies: config.enemies.length,
+      hasBoss: (counts.get('BOSS') || 0) + (counts.get('BLACK_MEGA_BOSS') || 0) > 0,
+      archetype: config.archetype,
     };
   }
 
@@ -228,12 +417,7 @@ export class WaveManager {
       if (!enemy) return null;
 
       const currentWaveNum = this.currentWaveIndex + 1;
-      let spawnType = enemy.type;
-      if (spawnType === 'BLACK_MEGA_BOSS' && !this.isMorteCerta) {
-        spawnType = 'BOSS';
-      } else if (currentWaveNum === 10 && this.isMorteCerta && enemy.type === 'BOSS') {
-        spawnType = 'BLACK_MEGA_BOSS';
-      }
+      const spawnType = this.resolveSpawnType(enemy.type, currentWaveNum);
 
       let hpMultiplier = 1.0;
       const campaignHpScales: Record<number, number> = {
