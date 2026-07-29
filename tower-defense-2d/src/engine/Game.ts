@@ -313,7 +313,16 @@ export class Game2D {
 
       // Handle Meteor Spell Casting
       if (this.spellManager.activeSpell === 'METEOR') {
-        this.spellManager.castMeteorAt(x, y, this.enemyManager.getEnemies());
+        const casted = this.spellManager.castMeteorAt(x, y, this.enemyManager.getEnemies());
+        if (!casted) {
+          // castMeteorAt() só desarma a magia quando ela sai. Um lançamento
+          // impossível (sem ouro, em cooldown, modo sem magias) deixava METEOR
+          // armado e este return engolia TODO clique no canvas depois disso —
+          // o jogador não conseguia mais selecionar nem construir torre.
+          // Desarma e trata o clique como cancelamento, para não gastar ouro
+          // construindo onde ele estava mirando.
+          this.spellManager.selectSpell(null);
+        }
         return;
       }
 
