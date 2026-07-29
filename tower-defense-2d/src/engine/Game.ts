@@ -8,6 +8,7 @@ import { EnemyManager2D } from './EnemyManager';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
 import { MapManager2D, type MapId } from './MapManager';
+import { MegaBossSpriteRenderer } from './MegaBossSpriteRenderer';
 import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
 import { SpellManager } from './SpellManager';
@@ -15,6 +16,25 @@ import { TalentManager } from './TalentManager';
 import { TowerManager2D } from './TowerManager';
 import { WaveManager } from './WaveManager';
 export class Game2D {
+  /**
+   * Duração de um passo de simulação. A simulação SEMPRE avança em passos de
+   * 1/60s, independente do refresh rate do monitor.
+   *
+   * Motivo: todos os timers das entidades são contados em frames
+   * (`Tower.cooldownTimer`, `Enemy.slowTimer`, `Enemy.speed` em px/frame...),
+   * enquanto spawn de onda e cooldown de magia usam ms reais. Sem passo fixo,
+   * um monitor de 144Hz roda movimento e tiro ~2,4x mais rápido que um de 60Hz
+   * enquanto o spawn continua igual — o balanceamento mudaria por hardware.
+   */
+  private static readonly FIXED_STEP_MS = 1000 / 60;
+
+  /**
+   * Delta máximo processado num único frame. Sem o clamp, voltar de uma aba
+   * inativa entregaria segundos de delta de uma vez, teleportando inimigos e
+   * zerando cooldowns de magia instantaneamente.
+   */
+  private static readonly MAX_FRAME_MS = 100;
+
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
 
@@ -39,6 +59,10 @@ export class Game2D {
   private mousePos: { x: number; y: number } | null = null;
   private hoveredGrid: { x: number; y: number } | null = null;
   private lastTime = 0;
+  /** Tempo real acumulado ainda não consumido pela simulação (escalado pela velocidade). */
+  private simAccumulatorMs = 0;
+  /** Idem para FX/toasts, mas sem escala de velocidade (duram o mesmo em 1x e 4x). */
+  private fxAccumulatorMs = 0;
   private hasAwardedStars = false;
   private currentSavedMapId: MapId = 'MAP_1';
   private currentSavedChallengeMode: ChallengeMode = 'NORMAL';
@@ -117,6 +141,9 @@ export class Game2D {
     }
 
     this.hasAwardedStars = false;
+    // Managers foram recriados: descarta tempo acumulado da partida anterior.
+    this.simAccumulatorMs = 0;
+    this.fxAccumulatorMs = 0;
 
     this.uiManager = new UIManager(
       this.gameState,
@@ -351,6 +378,46 @@ export class Game2D {
     this.ctx.restore();
   }
 
+  /**
+   * Um passo de simulação de duração fixa. Tudo que afeta o estado do jogo
+   * (ondas, inimigos, torres, projéteis, magias, partículas) roda aqui.
+   * Retorna `false` quando a partida terminou e o loop deve parar de avançar.
+   */
+  private stepSimulation(stepMs: number): boolean {
+    this.waveManager.updateAutoCountdown(stepMs);
+    this.enemyManager.update(stepMs, this.towerManager.getTowers());
+    this.towerManager.update(this.enemyManager.getEnemies());
+    this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
+    this.spellManager.update(stepMs);
+    this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
+
+    // Check Endless Survivor Achievement
+    if (this.waveManager.isEndlessMode) {
+      this.achievementManager.setProgress('ENDLESS_SURVIVOR', this.waveManager.currentWaveIndex + 1);
+    }
+
+    if (this.gameState.status !== 'PLAYING') return false;
+
+    // Check Victory
+    if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
+      this.gameState.setStatus('VICTORY');
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Passo de apresentação: texto flutuante, screen-shake, toasts e animação do
+   * mega boss. Roda em tempo real e NÃO é escalado pela velocidade do jogo, para
+   * que um toast dure os mesmos segundos em 1x e em 4x.
+   */
+  private stepPresentation(stepMs: number) {
+    this.fxManager.update();
+    this.achievementManager.update();
+    MegaBossSpriteRenderer.getInstance().update(stepMs);
+  }
+
   public run() {
     this.lastTime = performance.now();
 
@@ -358,7 +425,12 @@ export class Game2D {
       const rawDelta = currentTime - this.lastTime;
       this.lastTime = currentTime;
 
-      const deltaTimeMs = rawDelta;
+      const frameMs = Math.min(Math.max(0, rawDelta), Game2D.MAX_FRAME_MS);
+      // Teto de passos por frame: válvula de segurança para um frame patológico
+      // não travar o requestAnimationFrame tentando recuperar o atraso todo.
+      // O "+1" cobre o resto acumulado, então um frame já clampado sempre é
+      // drenado por inteiro e o teto nunca limita jogo normal.
+      const maxStepsPerFrame = Math.ceil(Game2D.MAX_FRAME_MS / Game2D.FIXED_STEP_MS) + 1;
 
       // Determine BGM track: BOSS vs MAP-SPECIFIC TRACK
       const enemies = this.enemyManager.getEnemies();
@@ -384,31 +456,28 @@ export class Game2D {
 
       // 1. Update logic (only if active and NOT paused)
       if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
-        const steps = Math.max(1, Math.min(4, this.gameSpeedMultiplier));
-        for (let step = 0; step < steps; step++) {
-          if (this.gameState.status !== 'PLAYING') break;
+        // A velocidade (1x/2x/4x) não escala o delta: ela faz o acumulador
+        // encher N vezes mais rápido, logo N vezes mais passos fixos por frame.
+        const speed = Math.max(1, Math.min(4, this.gameSpeedMultiplier));
+        this.simAccumulatorMs += frameMs * speed;
 
-          this.waveManager.updateAutoCountdown(deltaTimeMs);
-          this.enemyManager.update(deltaTimeMs, this.towerManager.getTowers());
-          this.towerManager.update(this.enemyManager.getEnemies());
-          this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
-          this.spellManager.update(deltaTimeMs);
-          this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
-
-          // Check Endless Survivor Achievement
-          if (this.waveManager.isEndlessMode) {
-            this.achievementManager.setProgress('ENDLESS_SURVIVOR', activeWaveNum);
-          }
-
-          // Check Victory
-          if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
-            this.gameState.setStatus('VICTORY');
-            break;
-          }
+        let simBudget = maxStepsPerFrame * speed;
+        while (this.simAccumulatorMs >= Game2D.FIXED_STEP_MS && simBudget > 0) {
+          this.simAccumulatorMs -= Game2D.FIXED_STEP_MS;
+          simBudget--;
+          if (!this.stepSimulation(Game2D.FIXED_STEP_MS)) break;
         }
+        // Estourou o teto: descarta o atraso em vez de acumular dívida.
+        if (simBudget <= 0) this.simAccumulatorMs = 0;
 
-        this.achievementManager.update();
-        this.fxManager.update();
+        this.fxAccumulatorMs += frameMs;
+        let fxBudget = maxStepsPerFrame;
+        while (this.fxAccumulatorMs >= Game2D.FIXED_STEP_MS && fxBudget > 0) {
+          this.fxAccumulatorMs -= Game2D.FIXED_STEP_MS;
+          fxBudget--;
+          this.stepPresentation(Game2D.FIXED_STEP_MS);
+        }
+        if (fxBudget <= 0) this.fxAccumulatorMs = 0;
       }
 
       // Award Stars & High Score Check on Match End

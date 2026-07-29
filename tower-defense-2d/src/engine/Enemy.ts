@@ -127,9 +127,8 @@ export class Enemy2D {
   }
 
   public update(waypoints: Vector2D[], isStandingOnGrass = false): boolean {
-    if (this.data.type === 'BLACK_MEGA_BOSS') {
-      MegaBossSpriteRenderer.getInstance().update(16.6);
-    }
+    // A animação do mega boss é avançada pelo Game2D (passo de apresentação):
+    // fazê-lo aqui acelerava o sprite quando havia mais de um boss em tela.
     if (this.data.type === 'MOSS_GIANT' && isStandingOnGrass && this.data.hp < this.data.maxHp) {
       this.mossRegenTimer++;
       if (this.mossRegenTimer >= 20) { // +1 HP every 20 frames (~3 HP/sec)
