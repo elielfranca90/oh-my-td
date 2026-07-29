@@ -76,7 +76,11 @@ export class EnemyManager2D {
       }
 
       const waypoints = this.mapManager.getWaypoints(enemy.pathIndex);
-      const reachedBase = enemy.update(waypoints);
+      // Só o Moss Giant regenera, então evita a varredura de vizinhos para o resto.
+      const isNearFoliage =
+        enemy.data.type === 'MOSS_GIANT' &&
+        this.mapManager.isNearFoliage(enemy.data.position.x, enemy.data.position.y);
+      const reachedBase = enemy.update(waypoints, isNearFoliage);
       if (reachedBase) {
         this.gameState.takeDamage(enemy.baseDamage);
         this.audioManager.playBaseDamage();

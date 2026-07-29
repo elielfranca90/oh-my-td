@@ -190,6 +190,7 @@ export class TowerManager2D {
 
       if (inRangeEnemies.length === 0) {
         tower.data.laserTargetId = undefined;
+        tower.data.laserTargetPos = undefined;
         tower.data.beamDuration = 0;
         continue;
       }
@@ -235,6 +236,7 @@ export class TowerManager2D {
             tower.data.laserTargetId = target.data.id;
             tower.data.beamDuration = 0;
           }
+          tower.data.laserTargetPos = { ...target.data.position };
 
           const focusBonus = Math.min(1.0, Math.floor((tower.data.beamDuration || 0) / 60) * 0.1);
           const laserDmg = Math.round(tower.data.damage * (1 + focusBonus));
@@ -316,15 +318,50 @@ export class TowerManager2D {
     }
   }
 
+  /**
+   * Desenha os tiles Overgrowth Sprout. Chamado logo após o mapa, antes das
+   * torres: sem marcação visível o bônus existiria sem o jogador poder buscá-lo.
+   */
+  public renderSproutTiles(ctx: CanvasRenderingContext2D, tileSize: number) {
+    if (this.sproutTiles.length === 0) return;
+
+    ctx.save();
+    for (const tile of this.sproutTiles) {
+      const px = tile.x * tileSize;
+      const py = tile.y * tileSize;
+      const occupied = this.getTowerAt(tile.x, tile.y) !== undefined;
+
+      ctx.globalAlpha = occupied ? 0.28 : 0.6;
+      ctx.fillStyle = 'rgba(124, 179, 66, 0.35)';
+      ctx.fillRect(px, py, tileSize, tileSize);
+
+      ctx.strokeStyle = '#8bc34a';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.strokeRect(px + 1.5, py + 1.5, tileSize - 3, tileSize - 3);
+      ctx.setLineDash([]);
+
+      if (!occupied) {
+        ctx.globalAlpha = 1;
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#c5e1a5';
+        ctx.fillText('🌱', px + tileSize / 2, py + tileSize / 2 + 6);
+      }
+    }
+    ctx.restore();
+  }
+
   public render(ctx: CanvasRenderingContext2D, mousePos: { x: number; y: number } | null) {
     // Render Solar Prism Laser Beams
     for (const tower of this.towers) {
-      if (tower.data.type === 'SOLAR_PRISM' && tower.data.laserTargetId) {
-        // Find target position
+      if (tower.data.type === 'SOLAR_PRISM' && tower.data.laserTargetId && tower.data.laserTargetPos) {
+        // Aponta para a posição real do alvo (antes o feixe era um traço fixo para cima)
+        const tp = tower.data.laserTargetPos;
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(tower.data.position.x, tower.data.position.y);
-        ctx.lineTo(tower.data.position.x + (Math.random() * 6 - 3), tower.data.position.y - 40);
+        ctx.lineTo(tp.x + (Math.random() * 4 - 2), tp.y + (Math.random() * 4 - 2));
         ctx.strokeStyle = '#ffff8d';
         ctx.lineWidth = 3;
         ctx.stroke();

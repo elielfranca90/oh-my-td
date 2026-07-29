@@ -56,6 +56,8 @@ export interface ITower2D {
   splashRadius?: number;
   slowFactor?: number;
   laserTargetId?: string;
+  /** Posição do alvo no último tiro do Solar Prism, para o feixe apontar certo. */
+  laserTargetPos?: Vector2D;
   beamDuration?: number;
   onSproutTile?: boolean;
   hp: number;

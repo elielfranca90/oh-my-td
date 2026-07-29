@@ -76,7 +76,8 @@ export class WaveManager {
       enemies: [
         { type: 'MOSS_GIANT', delay: 1800 },
         { type: 'RUNNER', delay: 450 },
-        { type: 'RUNNER', delay: 450 },
+        // Estreia do SHIELDED: ensina escudo vs tiro leve antes das ondas finais
+        { type: 'SHIELDED', delay: 1100 },
         { type: 'TANK', delay: 1200 },
         { type: 'MOSS_GIANT', delay: 1800 },
         { type: 'RUNNER', delay: 450 },
@@ -104,7 +105,7 @@ export class WaveManager {
         { type: 'MOSS_GIANT', delay: 1600 },
         { type: 'BOSS', delay: 2000 },
         { type: 'RUNNER', delay: 400 },
-        { type: 'RUNNER', delay: 400 },
+        { type: 'SHIELDED', delay: 1000 },
         { type: 'TANK', delay: 1000 },
       ],
     },
@@ -114,7 +115,7 @@ export class WaveManager {
       enemies: [
         { type: 'RUNNER', delay: 350 },
         { type: 'SPORE_SPRINTER', delay: 350 },
-        { type: 'TANK', delay: 900 },
+        { type: 'SHIELDED', delay: 950 },
         { type: 'MOSS_GIANT', delay: 1600 },
         { type: 'TANK', delay: 900 },
         { type: 'RUNNER', delay: 350 },
@@ -127,7 +128,7 @@ export class WaveManager {
         { type: 'TANK', delay: 800 },
         { type: 'MOSS_GIANT', delay: 1600 },
         { type: 'BOSS', delay: 2000 },
-        { type: 'RUNNER', delay: 400 },
+        { type: 'SHIELDED', delay: 1000 },
         { type: 'BOSS', delay: 3000 },
         { type: 'RUNNER', delay: 400 },
         { type: 'TANK', delay: 800 },
@@ -181,7 +182,7 @@ export class WaveManager {
   }
 
   private generateEndlessWave(waveNum: number): WaveConfig {
-    const enemyTypes: EnemyType[] = ['STANDARD', 'RUNNER', 'TANK', 'SPORE_SPRINTER', 'MOSS_GIANT'];
+    const enemyTypes: EnemyType[] = ['STANDARD', 'RUNNER', 'TANK', 'SHIELDED', 'SPORE_SPRINTER', 'MOSS_GIANT'];
     const count = 12 + Math.floor((waveNum - 10) * 2);
     const enemies: { type: EnemyType; delay: number }[] = [];
     const baseDelay = Math.max(250, 750 - (waveNum - 10) * 25);

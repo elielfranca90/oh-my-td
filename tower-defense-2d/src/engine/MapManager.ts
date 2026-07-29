@@ -107,6 +107,70 @@ export class MapManager2D {
     return this.mapData[gridY][gridX] === TileType.BUILDABLE;
   }
 
+  /**
+   * True se o tile na posição mundial informada, ou algum dos 8 vizinhos, for
+   * floresta. Usado pela regeneração do MOSS_GIANT: inimigos sempre caminham
+   * sobre PATH, então o que importa é estar *ao lado* de vegetação — trechos do
+   * caminho colados na mata viram zona de perigo para quem tenta segurá-lo lá.
+   */
+  public isNearFoliage(worldX: number, worldY: number): boolean {
+    const gridX = Math.floor(worldX / this.tileSize);
+    const gridY = Math.floor(worldY / this.tileSize);
+
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const nx = gridX + dx;
+        const ny = gridY + dy;
+        if (nx < 0 || nx >= this.cols || ny < 0 || ny >= this.rows) continue;
+        if (this.mapData[ny][nx] === TileType.OBSTACLE_FOREST) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Sorteia tiles construíveis para o twist Overgrowth Sprout (+25% de alcance e
+   * metade do cooldown para a torre erguida ali).
+   *
+   * Só entram tiles adjacentes ao caminho: um sprout longe da rota seria um
+   * bônus decorativo que o jogador nunca teria motivo para usar.
+   */
+  public pickSproutTiles(count = 4): { x: number; y: number }[] {
+    const candidates: { x: number; y: number }[] = [];
+
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        if (this.mapData[y][x] !== TileType.BUILDABLE) continue;
+        if (this.isAdjacentToPath(x, y)) candidates.push({ x, y });
+      }
+    }
+
+    // Fisher-Yates parcial: embaralha só o necessário para tirar `count`.
+    const picked: { x: number; y: number }[] = [];
+    for (let i = 0; i < Math.min(count, candidates.length); i++) {
+      const j = i + Math.floor(Math.random() * (candidates.length - i));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+      picked.push(candidates[i]);
+    }
+    return picked;
+  }
+
+  private isAdjacentToPath(gridX: number, gridY: number): boolean {
+    const neighbors = [
+      [0, -1],
+      [0, 1],
+      [-1, 0],
+      [1, 0],
+    ];
+    for (const [dx, dy] of neighbors) {
+      const nx = gridX + dx;
+      const ny = gridY + dy;
+      if (nx < 0 || nx >= this.cols || ny < 0 || ny >= this.rows) continue;
+      if (this.mapData[ny][nx] === TileType.PATH) return true;
+    }
+    return false;
+  }
+
   public getWaypoints(pathIndex = 0): Vector2D[] {
     const half = this.tileSize / 2;
 

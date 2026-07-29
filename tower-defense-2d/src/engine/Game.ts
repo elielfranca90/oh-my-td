@@ -136,6 +136,9 @@ export class Game2D {
       this.achievementManager
     );
 
+    // Overgrowth Sprout: sorteia os tiles bonificados desta partida.
+    this.towerManager.sproutTiles = this.mapManager.pickSproutTiles(4);
+
     if (this.uiManager) {
       this.uiManager.destroy();
     }
@@ -386,7 +389,7 @@ export class Game2D {
   private stepSimulation(stepMs: number): boolean {
     this.waveManager.updateAutoCountdown(stepMs);
     this.enemyManager.update(stepMs, this.towerManager.getTowers());
-    this.towerManager.update(this.enemyManager.getEnemies());
+    this.towerManager.update(this.enemyManager.getEnemies(), this.fxManager);
     this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
     this.spellManager.update(stepMs);
     this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
@@ -520,6 +523,7 @@ export class Game2D {
       this.ctx.translate(shake.x, shake.y);
 
       this.mapManager.render(this.ctx);
+      this.towerManager.renderSproutTiles(this.ctx, this.mapManager.tileSize);
       this.particleManager.render(this.ctx);
       this.renderGhostPlacement();
       this.towerManager.render(this.ctx, this.mousePos);

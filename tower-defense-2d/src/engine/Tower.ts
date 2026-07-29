@@ -165,6 +165,13 @@ export class Tower2D {
     ctx.lineWidth = isSelected ? 3 : 1.5;
     ctx.strokeRect(this.data.position.x - half, this.data.position.y - half, this.size, this.size);
 
+    // Marca de torre erguida em tile Overgrowth Sprout (+25% alcance, metade do cooldown)
+    if (this.data.onSproutTile) {
+      ctx.strokeStyle = '#8bc34a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(this.data.position.x - half + 3, this.data.position.y - half + 3, this.size - 6, this.size - 6);
+    }
+
     // Core icon / shape
     const drawn = SpriteManager.getInstance().drawSpriteAsset(
       ctx,
