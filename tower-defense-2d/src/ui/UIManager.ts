@@ -6,11 +6,12 @@ import { Game2D } from '../engine/Game';
 import { GameState } from '../engine/GameState';
 import type { MapId } from '../engine/MapManager';
 import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
+import { getSpecializationOption, getSpecializations } from '../engine/Specializations';
 import { TalentManager, type TalentData } from '../engine/TalentManager';
 import type { Tower2D } from '../engine/Tower';
 import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager, type EndlessArchetype, type WavePreview } from '../engine/WaveManager';
-import type { ChallengeMode, EnemyType, TowerType } from '../types';
+import type { ChallengeMode, EnemyType, TowerSpecialization, TowerType } from '../types';
 
 export class UIManager {
   private gameState: GameState;
@@ -201,6 +202,9 @@ export class UIManager {
                 <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
               </div>
             </div>
+
+            <!-- Escolha de especialização (nível 2 -> 3) -->
+            <div id="inspector-spec-choice" class="spec-choice hidden"></div>
           </div>
         </nav>
 
@@ -782,6 +786,14 @@ export class UIManager {
       this.towerManager.upgradeSelectedTower();
     });
 
+    // Delegação: os botões de especialização são recriados a cada renderInspector.
+    document.getElementById('inspector-spec-choice')?.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement | null)?.closest('.spec-btn') as HTMLElement | null;
+      if (!btn) return;
+      const spec = btn.dataset.spec as TowerSpecialization | undefined;
+      if (spec) this.towerManager.upgradeSelectedTower(spec);
+    });
+
     document.getElementById('btn-inspect-sell')?.addEventListener('click', () => {
       this.towerManager.sellSelectedTower();
     });
@@ -979,7 +991,14 @@ export class UIManager {
 
   private renderInspector(tower: Tower2D) {
     const title = document.getElementById('inspector-title');
-    if (title) title.innerText = `${tower.data.type} (Nível ${tower.data.level})`;
+    if (title) {
+      const spec = tower.data.specialization
+        ? getSpecializationOption(tower.data.specialization)
+        : undefined;
+      title.innerText = spec
+        ? `${tower.data.type} · ${spec.icon} ${spec.name}`
+        : `${tower.data.type} (Nível ${tower.data.level})`;
+    }
 
     const statsBox = document.getElementById('inspector-stats-summary');
     if (statsBox) {
@@ -1006,15 +1025,52 @@ export class UIManager {
       }
     }
 
+    // No nível 2 o upgrade deixa de ser um botão só: é a escolha entre as duas
+    // especializações do tipo, cada uma com seu efeito.
+    const isSpecializing = tower.data.level === 2 && !tower.data.isDestroyed;
+    const cost = tower.getUpgradeCost();
+
     const upgradeBtn = document.getElementById('btn-inspect-upgrade') as HTMLButtonElement;
     if (upgradeBtn) {
       if (tower.data.level >= 3) {
         upgradeBtn.innerText = '⭐ Máximo';
         upgradeBtn.disabled = true;
+        upgradeBtn.classList.remove('hidden');
+      } else if (isSpecializing) {
+        // A escolha vive no painel abaixo; o botão genérico sairia sobrando.
+        upgradeBtn.classList.add('hidden');
       } else {
-        const cost = tower.getUpgradeCost();
+        upgradeBtn.classList.remove('hidden');
         upgradeBtn.innerText = `⬆️ ${cost}g`;
         upgradeBtn.disabled = this.gameState.gold < cost;
+      }
+    }
+
+    const specBox = document.getElementById('inspector-spec-choice');
+    if (specBox) {
+      if (isSpecializing) {
+        const canAfford = this.gameState.gold >= cost;
+        const opcoes = getSpecializations(tower.data.type)
+          .map(
+            option => `
+            <button class="spec-btn" data-spec="${option.id}" ${canAfford ? '' : 'disabled'}
+                    title="${option.description}">
+              <span class="spec-btn-title">${option.icon} ${option.name}</span>
+              <span class="spec-btn-desc">${option.description}</span>
+            </button>`
+          )
+          .join('');
+
+        specBox.className = 'spec-choice';
+        specBox.innerHTML = `
+          <span class="spec-choice-label">
+            ⬆️ Nível 3 — escolha a especialização (${cost}g)
+          </span>
+          <div class="spec-choice-options">${opcoes}</div>
+        `;
+      } else {
+        specBox.className = 'spec-choice hidden';
+        specBox.innerHTML = '';
       }
     }
 

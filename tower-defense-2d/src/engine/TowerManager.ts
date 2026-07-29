@@ -1,4 +1,5 @@
-import type { TowerType } from '../types';
+import type { TowerSpecialization, TowerType } from '../types';
+import { isValidSpecialization } from './Specializations';
 import { AchievementManager } from './AchievementManager';
 import { EventBus } from './EventBus';
 import { AnalyticsManager } from './AnalyticsManager';
@@ -114,16 +115,26 @@ export class TowerManager2D {
     return true;
   }
 
-  public upgradeSelectedTower(): boolean {
+  /**
+   * Melhora a torre selecionada. O salto de nível 2 para 3 exige a
+   * especialização escolhida; sem ela o ouro não é gasto.
+   */
+  public upgradeSelectedTower(specialization?: TowerSpecialization): boolean {
     if (!this.selectedTower) return false;
     const cost = this.selectedTower.getUpgradeCost();
     if (this.selectedTower.data.level >= 3) return false;
+
+    // Valida antes de cobrar: cobrar e falhar torraria o ouro do jogador.
+    if (this.selectedTower.data.level === 2) {
+      if (!specialization) return false;
+      if (!isValidSpecialization(this.selectedTower.data.type, specialization)) return false;
+    }
 
     if (this.gameState.spendGold(cost)) {
       if (this.analyticsManager) {
         this.analyticsManager.recordGoldSpent(cost);
       }
-      const upgraded = this.selectedTower.upgrade();
+      const upgraded = this.selectedTower.upgrade(specialization);
       if (upgraded) {
         EventBus.getInstance().emit('tower:select', this.selectedTower);
       }
@@ -204,12 +215,21 @@ export class TowerManager2D {
       // 1. Frost Tower: AoE Glacial Pulse
       if (tower.data.type === 'FROST') {
         this.audioManager.playFrostShot();
+        const spec = tower.data.specialization;
         for (const enemy of inRangeEnemies) {
           const dmgDealt = enemy.takeDamage(tower.data.damage, true);
           if (dmgDealt > 0 && this.analyticsManager) {
             this.analyticsManager.recordDamage('FROST', dmgDealt);
           }
-          enemy.applySlow(tower.data.slowFactor || 0.5, 120);
+
+          if (spec === 'DEEP_FREEZE') {
+            // Pulso raro (fireRate triplicado) mas que trava tudo no lugar.
+            enemy.applyFreeze(60);
+          } else if (spec === 'PERMAFROST') {
+            enemy.applySlow(tower.data.slowFactor || 0.25, 240);
+          } else {
+            enemy.applySlow(tower.data.slowFactor || 0.5, 120);
+          }
         }
         tower.data.cooldownTimer = tower.data.fireRate;
         continue;
@@ -244,12 +264,26 @@ export class TowerManager2D {
           }
           tower.data.laserTargetPos = { ...target.data.position };
 
-          const focusBonus = Math.min(1.0, Math.floor((tower.data.beamDuration || 0) / 60) * 0.1);
+          // FOCUS_LENS: o foco sobe em metade do tempo
+          const focusPeriod = tower.data.specialization === 'FOCUS_LENS' ? 30 : 60;
+          const focusBonus = Math.min(1.0, Math.floor((tower.data.beamDuration || 0) / focusPeriod) * 0.1);
           const laserDmg = Math.round(tower.data.damage * (1 + focusBonus));
 
           const dmgDealt = target.takeDamage(laserDmg, false);
           if (dmgDealt > 0 && this.analyticsManager) {
             this.analyticsManager.recordDamage('SOLAR_PRISM', dmgDealt);
+          }
+
+          // CHAIN_BEAM: o feixe salta para um segundo alvo por metade do dano
+          if (tower.data.specialization === 'CHAIN_BEAM') {
+            const secondary = inRangeEnemies.find(e => e !== target && !e.data.isDead);
+            if (secondary) {
+              const chainDmg = Math.max(1, Math.round(laserDmg * 0.5));
+              const chainDealt = secondary.takeDamage(chainDmg, false);
+              if (chainDealt > 0 && this.analyticsManager) {
+                this.analyticsManager.recordDamage('SOLAR_PRISM', chainDealt);
+              }
+            }
           }
 
           if (fxManager && Math.random() < 0.3) {
@@ -266,21 +300,38 @@ export class TowerManager2D {
         let radius = 4;
         let splashRadius: number | undefined;
         let isCrit = false;
+        let isLightShot = false;
 
+        const spec = tower.data.specialization;
         const extraCritChance = this.talentManager ? this.talentManager.getCritChance() : 0;
+        // Alvos do disparo: normalmente um só, dois com MULTISHOT.
+        const targets: Enemy2D[] = [target];
 
         if (tower.data.type === 'BASIC') {
+          isLightShot = true;
           // 20% Base Critical Hit chance + Talent Crit Chance
           if (this.rng.chance(0.20 + extraCritChance)) {
             damage *= 2;
             isCrit = true;
             color = '#ffea00';
           }
+
+          if (spec === 'PIERCING') {
+            isLightShot = false; // ignora o armorFactor do alvo
+            color = isCrit ? '#80d8ff' : '#b3e5fc';
+          } else if (spec === 'MULTISHOT') {
+            const secondary = inRangeEnemies.find(e => e !== target && !e.data.isDead);
+            if (secondary) targets.push(secondary);
+          }
           this.audioManager.playBasicShot();
         } else if (tower.data.type === 'CANNON') {
           // Executioner (+100% damage against Tanks & Bosses > 50% HP)
           const targetHpRatio = target.data.hp / target.data.maxHp;
-          if ((target.data.type === 'TANK' || target.data.type === 'BOSS') && targetHpRatio >= 0.5) {
+          const isExecutionTarget = target.data.type === 'TANK' || target.data.type === 'BOSS';
+          // EXECUTIONER derruba o corte de 50% de HP do bônus base
+          const hpGateOk = spec === 'EXECUTIONER' || targetHpRatio >= 0.5;
+
+          if (isExecutionTarget && hpGateOk) {
             damage *= 2;
             isCrit = true;
           } else if (this.rng.chance(extraCritChance)) {
@@ -290,6 +341,7 @@ export class TowerManager2D {
           color = '#ff5722';
           speed = 6;
           radius = 7;
+          if (spec === 'SHRAPNEL') splashRadius = tower.data.splashRadius;
           this.audioManager.playCannonShot();
         } else if (tower.data.type === 'ARTILLERY') {
           if (this.rng.chance(extraCritChance)) {
@@ -307,18 +359,21 @@ export class TowerManager2D {
           }
         }
 
-        this.projectileManager.fire(
-          tower.data.position,
-          target.data,
-          damage,
-          color,
-          speed,
-          radius,
-          splashRadius,
-          undefined,
-          isCrit,
-          tower.data.type
-        );
+        for (const shotTarget of targets) {
+          this.projectileManager.fire(
+            tower.data.position,
+            shotTarget.data,
+            damage,
+            color,
+            speed,
+            radius,
+            splashRadius,
+            undefined,
+            isCrit,
+            tower.data.type,
+            isLightShot
+          );
+        }
         tower.data.cooldownTimer = tower.data.onSproutTile ? Math.floor(tower.data.fireRate / 2) : tower.data.fireRate;
       }
     }

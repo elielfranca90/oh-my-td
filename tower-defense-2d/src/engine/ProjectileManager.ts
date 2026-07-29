@@ -17,10 +17,23 @@ export class ProjectileManager2D {
     splashRadius?: number,
     slowFactor?: number,
     isCrit?: boolean,
-    towerType?: TowerType
+    towerType?: TowerType,
+    isLightShot?: boolean
   ) {
     this.projectiles.push(
-      new Projectile2D(startPos, target, damage, color, speed, radius, splashRadius, slowFactor, isCrit, towerType)
+      new Projectile2D(
+        startPos,
+        target,
+        damage,
+        color,
+        speed,
+        radius,
+        splashRadius,
+        slowFactor,
+        isCrit,
+        towerType,
+        isLightShot
+      )
     );
   }
 

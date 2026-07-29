@@ -40,6 +40,23 @@ export interface IEnemy2D {
 export type TowerType = 'BASIC' | 'CANNON' | 'FROST' | 'ARTILLERY' | 'SOLAR_PRISM';
 export type TargetingStrategy = 'FIRST' | 'STRONGEST' | 'WEAKEST' | 'LAST';
 
+/**
+ * Especializações escolhidas no salto de nível 2 para 3. Antes toda torre
+ * evoluía igual (dano x1.5, alcance x1.15, três níveis), então não existia
+ * nenhuma decisão depois de escolher onde construir.
+ */
+export type TowerSpecialization =
+  | 'MULTISHOT'
+  | 'PIERCING'
+  | 'EXECUTIONER'
+  | 'SHRAPNEL'
+  | 'DEEP_FREEZE'
+  | 'PERMAFROST'
+  | 'NAPALM'
+  | 'SIEGE'
+  | 'FOCUS_LENS'
+  | 'CHAIN_BEAM';
+
 export interface ITower2D {
   id: string;
   type: TowerType;
@@ -53,6 +70,7 @@ export interface ITower2D {
   level: number;
   position: Vector2D;
   targeting: TargetingStrategy;
+  specialization?: TowerSpecialization;
   splashRadius?: number;
   slowFactor?: number;
   laserTargetId?: string;
@@ -77,6 +95,11 @@ export interface IProjectile2D {
   splashRadius?: number;
   slowFactor?: number;
   isCrit?: boolean;
+  /**
+   * Se o disparo é "leve" (sofre o armorFactor do alvo). Era inferido da cor do
+   * projétil, o que quebrava ao introduzir variações de cor por especialização.
+   */
+  isLightShot?: boolean;
   hasHit: boolean;
 }
 

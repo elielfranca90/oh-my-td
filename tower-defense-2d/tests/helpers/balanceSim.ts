@@ -8,9 +8,15 @@ import { MapManager2D, type MapId } from '../../src/engine/MapManager';
 import { ParticleManager } from '../../src/engine/ParticleManager';
 import { ProjectileManager2D } from '../../src/engine/ProjectileManager';
 import { Rng } from '../../src/engine/Rng';
+import { getSpecializations } from '../../src/engine/Specializations';
 import { TowerManager2D } from '../../src/engine/TowerManager';
 import { WaveManager } from '../../src/engine/WaveManager';
-import type { ChallengeMode, EnemyType, TowerType } from '../../src/types';
+import type {
+  ChallengeMode,
+  EnemyType,
+  TowerSpecialization,
+  TowerType,
+} from '../../src/types';
 
 /**
  * Harness headless de balanceamento.
@@ -46,6 +52,12 @@ export interface SimUpgradeOrder {
   gridX: number;
   gridY: number;
   toLevel: number;
+  /**
+   * Especialização usada no salto de nível 2 para 3. Se omitida, o harness pega
+   * a primeira opção do catálogo do tipo — suficiente para exercitar o caminho,
+   * mas testes de especialização devem informar explicitamente.
+   */
+  specialization?: TowerSpecialization;
 }
 
 export interface SimOptions {
@@ -188,8 +200,9 @@ export function runBalanceSim(options: SimOptions): SimResult {
 
       // upgradeSelectedTower() opera sobre a torre selecionada.
       towerManager.selectedTower = tower;
+      const spec = order.specialization || getSpecializations(tower.data.type)[0].id;
       while (tower.data.level < order.toLevel) {
-        if (!towerManager.upgradeSelectedTower()) break;
+        if (!towerManager.upgradeSelectedTower(spec)) break;
         upgradesApplied++;
       }
       if (tower.data.level < order.toLevel) failedUpgrades.push(order);

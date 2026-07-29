@@ -468,6 +468,69 @@
         transform: none !important;
       }
 
+      /* TOWER SPECIALIZATION CHOICE (level 2 -> 3) */
+      .spec-choice {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-top: 6px;
+        padding: 7px 9px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 235, 59, 0.35);
+      }
+
+      .spec-choice-label {
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #ffe082;
+      }
+
+      .spec-choice-options {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .spec-btn {
+        flex: 1 1 150px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        text-align: left;
+        padding: 6px 8px;
+        border-radius: 7px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: linear-gradient(135deg, #263238, #37474f);
+        color: #eceff1;
+        cursor: pointer;
+        transition: transform 120ms ease-out, border-color 120ms ease;
+      }
+
+      .spec-btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        border-color: #ffeb3b;
+      }
+
+      .spec-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .spec-btn-title {
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .spec-btn-desc {
+        font-size: 0.62rem;
+        font-weight: 500;
+        line-height: 1.25;
+        color: #b0bec5;
+      }
+
       /* WAVE COMPOSITION PREVIEW */
       .wave-preview {
         display: flex;
