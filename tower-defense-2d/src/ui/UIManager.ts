@@ -1378,62 +1378,90 @@ export class UIManager {
     }
   }
 
+  /** Escreve na faixa de status do modal de perfil. `kind` vazio = neutro. */
+  private setProfileStatus(text: string, kind: '' | 'success' | 'error' = '') {
+    const statusMsg = document.getElementById('profile-status-msg');
+    if (!statusMsg) return;
+    statusMsg.innerText = text;
+    statusMsg.className = kind ? `profile-status-msg ${kind}` : 'profile-status-msg';
+  }
+
   private async openProfileModal() {
     this.openSubModal(this.profileOverlayEl);
-    const statusMsg = document.getElementById('profile-status-msg');
-    if (statusMsg) {
-      statusMsg.innerText = '';
-      statusMsg.className = 'profile-status-msg';
-    }
+    const usernameInput = document.getElementById('profile-username-input') as HTMLInputElement | null;
+    const avatarSelect = document.getElementById('profile-avatar-select') as HTMLSelectElement | null;
 
     const db = this.game.databaseManager;
-    if (db) {
-      const profile = await db.getProfile();
-      if (profile) {
-        const usernameInput = document.getElementById('profile-username-input') as HTMLInputElement;
-        const avatarSelect = document.getElementById('profile-avatar-select') as HTMLSelectElement;
-        if (usernameInput) usernameInput.value = profile.username || '';
-        if (avatarSelect) avatarSelect.value = profile.avatarId || 'default_avatar';
+    if (!db) return;
+
+    // Preenche na hora com o perfil local, sem esperar a rede.
+    const local = db.loadLocalProfile();
+    if (usernameInput) usernameInput.value = local?.username ?? '';
+    if (avatarSelect) avatarSelect.value = local?.avatarId ?? 'default_avatar';
+
+    if (!db.isConnected()) {
+      this.setProfileStatus('Modo offline: as alterações ficam salvas neste dispositivo.');
+      return;
+    }
+
+    this.setProfileStatus('⌛ Sincronizando...');
+    const res = await db.syncProfileWithRemote();
+
+    // O modal pode ter sido fechado enquanto a rede respondia.
+    if (this.profileOverlayEl.classList.contains('hidden')) return;
+
+    if (res.profile) {
+      // Nao sobrescreve o campo se o jogador ja comecou a digitar.
+      if (usernameInput && document.activeElement !== usernameInput) {
+        usernameInput.value = res.profile.username;
       }
+      if (avatarSelect && document.activeElement !== avatarSelect) {
+        avatarSelect.value = res.profile.avatarId;
+      }
+    }
+
+    if (!res.remoteOk) {
+      this.setProfileStatus(
+        '⚠️ Não foi possível ler o perfil no servidor. Exibindo os dados deste dispositivo.',
+        'error'
+      );
+    } else if (res.pending) {
+      this.setProfileStatus('Alterações locais aguardando envio ao servidor.');
+    } else {
+      this.setProfileStatus('');
     }
   }
 
   private async saveProfile() {
     const usernameInput = document.getElementById('profile-username-input') as HTMLInputElement;
     const avatarSelect = document.getElementById('profile-avatar-select') as HTMLSelectElement;
-    const statusMsg = document.getElementById('profile-status-msg');
 
     if (!usernameInput || !avatarSelect) return;
     const username = usernameInput.value.trim();
     const avatarId = avatarSelect.value;
 
     if (!username) {
-      if (statusMsg) {
-        statusMsg.innerText = 'Digite um nome de usuário válido.';
-        statusMsg.className = 'profile-status-msg error';
-      }
+      this.setProfileStatus('Digite um nome de usuário válido.', 'error');
       return;
     }
 
     const db = this.game.databaseManager;
     if (!db) return;
 
-    if (statusMsg) {
-      statusMsg.innerText = 'Salvando...';
-      statusMsg.className = 'profile-status-msg';
-    }
+    this.setProfileStatus('Salvando...');
 
     const res = await db.updateProfile(username, avatarId);
+    if (this.profileOverlayEl.classList.contains('hidden')) return;
+
     if (res.success) {
-      if (statusMsg) {
-        statusMsg.innerText = 'Perfil atualizado com sucesso!';
-        statusMsg.className = 'profile-status-msg success';
-      }
+      this.setProfileStatus(
+        res.pending
+          ? 'Salvo neste dispositivo. Será enviado ao servidor assim que possível.'
+          : 'Perfil atualizado com sucesso!',
+        'success'
+      );
     } else {
-      if (statusMsg) {
-        statusMsg.innerText = res.error || 'Erro ao salvar perfil.';
-        statusMsg.className = 'profile-status-msg error';
-      }
+      this.setProfileStatus(res.error || 'Erro ao salvar perfil.', 'error');
     }
   }
   private async openLeaderboardModal() {

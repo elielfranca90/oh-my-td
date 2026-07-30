@@ -72,11 +72,40 @@ describe('DatabaseManager Tests', () => {
     });
   });
 
-  it('should return error gracefully when updating profile offline', async () => {
+  it('should persist profile locally and queue it when offline', async () => {
     const db = new DatabaseManager();
     const res = await db.updateProfile('HeroPlayer', 'solar_prism');
-    expect(res.success).toBe(false);
-    expect(res.error).toBe('Database disconnected (offline mode)');
+
+    // Offline nao e mais falha: o perfil e local-first, igual estrelas e talentos.
+    expect(res.success).toBe(true);
+    expect(res.pending).toBe(true);
+
+    expect(db.loadLocalProfile()).toEqual({
+      username: 'HeroPlayer',
+      avatarId: 'solar_prism',
+    });
+
+    const parsed = JSON.parse(localStorage.getItem('td2d_sync_queue_v1')!);
+    expect(parsed.profile).toEqual({ username: 'HeroPlayer', avatarId: 'solar_prism' });
+  });
+
+  it('should keep the local profile across DatabaseManager instances', async () => {
+    const first = new DatabaseManager();
+    await first.updateProfile('skadi', 'solar_prism');
+
+    // Nova instancia (novo carregamento do jogo) nao pode perder o perfil.
+    const second = new DatabaseManager();
+    expect(second.loadLocalProfile()).toEqual({ username: 'skadi', avatarId: 'solar_prism' });
+  });
+
+  it('should report the local profile when offline instead of losing it', async () => {
+    const db = new DatabaseManager();
+    await db.updateProfile('skadi', 'mega_boss');
+
+    const res = await db.syncProfileWithRemote();
+    expect(res.profile).toEqual({ username: 'skadi', avatarId: 'mega_boss' });
+    expect(res.remoteOk).toBe(false);
+    expect(res.pending).toBe(true);
   });
 
   it('should return empty array for leaderboard when offline', async () => {
@@ -106,17 +135,13 @@ describe('DatabaseManager Tests', () => {
             return {
               select: () => ({
                 eq: () => ({
-                  single: async () => ({
+                  maybeSingle: async () => ({
                     data: { id: 'mock-user-123', username: 'TestPlayer', avatar_id: 'mega_boss' },
                     error: null,
                   }),
                 }),
               }),
-              update: () => ({
-                eq: async (col: string, val: string) => {
-                  return { error: null };
-                },
-              }),
+              upsert: async (_payload: unknown) => ({ error: null }),
             };
           }
           if (table === 'player_state') {
@@ -218,10 +243,8 @@ describe('DatabaseManager Tests', () => {
         from: (table: string) => {
           if (table === 'profiles') {
             return {
-              update: () => ({
-                eq: async () => ({
-                  error: { code: '23505', message: 'duplicate key value violates unique constraint' },
-                }),
+              upsert: async () => ({
+                error: { code: '23505', message: 'duplicate key value violates unique constraint' },
               }),
             };
           }
@@ -232,6 +255,99 @@ describe('DatabaseManager Tests', () => {
       const res = await db.updateProfile('ExistingUser', 'solar_prism');
       expect(res.success).toBe(false);
       expect(res.error).toBe('Este nome de usuário já está em uso.');
+      // Nome tomado por outro jogador nunca sera aceito: nao suja o local.
+      expect(db.loadLocalProfile()).toBeNull();
+    });
+
+    it('should upsert the profile so a missing row is created, not silently skipped', async () => {
+      const db = new DatabaseManager();
+      const baseMock = mockSupabaseClient as Record<string, unknown>;
+      let upsertPayload: Record<string, unknown> | null = null;
+
+      db.client = {
+        ...baseMock,
+        from: (table: string) => {
+          if (table === 'profiles') {
+            return {
+              upsert: async (payload: Record<string, unknown>) => {
+                upsertPayload = payload;
+                return { error: null };
+              },
+            };
+          }
+          return (baseMock.from as (t: string) => unknown)(table);
+        },
+      } as unknown as SupabaseClient;
+
+      const res = await db.updateProfile('skadi', 'solar_prism');
+      expect(res.success).toBe(true);
+      expect(res.pending).toBeUndefined();
+      // O id tem que ir no payload, senao o upsert nao sabe em qual linha conflitar.
+      expect(upsertPayload).toEqual({
+        id: 'mock-user-123',
+        username: 'skadi',
+        avatar_id: 'solar_prism',
+      });
+    });
+
+    it('should prefer the local profile over the remote one and re-queue the difference', async () => {
+      const db = new DatabaseManager();
+      db.client = mockSupabaseClient as unknown as SupabaseClient;
+
+      // Local tem o nome real; o remoto e o Player_* recem-criado pelo trigger.
+      localStorage.setItem(
+        'td2d_profile_v1',
+        JSON.stringify({ username: 'skadi', avatarId: 'solar_prism' })
+      );
+
+      const res = await db.syncProfileWithRemote();
+      expect(res.profile).toEqual({ username: 'skadi', avatarId: 'solar_prism' });
+      expect(res.remoteOk).toBe(true);
+      expect(res.pending).toBe(true);
+    });
+
+    it('should adopt the remote profile when there is no local one', async () => {
+      const db = new DatabaseManager();
+      db.client = mockSupabaseClient as unknown as SupabaseClient;
+
+      const res = await db.syncProfileWithRemote();
+      expect(res.profile).toEqual({ username: 'TestPlayer', avatarId: 'mega_boss' });
+      expect(res.pending).toBe(false);
+      // E grava local, para o proximo carregamento nao depender da rede.
+      expect(db.loadLocalProfile()).toEqual({ username: 'TestPlayer', avatarId: 'mega_boss' });
+    });
+
+    it('should share a single anonymous sign-in across concurrent ensureAuth callers', async () => {
+      let signInCount = 0;
+      const db = new DatabaseManager();
+      db.client = {
+        auth: {
+          getSession: async () => ({ data: { session: null } }),
+          signInAnonymously: async () => {
+            signInCount++;
+            const id = `anon-${signInCount}`;
+            // Janela de concorrencia: os outros chamadores chegam antes de userId existir.
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            return { data: { user: { id } }, error: null };
+          },
+        },
+        from: () => ({}),
+      } as unknown as SupabaseClient;
+
+      const ids = await Promise.all([
+        db.ensureAuth(),
+        db.ensureAuth(),
+        db.ensureAuth(),
+        db.ensureAuth(),
+        db.ensureAuth(),
+      ]);
+
+      // Este era o bug: 5 chamadores viravam 5 usuarios anonimos e a identidade
+      // do jogador mudava a cada carregamento, levando o perfil salvo com ela.
+      expect(signInCount).toBe(1);
+      expect(new Set(ids).size).toBe(1);
+      expect(ids[0]).toBe('anon-1');
+      expect(db.getUserId()).toBe('anon-1');
     });
     it('should fetch top 20 leaderboard entries online', async () => {
       const db = new DatabaseManager();
