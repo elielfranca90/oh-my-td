@@ -13,6 +13,7 @@ import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
 import { Rng } from './Rng';
 import { SpellManager } from './SpellManager';
+import { getSpecializationOption } from './Specializations';
 import { TalentManager } from './TalentManager';
 import { TowerManager2D } from './TowerManager';
 import { WaveManager } from './WaveManager';
@@ -35,6 +36,18 @@ export class Game2D {
    * zerando cooldowns de magia instantaneamente.
    */
   private static readonly MAX_FRAME_MS = 100;
+
+  /**
+   * Tempo de pressão para abrir o tip de informação do tile. No toque não existe
+   * hover, então press-and-hold é a única forma de "olhar sem agir".
+   */
+  private static readonly LONG_PRESS_MS = 420;
+
+  /**
+   * Quanto o dedo/cursor pode escorregar (em px da grade interna) antes de
+   * cancelar a pressão. Sem tolerância, o tremor natural do toque cancelaria.
+   */
+  private static readonly LONG_PRESS_MOVE_TOLERANCE = 14;
 
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -73,6 +86,14 @@ export class Game2D {
   private simAccumulatorMs = 0;
   /** Idem para FX/toasts, mas sem escala de velocidade (duram o mesmo em 1x e 4x). */
   private fxAccumulatorMs = 0;
+
+  // --- Press-and-hold ---
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Marca que a pressão virou tip, para o clique seguinte não construir. */
+  private longPressFired = false;
+  private pressOrigin: { x: number; y: number } | null = null;
+  /** Tile cujo tip está aberto, ou null. */
+  private tooltipGrid: { x: number; y: number } | null = null;
   private hasAwardedStars = false;
   private currentSavedMapId: MapId = 'MAP_1';
   private currentSavedChallengeMode: ChallengeMode = 'NORMAL';
@@ -163,6 +184,8 @@ export class Game2D {
     // Managers foram recriados: descarta tempo acumulado da partida anterior.
     this.simAccumulatorMs = 0;
     this.fxAccumulatorMs = 0;
+    this.tooltipGrid = null;
+    this.longPressFired = false;
 
     this.uiManager = new UIManager(
       this.gameState,
@@ -299,8 +322,64 @@ export class Game2D {
       { passive: true }
     );
 
+    // --- Press-and-hold: abre o tip do tile sem executar a ação ---
+    // Pointer Events unificam mouse, toque e caneta; a ação em si continua no
+    // click/touchend existente, e o flag longPressFired impede que a mesma
+    // pressão também construa ou selecione.
+    const cancelLongPress = () => {
+      if (this.longPressTimer !== null) {
+        clearTimeout(this.longPressTimer);
+        this.longPressTimer = null;
+      }
+      this.pressOrigin = null;
+    };
+
+    this.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (this.gameState.status !== 'PLAYING') return;
+      cancelLongPress();
+      this.tooltipGrid = null;
+      this.longPressFired = false;
+
+      const { x, y } = this.getCanvasMousePosition(e);
+      this.pressOrigin = { x, y };
+
+      this.longPressTimer = setTimeout(() => {
+        this.longPressTimer = null;
+        if (!this.pressOrigin) return;
+        this.longPressFired = true;
+        this.tooltipGrid = {
+          x: Math.floor(this.pressOrigin.x / this.mapManager.tileSize),
+          y: Math.floor(this.pressOrigin.y / this.mapManager.tileSize),
+        };
+      }, Game2D.LONG_PRESS_MS);
+    });
+
+    this.canvas.addEventListener('pointermove', (e: PointerEvent) => {
+      if (!this.pressOrigin) return;
+      const { x, y } = this.getCanvasMousePosition(e);
+      const moved = Math.hypot(x - this.pressOrigin.x, y - this.pressOrigin.y);
+      if (moved > Game2D.LONG_PRESS_MOVE_TOLERANCE) cancelLongPress();
+    });
+
+    const endPress = () => {
+      cancelLongPress();
+      this.tooltipGrid = null;
+    };
+    this.canvas.addEventListener('pointerup', endPress);
+    this.canvas.addEventListener('pointercancel', endPress);
+    this.canvas.addEventListener('pointerleave', endPress);
+
+    // Long-press no toque abriria o menu de contexto / lupa do sistema.
+    this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
     const handleTap = (e: MouseEvent | TouchEvent) => {
       if (this.gameState.status !== 'PLAYING' || this.gameState.isPaused) return;
+
+      // A pressão já foi consumida pelo tip: não constrói nem seleciona.
+      if (this.longPressFired) {
+        this.longPressFired = false;
+        return;
+      }
 
       // Prevent duplicate synthetic click event right after a touch event on UI or canvas
       if (e.type === 'click' && Date.now() - lastTouchTime < 400) {
@@ -386,6 +465,119 @@ export class Game2D {
       this.ctx.fillText(`${toast.title} (+${toast.reward} ★)`, x + 10, y + 38);
       this.ctx.restore();
     }
+  }
+
+  /**
+   * Conteúdo do tip de um tile. Separado do desenho para poder ser testado sem
+   * canvas.
+   */
+  public getTileTipLines(gridX: number, gridY: number): { text: string; color: string }[] {
+    const linhas: { text: string; color: string }[] = [];
+    const tower = this.towerManager.getTowerAt(gridX, gridY);
+    const isSprout = this.towerManager.isSproutTile(gridX, gridY);
+
+    if (tower) {
+      const spec = tower.data.specialization
+        ? getSpecializationOption(tower.data.specialization)
+        : undefined;
+      linhas.push({
+        text: spec
+          ? `${tower.data.type} · ${spec.icon} ${spec.name}`
+          : `${tower.data.type} — Nível ${tower.data.level}`,
+        color: '#ffffff',
+      });
+      if (spec) linhas.push({ text: spec.description, color: '#b0bec5' });
+      linhas.push({
+        text: `⚔️ ${tower.data.damage}   📏 ${tower.data.range}   ❤️ ${tower.data.hp}/${tower.data.maxHp}`,
+        color: '#eceff1',
+      });
+      if (tower.data.onSproutTile) {
+        linhas.push({ text: '🌱 Broto: +25% alcance · cadência 2x', color: '#aed581' });
+      }
+      return linhas;
+    }
+
+    if (isSprout) {
+      linhas.push({ text: '🌱 Broto de Vegetação', color: '#c5e1a5' });
+      linhas.push({ text: 'Torre construída aqui recebe:', color: '#b0bec5' });
+      linhas.push({ text: '+25% de alcance', color: '#aed581' });
+      linhas.push({ text: 'Cadência de tiro dobrada', color: '#aed581' });
+    } else if (this.mapManager.isBuildable(gridX, gridY)) {
+      linhas.push({ text: 'Terreno livre', color: '#ffffff' });
+    } else {
+      linhas.push({ text: 'Não construível', color: '#ff8a80' });
+      linhas.push({ text: 'Caminho ou obstáculo', color: '#b0bec5' });
+      return linhas;
+    }
+
+    const tipo = this.towerManager.selectedBuildType;
+    const custo = this.towerManager.getTowerCost(tipo);
+    const podePagar = this.gameState.gold >= custo;
+    linhas.push({
+      text: `Construir ${tipo}: ${custo}g`,
+      color: podePagar ? '#ffe082' : '#ff8a80',
+    });
+
+    return linhas;
+  }
+
+  /** Tip aberto por press-and-hold, desenhado junto ao tile pressionado. */
+  private renderTileTooltip() {
+    if (!this.tooltipGrid) return;
+
+    const { x: gx, y: gy } = this.tooltipGrid;
+    if (gx < 0 || gx >= this.mapManager.cols || gy < 0 || gy >= this.mapManager.rows) return;
+
+    const linhas = this.getTileTipLines(gx, gy);
+    if (linhas.length === 0) return;
+
+    const ctx = this.ctx;
+    ctx.save();
+
+    const padding = 9;
+    const lineHeight = 15;
+    const titleFont = 'bold 12px Arial';
+    const bodyFont = '11px Arial';
+
+    let largura = 0;
+    linhas.forEach((linha, i) => {
+      ctx.font = i === 0 ? titleFont : bodyFont;
+      largura = Math.max(largura, ctx.measureText(linha.text).width);
+    });
+
+    const boxW = largura + padding * 2;
+    const boxH = linhas.length * lineHeight + padding * 2 - 3;
+    const tile = this.mapManager.tileSize;
+
+    // Acima do tile por padrão; abaixo se não couber. Sempre dentro do canvas.
+    let boxX = gx * tile + tile / 2 - boxW / 2;
+    let boxY = gy * tile - boxH - 8;
+    if (boxY < 4) boxY = gy * tile + tile + 8;
+    boxX = Math.max(4, Math.min(this.canvas.width - boxW - 4, boxX));
+    boxY = Math.max(4, Math.min(this.canvas.height - boxH - 4, boxY));
+
+    // Realce do tile sob pressão
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(gx * tile + 1, gy * tile + 1, tile - 2, tile - 2);
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(12, 16, 20, 0.94)';
+    ctx.fillRect(boxX, boxY, boxW, boxH);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    linhas.forEach((linha, i) => {
+      ctx.font = i === 0 ? titleFont : bodyFont;
+      ctx.fillStyle = linha.color;
+      ctx.fillText(linha.text, boxX + padding, boxY + padding + 10 + i * lineHeight);
+    });
+
+    ctx.restore();
   }
 
   private renderPauseOverlay() {
@@ -559,6 +751,8 @@ export class Game2D {
 
       this.renderAchievementToasts();
       this.renderPauseOverlay();
+      // Depois do overlay de pause: inspecionar tile com o jogo pausado é útil.
+      this.renderTileTooltip();
 
       this.ctx.restore();
 

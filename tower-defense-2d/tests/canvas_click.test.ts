@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Game2D } from '../src/engine/Game';
 
 /**
@@ -45,13 +45,21 @@ describe('Roteamento do clique no canvas', () => {
     const clickAt = (x: number, y: number) =>
       canvas.dispatchEvent(new MouseEvent('click', { clientX: x, clientY: y, bubbles: true }));
 
+    // Pointer Events podem não existir no happy-dom; um MouseEvent com o type
+    // certo é suficiente, pois o código só lê clientX/clientY.
+    const pointer = (type: string, x: number, y: number) =>
+      canvas.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, bubbles: true }));
+
     return {
       game,
+      canvas,
       clickAt,
+      pointer,
       towerManager: (game as any).towerManager,
       spellManager: game.spellManager,
       gameState: game.gameState,
       inspector: () => document.getElementById('inspector-state')!,
+      tooltipGrid: () => (game as any).tooltipGrid,
     };
   };
 
@@ -111,6 +119,95 @@ describe('Roteamento do clique no canvas', () => {
     expect(spellManager.activeSpell).toBeNull();
     expect(gameState.gold).toBeLessThan(1000);
     expect(towerManager.getTowers().length).toBe(0);
+  });
+
+  describe('Press-and-hold (tip do tile)', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('deve abrir o tip após segurar e suprimir a ação do clique', () => {
+      const { pointer, clickAt, towerManager, tooltipGrid } = setup();
+
+      pointer('pointerdown', TORRE_X, TORRE_Y);
+      expect(tooltipGrid()).toBeNull(); // ainda não passou o tempo
+
+      vi.advanceTimersByTime(500);
+      expect(tooltipGrid()).toEqual({ x: 4, y: 2 });
+
+      // O clique que fecha a pressão NÃO deve construir: o jogador estava
+      // consultando, não comprando.
+      clickAt(TORRE_X, TORRE_Y);
+      expect(towerManager.getTowers().length).toBe(0);
+    });
+
+    it('deve voltar a agir normalmente no clique seguinte', () => {
+      const { pointer, clickAt, towerManager } = setup();
+
+      pointer('pointerdown', TORRE_X, TORRE_Y);
+      vi.advanceTimersByTime(500);
+      pointer('pointerup', TORRE_X, TORRE_Y);
+      clickAt(TORRE_X, TORRE_Y); // suprimido
+
+      expect(towerManager.getTowers().length).toBe(0);
+
+      clickAt(TORRE_X, TORRE_Y); // agora constrói
+      expect(towerManager.getTowers().length).toBe(1);
+    });
+
+    it('deve fechar o tip ao soltar', () => {
+      const { pointer, tooltipGrid } = setup();
+
+      pointer('pointerdown', TORRE_X, TORRE_Y);
+      vi.advanceTimersByTime(500);
+      expect(tooltipGrid()).not.toBeNull();
+
+      pointer('pointerup', TORRE_X, TORRE_Y);
+      expect(tooltipGrid()).toBeNull();
+    });
+
+    it('deve cancelar a pressão se o dedo escorregar', () => {
+      const { pointer, clickAt, towerManager, tooltipGrid } = setup();
+
+      pointer('pointerdown', TORRE_X, TORRE_Y);
+      pointer('pointermove', TORRE_X + 40, TORRE_Y); // acima da tolerância
+      vi.advanceTimersByTime(500);
+
+      expect(tooltipGrid()).toBeNull();
+      // Pressão cancelada: o toque volta a ser um toque comum
+      clickAt(TORRE_X, TORRE_Y);
+      expect(towerManager.getTowers().length).toBe(1);
+    });
+
+    it('deve tolerar tremor pequeno sem cancelar', () => {
+      const { pointer, tooltipGrid } = setup();
+
+      pointer('pointerdown', TORRE_X, TORRE_Y);
+      pointer('pointermove', TORRE_X + 5, TORRE_Y + 4); // dentro da tolerância
+      vi.advanceTimersByTime(500);
+
+      expect(tooltipGrid()).toEqual({ x: 4, y: 2 });
+    });
+
+    it('deve descrever o bônus do broto e os demais tipos de tile', () => {
+      const { game, towerManager } = setup();
+
+      towerManager.sproutTiles = [{ x: 4, y: 2 }];
+      const broto = game.getTileTipLines(4, 2).map(l => l.text).join(' | ');
+      expect(broto).toContain('Broto');
+      expect(broto).toContain('+25% de alcance');
+      expect(broto).toContain('Cadência de tiro dobrada');
+
+      // (1,1) é caminho no MAP_1
+      const caminho = game.getTileTipLines(1, 1).map(l => l.text).join(' | ');
+      expect(caminho).toContain('Não construível');
+
+      // Torre erguida no broto mostra o bônus já aplicado
+      towerManager.setSelectedBuildType('BASIC');
+      towerManager.placeTower(4, 2);
+      const comTorre = game.getTileTipLines(4, 2).map(l => l.text).join(' | ');
+      expect(comTorre).toContain('BASIC');
+      expect(comTorre).toContain('🌱 Broto');
+    });
   });
 
   it('não deve reagir a clique com o jogo pausado', () => {

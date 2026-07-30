@@ -61,6 +61,10 @@ export class TowerManager2D {
     return this.towers.find(t => t.data.gridX === gridX && t.data.gridY === gridY);
   }
 
+  public isSproutTile(gridX: number, gridY: number): boolean {
+    return this.sproutTiles.some(s => s.x === gridX && s.y === gridY);
+  }
+
   public getTowerCost(type: TowerType): number {
     switch (type) {
       case 'ARTILLERY': return 110;
