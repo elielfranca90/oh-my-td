@@ -6,11 +6,12 @@ import { Game2D } from '../engine/Game';
 import { GameState } from '../engine/GameState';
 import type { MapId } from '../engine/MapManager';
 import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
+import { getSpecializationOption, getSpecializations } from '../engine/Specializations';
 import { TalentManager, type TalentData } from '../engine/TalentManager';
 import type { Tower2D } from '../engine/Tower';
 import { TowerManager2D } from '../engine/TowerManager';
-import { WaveManager } from '../engine/WaveManager';
-import type { ChallengeMode, TowerType } from '../types';
+import { WaveManager, type EndlessArchetype, type WavePreview } from '../engine/WaveManager';
+import type { ChallengeMode, EnemyType, TowerSpecialization, TowerType } from '../types';
 
 export class UIManager {
   private gameState: GameState;
@@ -42,12 +43,14 @@ export class UIManager {
   private waveBtnEl: HTMLButtonElement | null = null;
   private waveBtnLabelEl: HTMLElement | null = null;
   private bossBadgeEl: HTMLElement | null = null;
+  private wavePreviewEl: HTMLElement | null = null;
   private meteorCdEl: HTMLElement | null = null;
   private freezeCdEl: HTMLElement | null = null;
 
   private lastWaveDisabled: boolean | null = null;
   private lastWaveLabelText = '';
   private lastWaveClassName = '';
+  private lastWavePreviewKey = '';
   private lastBossBadgeHidden: boolean | null = null;
   private lastMeteorCdText = '';
   private lastMeteorCdHidden: boolean | null = null;
@@ -105,7 +108,7 @@ export class UIManager {
             </div>
             <div class="hud-stat-badge wave" title="Onda Atual">
               <span class="icon">🌊</span>
-              <span class="wave-title hud-label-text">WAVE</span>
+              <span class="wave-title hud-label-text">ONDA</span>
               <strong id="hud-wave-val">0/10</strong>
               <span id="hud-boss-badge" class="boss-badge hidden">⚠️ BOSS</span>
             </div>
@@ -199,6 +202,9 @@ export class UIManager {
                 <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
               </div>
             </div>
+
+            <!-- Escolha de especialização (nível 2 -> 3) -->
+            <div id="inspector-spec-choice" class="spec-choice hidden"></div>
           </div>
         </nav>
 
@@ -214,6 +220,8 @@ export class UIManager {
             <button id="btn-speed-4x" class="speed-btn">4x</button>
             <button id="btn-auto-mode" class="auto-toggle-btn">⚡ Auto</button>
           </div>
+
+          <div id="hud-wave-preview" class="wave-preview hidden"></div>
 
           <button id="btn-next-wave" class="start-wave-main-btn">
             <span id="start-wave-label">Iniciar Onda 1</span>
@@ -348,6 +356,21 @@ export class UIManager {
               <div class="changelog-item latest">
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v2.3</strong>
+                  <span class="changelog-title">Especializações de Torres & Efeito Glacial</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Especialização Nível 3:</strong> Escolha entre 2 rotas exclusivas de upgrade para cada classe de torre no nível 3.</li>
+                  <li><strong>Pulso Glacial Visual:</strong> Onda de choque visível na Torre de Gelo indicando desaceleração de área.</li>
+                  <li><strong>Preview de Ondas:</strong> Visualização da composição da próxima horda diretamente na HUD.</li>
+                  <li><strong>Modo Infinito Inteligente:</strong> Hordas estruturadas por arquétipos e salvamento automático da preferência do jogador.</li>
+                  <li><strong>Dicas de Terreno:</strong> Toque longo ou hover em tiles especiais (como o Broto) para visualizar bônus de terreno.</li>
+                  <li><strong>Novos Inimigos:</strong> Inimigo com Escudo e Espectro ativados com suporte a conquistas.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
+                  <span class="badge-tag new">NOVO</span>
                   <strong class="version-tag">v2.2</strong>
                   <span class="changelog-title">Árvore de Talentos & Novas Conquistas</span>
                 </div>
@@ -451,7 +474,8 @@ export class UIManager {
 
         <!-- END GAME ANALYTICS MODAL -->
         <div id="modal-overlay" class="modal-overlay hidden pointer-events-auto">
-          <div class="modal-card analytics-modal">
+          <div class="modal-card analytics-modal" style="position: relative;">
+            <button id="endgame-close-btn" class="close-icon-btn" title="Encerrar" style="position: absolute; top: 16px; right: 16px;">✖</button>
             <h1 id="modal-title">Game Over</h1>
             <p id="modal-desc">Sua base foi destruída!</p>
             <div id="analytics-details" class="analytics-details">
@@ -632,6 +656,10 @@ export class UIManager {
     document.getElementById('endgame-leaderboard-btn')?.addEventListener('click', () => {
       this.openLeaderboardModal();
     });
+    document.getElementById('endgame-close-btn')?.addEventListener('click', () => {
+      this.overlayEl.classList.add('hidden');
+      this.onRestartCallback();
+    });
     document.getElementById('close-leaderboard-btn')?.addEventListener('click', () => {
       this.dismissModal();
     });
@@ -690,7 +718,7 @@ export class UIManager {
     if (endlessToggle) {
       endlessToggle.checked = this.waveManager.isEndlessMode;
       endlessToggle.addEventListener('change', (e) => {
-        this.waveManager.setEndlessMode((e.target as HTMLInputElement).checked);
+        this.game.setEndlessMode((e.target as HTMLInputElement).checked);
       });
     }
 
@@ -776,6 +804,14 @@ export class UIManager {
 
     document.getElementById('btn-inspect-upgrade')?.addEventListener('click', () => {
       this.towerManager.upgradeSelectedTower();
+    });
+
+    // Delegação: os botões de especialização são recriados a cada renderInspector.
+    document.getElementById('inspector-spec-choice')?.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement | null)?.closest('.spec-btn') as HTMLElement | null;
+      if (!btn) return;
+      const spec = btn.dataset.spec as TowerSpecialization | undefined;
+      if (spec) this.towerManager.upgradeSelectedTower(spec);
     });
 
     document.getElementById('btn-inspect-sell')?.addEventListener('click', () => {
@@ -975,7 +1011,14 @@ export class UIManager {
 
   private renderInspector(tower: Tower2D) {
     const title = document.getElementById('inspector-title');
-    if (title) title.innerText = `${tower.data.type} (Nível ${tower.data.level})`;
+    if (title) {
+      const spec = tower.data.specialization
+        ? getSpecializationOption(tower.data.specialization)
+        : undefined;
+      title.innerText = spec
+        ? `${tower.data.type} · ${spec.icon} ${spec.name}`
+        : `${tower.data.type} (Nível ${tower.data.level})`;
+    }
 
     const statsBox = document.getElementById('inspector-stats-summary');
     if (statsBox) {
@@ -1002,15 +1045,52 @@ export class UIManager {
       }
     }
 
+    // No nível 2 o upgrade deixa de ser um botão só: é a escolha entre as duas
+    // especializações do tipo, cada uma com seu efeito.
+    const isSpecializing = tower.data.level === 2 && !tower.data.isDestroyed;
+    const cost = tower.getUpgradeCost();
+
     const upgradeBtn = document.getElementById('btn-inspect-upgrade') as HTMLButtonElement;
     if (upgradeBtn) {
       if (tower.data.level >= 3) {
         upgradeBtn.innerText = '⭐ Máximo';
         upgradeBtn.disabled = true;
+        upgradeBtn.classList.remove('hidden');
+      } else if (isSpecializing) {
+        // A escolha vive no painel abaixo; o botão genérico sairia sobrando.
+        upgradeBtn.classList.add('hidden');
       } else {
-        const cost = tower.getUpgradeCost();
+        upgradeBtn.classList.remove('hidden');
         upgradeBtn.innerText = `⬆️ ${cost}g`;
         upgradeBtn.disabled = this.gameState.gold < cost;
+      }
+    }
+
+    const specBox = document.getElementById('inspector-spec-choice');
+    if (specBox) {
+      if (isSpecializing) {
+        const canAfford = this.gameState.gold >= cost;
+        const opcoes = getSpecializations(tower.data.type)
+          .map(
+            option => `
+            <button class="spec-btn" data-spec="${option.id}" ${canAfford ? '' : 'disabled'}
+                    title="${option.description}">
+              <span class="spec-btn-title">${option.icon} ${option.name}</span>
+              <span class="spec-btn-desc">${option.description}</span>
+            </button>`
+          )
+          .join('');
+
+        specBox.className = 'spec-choice';
+        specBox.innerHTML = `
+          <span class="spec-choice-label">
+            ⬆️ Nível 3 — escolha a especialização (${cost}g)
+          </span>
+          <div class="spec-choice-options">${opcoes}</div>
+        `;
+      } else {
+        specBox.className = 'spec-choice hidden';
+        specBox.innerHTML = '';
       }
     }
 
@@ -1032,6 +1112,14 @@ export class UIManager {
 
     const challengeSelect = document.getElementById('settings-challenge-select') as HTMLSelectElement;
     if (challengeSelect) challengeSelect.value = this.gameState.challengeMode;
+
+    const endlessToggle = document.getElementById('settings-endless-toggle') as HTMLInputElement;
+    if (endlessToggle) {
+      const isMorteCerta = this.gameState.challengeMode === 'MORTE_CERTA';
+      endlessToggle.checked = this.waveManager.isEndlessMode;
+      endlessToggle.disabled = isMorteCerta;
+      endlessToggle.title = isMorteCerta ? 'Morte Certa é sempre infinito' : '';
+    }
   }
 
   private updateTalentsModal() {
@@ -1141,10 +1229,76 @@ export class UIManager {
     }
   }
 
+  /** Ícone de cada tipo na faixa de preview, alinhado à cor do inimigo em jogo. */
+  private static readonly ENEMY_ICONS: Record<EnemyType, string> = {
+    STANDARD: '🔴',
+    RUNNER: '🟠',
+    SPORE_SPRINTER: '🟢',
+    SHIELDED: '🔵',
+    TANK: '🟣',
+    MOSS_GIANT: '🌲',
+    BOSS: '💀',
+    BLACK_MEGA_BOSS: '☠️',
+  };
+
+  private static readonly ARCHETYPE_LABELS: Record<EndlessArchetype, string> = {
+    SWARM: 'Enxame',
+    ARMORED: 'Blindada',
+    RUSH: 'Investida',
+    MIXED: 'Mista',
+    BOSS_RUSH: 'Chefes',
+  };
+
+  /**
+   * Faixa compacta com a composição da próxima onda. Sem isso o jogador só sabe
+   * o número da onda, e num TD planejar a defesa é o jogo — a única estratégia
+   * possível passava a ser morrer e reiniciar.
+   */
+  private renderWavePreview(preview: WavePreview) {
+    if (!this.wavePreviewEl) return;
+
+    const titulo = preview.archetype
+      ? `Onda ${preview.waveNumber} · ${UIManager.ARCHETYPE_LABELS[preview.archetype]}`
+      : `Onda ${preview.waveNumber}`;
+
+    const chips = preview.entries
+      .map(entry => {
+        const isBoss = entry.type === 'BOSS' || entry.type === 'BLACK_MEGA_BOSS';
+        const icon = UIManager.ENEMY_ICONS[entry.type] || '❔';
+        return `<span class="wave-preview-chip${isBoss ? ' boss' : ''}">${icon} ${entry.count}</span>`;
+      })
+      .join('');
+
+    this.wavePreviewEl.className = `wave-preview${preview.hasBoss ? ' danger' : ''}`;
+    this.wavePreviewEl.innerHTML = `<span class="wave-preview-title">${titulo}</span>${chips}`;
+  }
+
   public update() {
     if (!this.waveBtnEl) {
       this.waveBtnEl = document.getElementById('btn-next-wave') as HTMLButtonElement;
       this.waveBtnLabelEl = document.getElementById('start-wave-label');
+    }
+    if (!this.wavePreviewEl) {
+      this.wavePreviewEl = document.getElementById('hud-wave-preview');
+    }
+
+    // Preview da próxima onda: só recalcula quando a onda alvo muda, para não
+    // remontar HTML a 60fps.
+    if (this.wavePreviewEl) {
+      const previewKey = this.waveManager.isWaveActive
+        ? 'active'
+        : `w${this.waveManager.currentWaveIndex + 1}`;
+
+      if (this.lastWavePreviewKey !== previewKey) {
+        this.lastWavePreviewKey = previewKey;
+        const preview = this.waveManager.isWaveActive ? null : this.waveManager.getNextWavePreview();
+        if (preview) {
+          this.renderWavePreview(preview);
+        } else {
+          this.wavePreviewEl.className = 'wave-preview hidden';
+          this.wavePreviewEl.innerHTML = '';
+        }
+      }
     }
 
     if (this.waveBtnEl && this.waveBtnLabelEl) {
@@ -1246,68 +1400,96 @@ export class UIManager {
         }
       }
     }
-    // Safety check for End Game modal display
-    if (this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') {
+    // Safety check for End Game modal display (skip while a sub-modal opened from it, like the leaderboard, is active)
+    if ((this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') && this.activeParentModal !== this.overlayEl) {
       this.updateEndGameModal();
     }
   }
 
+  /** Escreve na faixa de status do modal de perfil. `kind` vazio = neutro. */
+  private setProfileStatus(text: string, kind: '' | 'success' | 'error' = '') {
+    const statusMsg = document.getElementById('profile-status-msg');
+    if (!statusMsg) return;
+    statusMsg.innerText = text;
+    statusMsg.className = kind ? `profile-status-msg ${kind}` : 'profile-status-msg';
+  }
+
   private async openProfileModal() {
     this.openSubModal(this.profileOverlayEl);
-    const statusMsg = document.getElementById('profile-status-msg');
-    if (statusMsg) {
-      statusMsg.innerText = '';
-      statusMsg.className = 'profile-status-msg';
-    }
+    const usernameInput = document.getElementById('profile-username-input') as HTMLInputElement | null;
+    const avatarSelect = document.getElementById('profile-avatar-select') as HTMLSelectElement | null;
 
     const db = this.game.databaseManager;
-    if (db) {
-      const profile = await db.getProfile();
-      if (profile) {
-        const usernameInput = document.getElementById('profile-username-input') as HTMLInputElement;
-        const avatarSelect = document.getElementById('profile-avatar-select') as HTMLSelectElement;
-        if (usernameInput) usernameInput.value = profile.username || '';
-        if (avatarSelect) avatarSelect.value = profile.avatarId || 'default_avatar';
+    if (!db) return;
+
+    // Preenche na hora com o perfil local, sem esperar a rede.
+    const local = db.loadLocalProfile();
+    if (usernameInput) usernameInput.value = local?.username ?? '';
+    if (avatarSelect) avatarSelect.value = local?.avatarId ?? 'default_avatar';
+
+    if (!db.isConnected()) {
+      this.setProfileStatus('Modo offline: as alterações ficam salvas neste dispositivo.');
+      return;
+    }
+
+    this.setProfileStatus('⌛ Sincronizando...');
+    const res = await db.syncProfileWithRemote();
+
+    // O modal pode ter sido fechado enquanto a rede respondia.
+    if (this.profileOverlayEl.classList.contains('hidden')) return;
+
+    if (res.profile) {
+      // Nao sobrescreve o campo se o jogador ja comecou a digitar.
+      if (usernameInput && document.activeElement !== usernameInput) {
+        usernameInput.value = res.profile.username;
       }
+      if (avatarSelect && document.activeElement !== avatarSelect) {
+        avatarSelect.value = res.profile.avatarId;
+      }
+    }
+
+    if (!res.remoteOk) {
+      this.setProfileStatus(
+        '⚠️ Não foi possível ler o perfil no servidor. Exibindo os dados deste dispositivo.',
+        'error'
+      );
+    } else if (res.pending) {
+      this.setProfileStatus('Alterações locais aguardando envio ao servidor.');
+    } else {
+      this.setProfileStatus('');
     }
   }
 
   private async saveProfile() {
     const usernameInput = document.getElementById('profile-username-input') as HTMLInputElement;
     const avatarSelect = document.getElementById('profile-avatar-select') as HTMLSelectElement;
-    const statusMsg = document.getElementById('profile-status-msg');
 
     if (!usernameInput || !avatarSelect) return;
     const username = usernameInput.value.trim();
     const avatarId = avatarSelect.value;
 
     if (!username) {
-      if (statusMsg) {
-        statusMsg.innerText = 'Digite um nome de usuário válido.';
-        statusMsg.className = 'profile-status-msg error';
-      }
+      this.setProfileStatus('Digite um nome de usuário válido.', 'error');
       return;
     }
 
     const db = this.game.databaseManager;
     if (!db) return;
 
-    if (statusMsg) {
-      statusMsg.innerText = 'Salvando...';
-      statusMsg.className = 'profile-status-msg';
-    }
+    this.setProfileStatus('Salvando...');
 
     const res = await db.updateProfile(username, avatarId);
+    if (this.profileOverlayEl.classList.contains('hidden')) return;
+
     if (res.success) {
-      if (statusMsg) {
-        statusMsg.innerText = 'Perfil atualizado com sucesso!';
-        statusMsg.className = 'profile-status-msg success';
-      }
+      this.setProfileStatus(
+        res.pending
+          ? 'Salvo neste dispositivo. Será enviado ao servidor assim que possível.'
+          : 'Perfil atualizado com sucesso!',
+        'success'
+      );
     } else {
-      if (statusMsg) {
-        statusMsg.innerText = res.error || 'Erro ao salvar perfil.';
-        statusMsg.className = 'profile-status-msg error';
-      }
+      this.setProfileStatus(res.error || 'Erro ao salvar perfil.', 'error');
     }
   }
   private async openLeaderboardModal() {

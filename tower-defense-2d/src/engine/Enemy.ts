@@ -1,4 +1,5 @@
 import { MegaBossSpriteRenderer } from './MegaBossSpriteRenderer';
+import { Rng } from './Rng';
 import { SpriteManager } from './SpriteManager';
 
 import type { EnemyType, IEnemy2D, Vector2D } from '../types';
@@ -7,8 +8,11 @@ export class Enemy2D {
   public data: IEnemy2D;
   public baseDamage: number;
   public pathIndex: number;
+  /** Ligado enquanto o MOSS_GIANT se cura junto à mata; lido apenas pelo render. */
+  public isRegenerating = false;
   private hasTriggeredSpore = false;
   private mossRegenTimer = 0;
+  private rng: Rng;
 
   constructor(
     waypoints: Vector2D[],
@@ -17,8 +21,12 @@ export class Enemy2D {
     hpMultiplier = 1.0,
     pathIndex = 0,
     speedMultiplier = 1.0,
-    goldMultiplier = 1.0
+    goldMultiplier = 1.0,
+    rng?: Rng
   ) {
+    // Sem RNG injetado cai numa semente de relógio: comportamento idêntico ao
+    // anterior para quem constrói o inimigo solto (testes, spawn avulso).
+    this.rng = rng || new Rng(Date.now());
     const config = this.getEnemyConfig(type);
     this.baseDamage = config.baseDamage;
     this.pathIndex = pathIndex;
@@ -74,7 +82,7 @@ export class Enemy2D {
 
   public takeDamage(amount: number, isLightShot = false): number {
     // 1. Check Dodge (Runner)
-    if (this.data.dodgeChance > 0 && Math.random() < this.data.dodgeChance) {
+    if (this.data.dodgeChance > 0 && this.rng.chance(this.data.dodgeChance)) {
       return -1; // Dodged!
     }
 
@@ -126,16 +134,19 @@ export class Enemy2D {
     this.data.sporeBoostTimer = Math.max(this.data.sporeBoostTimer || 0, durationFrames);
   }
 
-  public update(waypoints: Vector2D[], isStandingOnGrass = false): boolean {
-    if (this.data.type === 'BLACK_MEGA_BOSS') {
-      MegaBossSpriteRenderer.getInstance().update(16.6);
-    }
-    if (this.data.type === 'MOSS_GIANT' && isStandingOnGrass && this.data.hp < this.data.maxHp) {
+  public update(waypoints: Vector2D[], isNearFoliage = false): boolean {
+    // A animação do mega boss é avançada pelo Game2D (passo de apresentação):
+    // fazê-lo aqui acelerava o sprite quando havia mais de um boss em tela.
+    this.isRegenerating =
+      this.data.type === 'MOSS_GIANT' && isNearFoliage && this.data.hp < this.data.maxHp;
+    if (this.isRegenerating) {
       this.mossRegenTimer++;
       if (this.mossRegenTimer >= 20) { // +1 HP every 20 frames (~3 HP/sec)
         this.data.hp = Math.min(this.data.maxHp, this.data.hp + 1);
         this.mossRegenTimer = 0;
       }
+    } else {
+      this.mossRegenTimer = 0;
     }
 
     // Handle Timers
@@ -186,6 +197,21 @@ export class Enemy2D {
 
   public render(ctx: CanvasRenderingContext2D) {
     if (this.data.isDead) return;
+
+    // Regeneração junto à mata (Moss Giant): anel verde pulsante
+    if (this.isRegenerating) {
+      const pulse = 3 + (this.mossRegenTimer / 20) * 4;
+      ctx.beginPath();
+      ctx.arc(this.data.position.x, this.data.position.y, this.data.radius + pulse, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(139, 195, 74, 0.85)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#aed581';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('+', this.data.position.x + this.data.radius + 6, this.data.position.y - this.data.radius);
+    }
 
     // Spore Boost Aura
     if (this.data.sporeBoostTimer && this.data.sporeBoostTimer > 0) {

@@ -8,13 +8,47 @@ import { EnemyManager2D } from './EnemyManager';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
 import { MapManager2D, type MapId } from './MapManager';
+import { MegaBossSpriteRenderer } from './MegaBossSpriteRenderer';
 import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
+import { Rng } from './Rng';
 import { SpellManager } from './SpellManager';
+import { getSpecializationOption } from './Specializations';
 import { TalentManager } from './TalentManager';
 import { TowerManager2D } from './TowerManager';
 import { WaveManager } from './WaveManager';
 export class Game2D {
+  /**
+   * Duração de um passo de simulação. A simulação SEMPRE avança em passos de
+   * 1/60s, independente do refresh rate do monitor.
+   *
+   * Motivo: todos os timers das entidades são contados em frames
+   * (`Tower.cooldownTimer`, `Enemy.slowTimer`, `Enemy.speed` em px/frame...),
+   * enquanto spawn de onda e cooldown de magia usam ms reais. Sem passo fixo,
+   * um monitor de 144Hz roda movimento e tiro ~2,4x mais rápido que um de 60Hz
+   * enquanto o spawn continua igual — o balanceamento mudaria por hardware.
+   */
+  private static readonly FIXED_STEP_MS = 1000 / 60;
+
+  /**
+   * Delta máximo processado num único frame. Sem o clamp, voltar de uma aba
+   * inativa entregaria segundos de delta de uma vez, teleportando inimigos e
+   * zerando cooldowns de magia instantaneamente.
+   */
+  private static readonly MAX_FRAME_MS = 100;
+
+  /**
+   * Tempo de pressão para abrir o tip de informação do tile. No toque não existe
+   * hover, então press-and-hold é a única forma de "olhar sem agir".
+   */
+  private static readonly LONG_PRESS_MS = 420;
+
+  /**
+   * Quanto o dedo/cursor pode escorregar (em px da grade interna) antes de
+   * cancelar a pressão. Sem tolerância, o tremor natural do toque cancelaria.
+   */
+  private static readonly LONG_PRESS_MOVE_TOLERANCE = 14;
+
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
 
@@ -36,12 +70,39 @@ export class Game2D {
 
   public gameSpeedMultiplier = 1; // 1x, 2x, 4x
 
+  /**
+   * Semente da partida atual. Toda a aleatoriedade que decide o jogo (esquiva,
+   * crítico, composição endless, tiles Sprout) sai deste RNG, então informar a
+   * mesma semente reproduz a partida — base para depurar um bug relatado e para
+   * o harness de balanceamento comparar builds.
+   */
+  public runSeed = 0;
+  private rng!: Rng;
+
   private mousePos: { x: number; y: number } | null = null;
   private hoveredGrid: { x: number; y: number } | null = null;
   private lastTime = 0;
+  /** Tempo real acumulado ainda não consumido pela simulação (escalado pela velocidade). */
+  private simAccumulatorMs = 0;
+  /** Idem para FX/toasts, mas sem escala de velocidade (duram o mesmo em 1x e 4x). */
+  private fxAccumulatorMs = 0;
+
+  // --- Press-and-hold ---
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Marca que a pressão virou tip, para o clique seguinte não construir. */
+  private longPressFired = false;
+  private pressOrigin: { x: number; y: number } | null = null;
+  /** Tile cujo tip está aberto, ou null. */
+  private tooltipGrid: { x: number; y: number } | null = null;
   private hasAwardedStars = false;
   private currentSavedMapId: MapId = 'MAP_1';
   private currentSavedChallengeMode: ChallengeMode = 'NORMAL';
+  /**
+   * Preferência do jogador para o Modo Infinito, independente do modo desafio.
+   * Sem isto, `initGame()` recriava o WaveManager a cada restart/troca de mapa
+   * e o infinito voltava a `false` — parecia que só existia no Morte Certa.
+   */
+  private currentSavedEndlessMode = false;
 
   constructor() {
     this.databaseManager = new DatabaseManager();
@@ -66,18 +127,21 @@ export class Game2D {
       this.audioManager.stopBGM();
     }
 
+    // Uma semente por partida, compartilhada por todos os managers.
+    this.runSeed = Date.now() >>> 0;
+    this.rng = new Rng(this.runSeed);
+
     this.analyticsManager = new AnalyticsManager();
     this.talentManager = new TalentManager(this.databaseManager);
     this.achievementManager = new AchievementManager(this.talentManager, this.databaseManager);
     this.gameState = new GameState(this.talentManager, this.currentSavedChallengeMode);
     this.gameState.setStatus('PLAYING');
-    this.waveManager = new WaveManager();
-    if (this.currentSavedChallengeMode === 'MORTE_CERTA') {
-      this.waveManager.isMorteCerta = true;
-      this.waveManager.setEndlessMode(true);
+    this.waveManager = new WaveManager(this.rng);
+    this.waveManager.isMorteCerta = this.currentSavedChallengeMode === 'MORTE_CERTA';
+    // Morte Certa é sempre infinito; nos demais modos vale a preferência salva do jogador.
+    this.waveManager.setEndlessMode(this.currentSavedEndlessMode || this.waveManager.isMorteCerta);
+    if (this.waveManager.isMorteCerta) {
       this.waveManager.setAutoMode(true);
-    } else {
-      this.waveManager.isMorteCerta = false;
     }
     this.mapManager = new MapManager2D(this.currentSavedMapId);
     this.fxManager = new FXManager();
@@ -101,7 +165,8 @@ export class Game2D {
       this.particleManager,
       this.talentManager,
       this.analyticsManager,
-      this.achievementManager
+      this.achievementManager,
+      this.rng
     );
     this.enemyManager = new EnemyManager2D(
       this.mapManager,
@@ -109,14 +174,23 @@ export class Game2D {
       this.waveManager,
       this.audioManager,
       this.analyticsManager,
-      this.achievementManager
+      this.achievementManager,
+      this.rng
     );
+
+    // Overgrowth Sprout: sorteia os tiles bonificados desta partida.
+    this.towerManager.sproutTiles = this.mapManager.pickSproutTiles(4, this.rng);
 
     if (this.uiManager) {
       this.uiManager.destroy();
     }
 
     this.hasAwardedStars = false;
+    // Managers foram recriados: descarta tempo acumulado da partida anterior.
+    this.simAccumulatorMs = 0;
+    this.fxAccumulatorMs = 0;
+    this.tooltipGrid = null;
+    this.longPressFired = false;
 
     this.uiManager = new UIManager(
       this.gameState,
@@ -139,6 +213,16 @@ export class Game2D {
   public changeChallengeMode(mode: ChallengeMode) {
     this.currentSavedChallengeMode = mode;
     this.initGame();
+  }
+
+  /**
+   * Liga/desliga o Modo Infinito na partida atual e persiste a preferência
+   * para sobreviver a restart/troca de mapa/troca de modo (exceto Morte
+   * Certa, que sempre força infinito independente disto).
+   */
+  public setEndlessMode(enabled: boolean) {
+    this.currentSavedEndlessMode = enabled;
+    this.waveManager.setEndlessMode(enabled || this.waveManager.isMorteCerta);
   }
 
   private restartGame() {
@@ -253,8 +337,64 @@ export class Game2D {
       { passive: true }
     );
 
+    // --- Press-and-hold: abre o tip do tile sem executar a ação ---
+    // Pointer Events unificam mouse, toque e caneta; a ação em si continua no
+    // click/touchend existente, e o flag longPressFired impede que a mesma
+    // pressão também construa ou selecione.
+    const cancelLongPress = () => {
+      if (this.longPressTimer !== null) {
+        clearTimeout(this.longPressTimer);
+        this.longPressTimer = null;
+      }
+      this.pressOrigin = null;
+    };
+
+    this.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (this.gameState.status !== 'PLAYING') return;
+      cancelLongPress();
+      this.tooltipGrid = null;
+      this.longPressFired = false;
+
+      const { x, y } = this.getCanvasMousePosition(e);
+      this.pressOrigin = { x, y };
+
+      this.longPressTimer = setTimeout(() => {
+        this.longPressTimer = null;
+        if (!this.pressOrigin) return;
+        this.longPressFired = true;
+        this.tooltipGrid = {
+          x: Math.floor(this.pressOrigin.x / this.mapManager.tileSize),
+          y: Math.floor(this.pressOrigin.y / this.mapManager.tileSize),
+        };
+      }, Game2D.LONG_PRESS_MS);
+    });
+
+    this.canvas.addEventListener('pointermove', (e: PointerEvent) => {
+      if (!this.pressOrigin) return;
+      const { x, y } = this.getCanvasMousePosition(e);
+      const moved = Math.hypot(x - this.pressOrigin.x, y - this.pressOrigin.y);
+      if (moved > Game2D.LONG_PRESS_MOVE_TOLERANCE) cancelLongPress();
+    });
+
+    const endPress = () => {
+      cancelLongPress();
+      this.tooltipGrid = null;
+    };
+    this.canvas.addEventListener('pointerup', endPress);
+    this.canvas.addEventListener('pointercancel', endPress);
+    this.canvas.addEventListener('pointerleave', endPress);
+
+    // Long-press no toque abriria o menu de contexto / lupa do sistema.
+    this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
     const handleTap = (e: MouseEvent | TouchEvent) => {
       if (this.gameState.status !== 'PLAYING' || this.gameState.isPaused) return;
+
+      // A pressão já foi consumida pelo tip: não constrói nem seleciona.
+      if (this.longPressFired) {
+        this.longPressFired = false;
+        return;
+      }
 
       // Prevent duplicate synthetic click event right after a touch event on UI or canvas
       if (e.type === 'click' && Date.now() - lastTouchTime < 400) {
@@ -267,7 +407,16 @@ export class Game2D {
 
       // Handle Meteor Spell Casting
       if (this.spellManager.activeSpell === 'METEOR') {
-        this.spellManager.castMeteorAt(x, y, this.enemyManager.getEnemies());
+        const casted = this.spellManager.castMeteorAt(x, y, this.enemyManager.getEnemies());
+        if (!casted) {
+          // castMeteorAt() só desarma a magia quando ela sai. Um lançamento
+          // impossível (sem ouro, em cooldown, modo sem magias) deixava METEOR
+          // armado e este return engolia TODO clique no canvas depois disso —
+          // o jogador não conseguia mais selecionar nem construir torre.
+          // Desarma e trata o clique como cancelamento, para não gastar ouro
+          // construindo onde ele estava mirando.
+          this.spellManager.selectSpell(null);
+        }
         return;
       }
 
@@ -333,6 +482,119 @@ export class Game2D {
     }
   }
 
+  /**
+   * Conteúdo do tip de um tile. Separado do desenho para poder ser testado sem
+   * canvas.
+   */
+  public getTileTipLines(gridX: number, gridY: number): { text: string; color: string }[] {
+    const linhas: { text: string; color: string }[] = [];
+    const tower = this.towerManager.getTowerAt(gridX, gridY);
+    const isSprout = this.towerManager.isSproutTile(gridX, gridY);
+
+    if (tower) {
+      const spec = tower.data.specialization
+        ? getSpecializationOption(tower.data.specialization)
+        : undefined;
+      linhas.push({
+        text: spec
+          ? `${tower.data.type} · ${spec.icon} ${spec.name}`
+          : `${tower.data.type} — Nível ${tower.data.level}`,
+        color: '#ffffff',
+      });
+      if (spec) linhas.push({ text: spec.description, color: '#b0bec5' });
+      linhas.push({
+        text: `⚔️ ${tower.data.damage}   📏 ${tower.data.range}   ❤️ ${tower.data.hp}/${tower.data.maxHp}`,
+        color: '#eceff1',
+      });
+      if (tower.data.onSproutTile) {
+        linhas.push({ text: '🌱 Broto: +25% alcance · cadência 2x', color: '#aed581' });
+      }
+      return linhas;
+    }
+
+    if (isSprout) {
+      linhas.push({ text: '🌱 Broto de Vegetação', color: '#c5e1a5' });
+      linhas.push({ text: 'Torre construída aqui recebe:', color: '#b0bec5' });
+      linhas.push({ text: '+25% de alcance', color: '#aed581' });
+      linhas.push({ text: 'Cadência de tiro dobrada', color: '#aed581' });
+    } else if (this.mapManager.isBuildable(gridX, gridY)) {
+      linhas.push({ text: 'Terreno livre', color: '#ffffff' });
+    } else {
+      linhas.push({ text: 'Não construível', color: '#ff8a80' });
+      linhas.push({ text: 'Caminho ou obstáculo', color: '#b0bec5' });
+      return linhas;
+    }
+
+    const tipo = this.towerManager.selectedBuildType;
+    const custo = this.towerManager.getTowerCost(tipo);
+    const podePagar = this.gameState.gold >= custo;
+    linhas.push({
+      text: `Construir ${tipo}: ${custo}g`,
+      color: podePagar ? '#ffe082' : '#ff8a80',
+    });
+
+    return linhas;
+  }
+
+  /** Tip aberto por press-and-hold, desenhado junto ao tile pressionado. */
+  private renderTileTooltip() {
+    if (!this.tooltipGrid) return;
+
+    const { x: gx, y: gy } = this.tooltipGrid;
+    if (gx < 0 || gx >= this.mapManager.cols || gy < 0 || gy >= this.mapManager.rows) return;
+
+    const linhas = this.getTileTipLines(gx, gy);
+    if (linhas.length === 0) return;
+
+    const ctx = this.ctx;
+    ctx.save();
+
+    const padding = 9;
+    const lineHeight = 15;
+    const titleFont = 'bold 12px Arial';
+    const bodyFont = '11px Arial';
+
+    let largura = 0;
+    linhas.forEach((linha, i) => {
+      ctx.font = i === 0 ? titleFont : bodyFont;
+      largura = Math.max(largura, ctx.measureText(linha.text).width);
+    });
+
+    const boxW = largura + padding * 2;
+    const boxH = linhas.length * lineHeight + padding * 2 - 3;
+    const tile = this.mapManager.tileSize;
+
+    // Acima do tile por padrão; abaixo se não couber. Sempre dentro do canvas.
+    let boxX = gx * tile + tile / 2 - boxW / 2;
+    let boxY = gy * tile - boxH - 8;
+    if (boxY < 4) boxY = gy * tile + tile + 8;
+    boxX = Math.max(4, Math.min(this.canvas.width - boxW - 4, boxX));
+    boxY = Math.max(4, Math.min(this.canvas.height - boxH - 4, boxY));
+
+    // Realce do tile sob pressão
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(gx * tile + 1, gy * tile + 1, tile - 2, tile - 2);
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(12, 16, 20, 0.94)';
+    ctx.fillRect(boxX, boxY, boxW, boxH);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    linhas.forEach((linha, i) => {
+      ctx.font = i === 0 ? titleFont : bodyFont;
+      ctx.fillStyle = linha.color;
+      ctx.fillText(linha.text, boxX + padding, boxY + padding + 10 + i * lineHeight);
+    });
+
+    ctx.restore();
+  }
+
   private renderPauseOverlay() {
     if (!this.gameState.isPaused) return;
 
@@ -351,6 +613,46 @@ export class Game2D {
     this.ctx.restore();
   }
 
+  /**
+   * Um passo de simulação de duração fixa. Tudo que afeta o estado do jogo
+   * (ondas, inimigos, torres, projéteis, magias, partículas) roda aqui.
+   * Retorna `false` quando a partida terminou e o loop deve parar de avançar.
+   */
+  private stepSimulation(stepMs: number): boolean {
+    this.waveManager.updateAutoCountdown(stepMs);
+    this.enemyManager.update(stepMs, this.towerManager.getTowers());
+    this.towerManager.update(this.enemyManager.getEnemies(), this.fxManager);
+    this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
+    this.spellManager.update(stepMs);
+    this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
+
+    // Check Endless Survivor Achievement
+    if (this.waveManager.isEndlessMode) {
+      this.achievementManager.setProgress('ENDLESS_SURVIVOR', this.waveManager.currentWaveIndex + 1);
+    }
+
+    if (this.gameState.status !== 'PLAYING') return false;
+
+    // Check Victory
+    if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
+      this.gameState.setStatus('VICTORY');
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Passo de apresentação: texto flutuante, screen-shake, toasts e animação do
+   * mega boss. Roda em tempo real e NÃO é escalado pela velocidade do jogo, para
+   * que um toast dure os mesmos segundos em 1x e em 4x.
+   */
+  private stepPresentation(stepMs: number) {
+    this.fxManager.update();
+    this.achievementManager.update();
+    MegaBossSpriteRenderer.getInstance().update(stepMs);
+  }
+
   public run() {
     this.lastTime = performance.now();
 
@@ -358,7 +660,12 @@ export class Game2D {
       const rawDelta = currentTime - this.lastTime;
       this.lastTime = currentTime;
 
-      const deltaTimeMs = rawDelta;
+      const frameMs = Math.min(Math.max(0, rawDelta), Game2D.MAX_FRAME_MS);
+      // Teto de passos por frame: válvula de segurança para um frame patológico
+      // não travar o requestAnimationFrame tentando recuperar o atraso todo.
+      // O "+1" cobre o resto acumulado, então um frame já clampado sempre é
+      // drenado por inteiro e o teto nunca limita jogo normal.
+      const maxStepsPerFrame = Math.ceil(Game2D.MAX_FRAME_MS / Game2D.FIXED_STEP_MS) + 1;
 
       // Determine BGM track: BOSS vs MAP-SPECIFIC TRACK
       const enemies = this.enemyManager.getEnemies();
@@ -384,31 +691,28 @@ export class Game2D {
 
       // 1. Update logic (only if active and NOT paused)
       if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
-        const steps = Math.max(1, Math.min(4, this.gameSpeedMultiplier));
-        for (let step = 0; step < steps; step++) {
-          if (this.gameState.status !== 'PLAYING') break;
+        // A velocidade (1x/2x/4x) não escala o delta: ela faz o acumulador
+        // encher N vezes mais rápido, logo N vezes mais passos fixos por frame.
+        const speed = Math.max(1, Math.min(4, this.gameSpeedMultiplier));
+        this.simAccumulatorMs += frameMs * speed;
 
-          this.waveManager.updateAutoCountdown(deltaTimeMs);
-          this.enemyManager.update(deltaTimeMs, this.towerManager.getTowers());
-          this.towerManager.update(this.enemyManager.getEnemies());
-          this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
-          this.spellManager.update(deltaTimeMs);
-          this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
-
-          // Check Endless Survivor Achievement
-          if (this.waveManager.isEndlessMode) {
-            this.achievementManager.setProgress('ENDLESS_SURVIVOR', activeWaveNum);
-          }
-
-          // Check Victory
-          if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
-            this.gameState.setStatus('VICTORY');
-            break;
-          }
+        let simBudget = maxStepsPerFrame * speed;
+        while (this.simAccumulatorMs >= Game2D.FIXED_STEP_MS && simBudget > 0) {
+          this.simAccumulatorMs -= Game2D.FIXED_STEP_MS;
+          simBudget--;
+          if (!this.stepSimulation(Game2D.FIXED_STEP_MS)) break;
         }
+        // Estourou o teto: descarta o atraso em vez de acumular dívida.
+        if (simBudget <= 0) this.simAccumulatorMs = 0;
 
-        this.achievementManager.update();
-        this.fxManager.update();
+        this.fxAccumulatorMs += frameMs;
+        let fxBudget = maxStepsPerFrame;
+        while (this.fxAccumulatorMs >= Game2D.FIXED_STEP_MS && fxBudget > 0) {
+          this.fxAccumulatorMs -= Game2D.FIXED_STEP_MS;
+          fxBudget--;
+          this.stepPresentation(Game2D.FIXED_STEP_MS);
+        }
+        if (fxBudget <= 0) this.fxAccumulatorMs = 0;
       }
 
       // Award Stars & High Score Check on Match End
@@ -451,6 +755,7 @@ export class Game2D {
       this.ctx.translate(shake.x, shake.y);
 
       this.mapManager.render(this.ctx);
+      this.towerManager.renderSproutTiles(this.ctx, this.mapManager.tileSize);
       this.particleManager.render(this.ctx);
       this.renderGhostPlacement();
       this.towerManager.render(this.ctx, this.mousePos);
@@ -461,6 +766,8 @@ export class Game2D {
 
       this.renderAchievementToasts();
       this.renderPauseOverlay();
+      // Depois do overlay de pause: inspecionar tile com o jogo pausado é útil.
+      this.renderTileTooltip();
 
       this.ctx.restore();
 

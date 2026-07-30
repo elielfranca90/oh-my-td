@@ -14,6 +14,11 @@ export class Projectile2D {
   public slowFactor?: number;
   public isCrit?: boolean;
   public towerType?: TowerType;
+  /**
+   * Se o disparo sofre o armorFactor do alvo. Antes era inferido da cor do
+   * projétil, acoplamento que quebraria ao dar cor própria a uma especialização.
+   */
+  public isLightShot: boolean;
 
   constructor(
     startPos: Vector2D,
@@ -25,8 +30,10 @@ export class Projectile2D {
     splashRadius?: number,
     slowFactor?: number,
     isCrit?: boolean,
-    towerType?: TowerType
+    towerType?: TowerType,
+    isLightShot = false
   ) {
+    this.isLightShot = isLightShot;
     this.position = { ...startPos };
     this.target = target;
     this.damage = damage;
@@ -48,7 +55,7 @@ export class Projectile2D {
 
     if (distance < this.speed) {
       const targetEnemy = allEnemies.find(e => e.data === this.target);
-      const isLightShot = this.color === '#ffeb3b' || this.color === '#ffea00';
+      const isLightShot = this.isLightShot;
 
       // 1. AoE Splash Damage (Artillery)
       if (this.splashRadius && this.splashRadius > 0) {

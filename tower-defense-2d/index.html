@@ -43,6 +43,12 @@
         max-height: 100vh;
         object-fit: contain;
         box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+        /* O press-and-hold do tip de tile nao pode disparar as reacoes nativas
+           de toque: lupa/callout do iOS, selecao de texto e scroll/zoom. */
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
       }
 
       /* UI OVERLAY CONTAINER (Fullscreen, pointer-events: none) */
@@ -466,6 +472,117 @@
         opacity: 0.5;
         cursor: not-allowed;
         transform: none !important;
+      }
+
+      /* TOWER SPECIALIZATION CHOICE (level 2 -> 3) */
+      .spec-choice {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-top: 6px;
+        padding: 7px 9px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 235, 59, 0.35);
+      }
+
+      .spec-choice-label {
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #ffe082;
+      }
+
+      .spec-choice-options {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .spec-btn {
+        flex: 1 1 150px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        text-align: left;
+        padding: 6px 8px;
+        border-radius: 7px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: linear-gradient(135deg, #263238, #37474f);
+        color: #eceff1;
+        cursor: pointer;
+        transition: transform 120ms ease-out, border-color 120ms ease;
+      }
+
+      .spec-btn:hover:not(:disabled) {
+        transform: translateY(-1px);
+        border-color: #ffeb3b;
+      }
+
+      .spec-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .spec-btn-title {
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .spec-btn-desc {
+        font-size: 0.62rem;
+        font-weight: 500;
+        line-height: 1.25;
+        color: #b0bec5;
+      }
+
+      /* WAVE COMPOSITION PREVIEW */
+      .wave-preview {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+        max-width: 260px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .wave-preview.danger {
+        border-color: rgba(255, 23, 68, 0.65);
+        background: rgba(70, 0, 0, 0.45);
+      }
+
+      .wave-preview-title {
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #b0bec5;
+        margin-right: 2px;
+      }
+
+      .wave-preview.danger .wave-preview-title { color: #ff8a80; }
+
+      .wave-preview-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        line-height: 1;
+        padding: 3px 5px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.09);
+        color: #eceff1;
+        white-space: nowrap;
+      }
+
+      .wave-preview-chip.boss {
+        background: rgba(255, 23, 68, 0.22);
+        color: #ff8a80;
       }
 
       /* BUTTON UTILITIES */

@@ -7,6 +7,21 @@ export interface UserProfile {
   avatarId: string;
 }
 
+/** Perfil como fica guardado no localStorage (fonte da verdade, igual estrelas/talentos). */
+export interface LocalProfile {
+  username: string;
+  avatarId: string;
+}
+
+export interface ProfileSyncResult {
+  /** Perfil efetivo a exibir, ou null se o jogador ainda nao tem nenhum. */
+  profile: LocalProfile | null;
+  /** false quando nao foi possivel ler o remoto (offline, sem auth ou erro de rede). */
+  remoteOk: boolean;
+  /** true quando o local esta a frente do remoto e aguarda envio. */
+  pending: boolean;
+}
+
 export interface LeaderboardEntry {
   username: string;
   avatar_id: string;
@@ -33,6 +48,7 @@ export interface PendingSyncQueue {
   };
   achievements?: Record<string, { progress: number; unlocked: boolean }>;
   pendingRuns?: PendingRun[];
+  profile?: LocalProfile;
 }
 
 /**
@@ -43,9 +59,12 @@ export class DatabaseManager {
   public client: SupabaseClient | null = null;
   private userId: string | null = null;
   private readonly QUEUE_KEY = 'td2d_sync_queue_v1';
+  private readonly PROFILE_KEY = 'td2d_profile_v1';
   private isSyncing = false;
   private authDisabled = false;
   private syncPromise: Promise<void> | null = null;
+  /** Login em voo, compartilhado por todos os chamadores concorrentes de ensureAuth(). */
+  private authPromise: Promise<string | null> | null = null;
   constructor() {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -76,11 +95,26 @@ export class DatabaseManager {
   }
 
   /**
-   * Ensures the user is authenticated (silently via anonymous auth if needed).
+   * Garante que o usuario esta autenticado (via login anonimo silencioso se preciso).
+   *
+   * Chamadas concorrentes compartilham o MESMO login em voo. Sem isso, cada chamador
+   * que chegasse antes de `userId` ser preenchido disparava seu proprio
+   * signInAnonymously(), criando N usuarios anonimos por carregamento — e o ultimo a
+   * resolver sobrescrevia a identidade, fazendo o jogador perder o perfil salvo.
    */
   public async ensureAuth(): Promise<string | null> {
     if (!this.client || this.authDisabled) return null;
     if (this.userId) return this.userId;
+    if (this.authPromise) return this.authPromise;
+
+    this.authPromise = this.performAuth().finally(() => {
+      this.authPromise = null;
+    });
+    return this.authPromise;
+  }
+
+  private async performAuth(): Promise<string | null> {
+    if (!this.client) return null;
 
     try {
       const { data: sessionData } = await this.client.auth.getSession();
@@ -127,72 +161,180 @@ export class DatabaseManager {
     return this.userId;
   }
 
-  /**
-   * Fetches user profile from Supabase.
-   */
-  public async getProfile(): Promise<UserProfile | null> {
-    if (!this.client) return null;
-    const uid = await this.ensureAuth();
-    if (!uid) return null;
-
+  /** Le o perfil guardado no localStorage. */
+  public loadLocalProfile(): LocalProfile | null {
     try {
-      const { data, error } = await this.client
-        .from('profiles')
-        .select('id, username, avatar_id')
-        .eq('id', uid)
-        .single();
-
-      if (error) throw error;
-      if (data) {
-        return {
-          id: data.id,
-          username: data.username,
-          avatarId: data.avatar_id,
-        };
+      const raw = localStorage.getItem(this.PROFILE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<LocalProfile>;
+        if (typeof parsed?.username === 'string' && parsed.username.length > 0) {
+          return {
+            username: parsed.username,
+            avatarId: parsed.avatarId || 'default_avatar',
+          };
+        }
       }
-    } catch (err) {
-      console.warn('[DatabaseManager] Failed to fetch profile:', err);
+    } catch {
+      // Ignore
     }
     return null;
   }
 
+  private saveLocalProfile(username: string, avatarId: string): void {
+    try {
+      localStorage.setItem(this.PROFILE_KEY, JSON.stringify({ username, avatarId }));
+    } catch {
+      // Ignore
+    }
+  }
+
   /**
-   * Updates user profile in Supabase.
+   * Le o perfil remoto. `ok` distingue "nao existe perfil" (ok=true, profile=null)
+   * de "nao consegui ler" (ok=false), para a UI poder dar o retorno correto.
+   */
+  private async fetchRemoteProfile(): Promise<{ ok: boolean; profile: UserProfile | null }> {
+    if (!this.client) return { ok: false, profile: null };
+    const uid = await this.ensureAuth();
+    if (!uid) return { ok: false, profile: null };
+
+    try {
+      // maybeSingle: zero linhas e ausencia de perfil, nao erro.
+      const { data, error } = await this.client
+        .from('profiles')
+        .select('id, username, avatar_id')
+        .eq('id', uid)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return { ok: true, profile: null };
+
+      return {
+        ok: true,
+        profile: {
+          id: data.id,
+          username: data.username,
+          avatarId: data.avatar_id,
+        },
+      };
+    } catch (err) {
+      console.warn('[DatabaseManager] Failed to fetch profile:', err);
+      return { ok: false, profile: null };
+    }
+  }
+
+  /**
+   * Fetches user profile from Supabase.
+   */
+  public async getProfile(): Promise<UserProfile | null> {
+    const { profile } = await this.fetchRemoteProfile();
+    return profile;
+  }
+
+  /**
+   * Reconcilia local e remoto: o local vence quando existe (local-first); se nao existe,
+   * adota o remoto. Divergencia com o local a frente e reenfileirada para envio —
+   * mesma semantica do merge de talentos/conquistas.
+   */
+  public async syncProfileWithRemote(): Promise<ProfileSyncResult> {
+    const local = this.loadLocalProfile();
+
+    if (!this.client) {
+      return { profile: local, remoteOk: false, pending: !!local };
+    }
+
+    const { ok, profile: remote } = await this.fetchRemoteProfile();
+
+    if (!local) {
+      if (ok && remote) {
+        this.saveLocalProfile(remote.username, remote.avatarId);
+        return {
+          profile: { username: remote.username, avatarId: remote.avatarId },
+          remoteOk: true,
+          pending: false,
+        };
+      }
+      return { profile: null, remoteOk: ok, pending: false };
+    }
+
+    const diverged =
+      !ok || !remote || remote.username !== local.username || remote.avatarId !== local.avatarId;
+
+    if (diverged) {
+      this.queueProfileSync(local.username, local.avatarId);
+    }
+
+    return { profile: local, remoteOk: ok, pending: diverged };
+  }
+
+  /**
+   * Salva o perfil localmente (fonte da verdade) e propaga para o Supabase.
+   *
+   * Colisao de nome e rejeitada sem gravar local, porque o nome nunca sera aceito.
+   * Qualquer outra falha mantem o local e enfileira o envio (`pending`).
    */
   public async updateProfile(
     username: string,
     avatarId: string
-  ): Promise<{ success: boolean; error?: string }> {
-    if (!this.client) {
-      return { success: false, error: 'Database disconnected (offline mode)' };
+  ): Promise<{ success: boolean; error?: string; pending?: boolean }> {
+    const uid = this.client ? await this.ensureAuth() : null;
+
+    if (!uid) {
+      this.saveLocalProfile(username, avatarId);
+      this.queueProfileSync(username, avatarId);
+      return { success: true, pending: true };
     }
 
-    const uid = await this.ensureAuth();
-    if (!uid) {
-      return { success: false, error: 'User not authenticated' };
+    const res = await this.pushProfileRemote(uid, username, avatarId);
+    if (res.taken) {
+      return { success: false, error: 'Este nome de usuário já está em uso.' };
     }
+
+    this.saveLocalProfile(username, avatarId);
+    if (!res.ok) {
+      this.queueProfileSync(username, avatarId);
+      return { success: true, pending: true };
+    }
+    return { success: true };
+  }
+
+  /**
+   * Envia o perfil ao Supabase. Usa upsert: com `update` puro, uma linha inexistente
+   * casava 0 registros SEM retornar erro, e a UI comemorava um salvamento que nao houve.
+   */
+  private async pushProfileRemote(
+    uid: string,
+    username: string,
+    avatarId: string
+  ): Promise<{ ok: boolean; taken?: boolean; message?: string }> {
+    if (!this.client) return { ok: false };
 
     try {
-      const { error } = await this.client
-        .from('profiles')
-        .update({
-          username,
-          avatar_id: avatarId,
-        })
-        .eq('id', uid);
+      const { error } = await this.client.from('profiles').upsert({
+        id: uid,
+        username,
+        avatar_id: avatarId,
+      });
 
       if (error) {
-        if (error.code === '23505') {
-          return { success: false, error: 'Este nome de usuário já está em uso.' };
-        }
-        return { success: false, error: error.message };
+        // 23505 = unique_violation (profiles.username e UNIQUE no schema)
+        if (error.code === '23505') return { ok: false, taken: true };
+        return { ok: false, message: error.message };
       }
-
-      return { success: true };
+      return { ok: true };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro ao atualizar perfil';
-      return { success: false, error: message };
+      return { ok: false, message };
     }
+  }
+
+  /**
+   * Enqueues the profile for background sync.
+   */
+  public queueProfileSync(username: string, avatarId: string): void {
+    const queue = this.loadQueue();
+    queue.profile = { username, avatarId };
+    this.saveQueue(queue);
+    this.flushSyncQueue();
   }
 
   /**
@@ -342,9 +484,30 @@ export class DatabaseManager {
         let hasMoreToSync = true;
         while (hasMoreToSync) {
           const queue = this.loadQueue();
+          let syncedProfile = false;
           let syncedPlayerState = false;
           const syncedAchievements: string[] = [];
           let syncedRunCount = 0;
+
+          // 0. Sync Profile — antes do resto: player_state e runs referenciam profiles.id
+          if (queue.profile) {
+            const res = await this.pushProfileRemote(
+              uid,
+              queue.profile.username,
+              queue.profile.avatarId
+            );
+            if (res.ok) {
+              syncedProfile = true;
+            } else if (res.taken) {
+              // Nome pertence a outro jogador: descarta da fila para nao repetir para sempre.
+              syncedProfile = true;
+              console.warn(
+                '[DatabaseManager] Profile sync descartado: nome já em uso por outro jogador.'
+              );
+            } else {
+              console.warn('[DatabaseManager] Profile sync failed:', res.message);
+            }
+          }
 
           // 1. Sync Player State
           if (queue.playerState) {
@@ -404,13 +567,20 @@ export class DatabaseManager {
             }
           }
 
-          const didSyncAnything = syncedPlayerState || syncedAchievements.length > 0 || syncedRunCount > 0;
+          const didSyncAnything =
+            syncedProfile || syncedPlayerState || syncedAchievements.length > 0 || syncedRunCount > 0;
           if (didSyncAnything) {
-            this.updateQueueAfterSync(syncedPlayerState, syncedAchievements, syncedRunCount);
+            this.updateQueueAfterSync(
+              syncedProfile,
+              syncedPlayerState,
+              syncedAchievements,
+              syncedRunCount
+            );
           }
 
           const recheckQueue = this.loadQueue();
           const hasRemainingItems =
+            !!recheckQueue.profile ||
             !!recheckQueue.playerState ||
             !!(recheckQueue.achievements && Object.keys(recheckQueue.achievements).length > 0) ||
             !!(recheckQueue.pendingRuns && recheckQueue.pendingRuns.length > 0);
@@ -430,8 +600,17 @@ export class DatabaseManager {
     return this.syncPromise;
   }
 
-  private updateQueueAfterSync(syncedPlayerState: boolean, syncedAchievements: string[], syncedRunCount: number): void {
+  private updateQueueAfterSync(
+    syncedProfile: boolean,
+    syncedPlayerState: boolean,
+    syncedAchievements: string[],
+    syncedRunCount: number
+  ): void {
     const currentQueue = this.loadQueue();
+
+    if (syncedProfile) {
+      delete currentQueue.profile;
+    }
 
     if (syncedPlayerState) {
       delete currentQueue.playerState;
@@ -470,11 +649,12 @@ export class DatabaseManager {
 
   private saveQueue(queue: PendingSyncQueue): void {
     try {
+      const hasProfile = !!queue.profile;
       const hasPlayerState = !!queue.playerState;
       const hasAchievements = !!(queue.achievements && Object.keys(queue.achievements).length > 0);
       const hasRuns = !!(queue.pendingRuns && queue.pendingRuns.length > 0);
 
-      if (!hasPlayerState && !hasAchievements && !hasRuns) {
+      if (!hasProfile && !hasPlayerState && !hasAchievements && !hasRuns) {
         localStorage.removeItem(this.QUEUE_KEY);
       } else {
         localStorage.setItem(this.QUEUE_KEY, JSON.stringify(queue));

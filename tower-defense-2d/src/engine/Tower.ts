@@ -1,6 +1,13 @@
+import { getSpecializationOption, isValidSpecialization } from './Specializations';
 import { SpriteManager } from './SpriteManager';
 import { TalentManager } from './TalentManager';
-import type { ITower2D, TargetingStrategy, TowerType, Vector2D } from '../types';
+import type {
+  ITower2D,
+  TargetingStrategy,
+  TowerSpecialization,
+  TowerType,
+  Vector2D,
+} from '../types';
 
 export class Tower2D {
   public data: ITower2D;
@@ -69,8 +76,19 @@ export class Tower2D {
     return Math.floor(totalInvested * 0.7);
   }
 
-  public upgrade(): boolean {
+  /**
+   * Sobe um nível. O salto de 2 para 3 exige a escolha de uma especialização
+   * válida para o tipo — é onde a torre deixa de ser genérica.
+   */
+  public upgrade(specialization?: TowerSpecialization): boolean {
     if (this.data.level >= 3 || this.data.isDestroyed) return false;
+
+    const isSpecializing = this.data.level === 2;
+    if (isSpecializing) {
+      if (!specialization) return false;
+      if (!isValidSpecialization(this.data.type, specialization)) return false;
+    }
+
     this.data.level++;
     this.data.damage = Math.floor(this.data.damage * 1.5);
     this.data.range = Math.floor(this.data.range * 1.15);
@@ -79,7 +97,46 @@ export class Tower2D {
     if (this.data.splashRadius) {
       this.data.splashRadius = Math.floor(this.data.splashRadius * 1.1);
     }
+
+    if (isSpecializing && specialization) {
+      this.data.specialization = specialization;
+      this.applySpecializationStats(specialization);
+    }
     return true;
+  }
+
+  /**
+   * Efeitos de especialização que são puro atributo. Os que mudam a forma de
+   * atirar (MULTISHOT, PIERCING, EXECUTIONER, DEEP_FREEZE, CHAIN_BEAM...) ficam
+   * no TowerManager, onde o disparo é resolvido.
+   */
+  private applySpecializationStats(spec: TowerSpecialization) {
+    switch (spec) {
+      case 'SIEGE':
+        this.data.range = Math.floor(this.data.range * 1.4);
+        break;
+      case 'NAPALM':
+        this.data.splashRadius = Math.floor((this.data.splashRadius || 50) * 1.8);
+        break;
+      case 'SHRAPNEL':
+        // Canhão não tinha área nenhuma; ganha um estouro modesto.
+        this.data.splashRadius = 34;
+        break;
+      case 'PERMAFROST':
+        this.data.slowFactor = 0.25;
+        break;
+      case 'DEEP_FREEZE':
+        // Congelar a cada pulso normal seria travar tudo para sempre: o pulso
+        // fica bem mais lento em troca do controle.
+        this.data.fireRate = Math.round(this.data.fireRate * 3);
+        break;
+      case 'MULTISHOT':
+        // O segundo alvo já é meio disparo extra; compensa no dano por tiro.
+        this.data.damage = Math.max(1, Math.round(this.data.damage * 0.8));
+        break;
+      default:
+        break;
+    }
   }
 
   public takeDamage(amount: number): boolean {
@@ -165,6 +222,13 @@ export class Tower2D {
     ctx.lineWidth = isSelected ? 3 : 1.5;
     ctx.strokeRect(this.data.position.x - half, this.data.position.y - half, this.size, this.size);
 
+    // Marca de torre erguida em tile Overgrowth Sprout (+25% alcance, metade do cooldown)
+    if (this.data.onSproutTile) {
+      ctx.strokeStyle = '#8bc34a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(this.data.position.x - half + 3, this.data.position.y - half + 3, this.size - 6, this.size - 6);
+    }
+
     // Core icon / shape
     const drawn = SpriteManager.getInstance().drawSpriteAsset(
       ctx,
@@ -184,6 +248,16 @@ export class Tower2D {
       if (this.data.type === 'ARTILLERY') coreColor = '#e1bee7';
       ctx.fillStyle = coreColor;
       ctx.fill();
+    }
+
+    // Ícone da especialização: identifica de relance o papel da torre no tabuleiro
+    if (this.data.specialization) {
+      const option = getSpecializationOption(this.data.specialization);
+      if (option) {
+        ctx.font = '11px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(option.icon, this.data.position.x + half - 7, this.data.position.y - half + 12);
+      }
     }
 
     // Level indicator dots

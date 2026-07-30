@@ -114,3 +114,8 @@ dist-ssr/
 *.sw?
 .DS_Store
 Thumbs.db
+
+# AI and Agent Context Files
+CLAUDE.md
+.cursorrules
+AGENTS.md

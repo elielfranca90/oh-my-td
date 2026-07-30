@@ -119,6 +119,40 @@ export class ParticleManager {
     }
   }
 
+  /**
+   * Pulso Glacial da torre FROST. O dano em área já era aplicado, mas sem
+   * nenhum visual: como essa torre não dispara projétil algum, o jogador via
+   * uma torre parada e concluía que estava quebrada.
+   */
+  public triggerFrostPulse(x: number, y: number, radius: number) {
+    // Anel que se expande até o alcance real da torre (nível + tile Sprout).
+    this.shockwaves.push({
+      x,
+      y,
+      radius: 5,
+      maxRadius: radius,
+      alpha: 0.9,
+      color: '#80deea',
+    });
+
+    // Estilhaços de gelo, reaproveitando as partículas de brasa.
+    const shardColors = ['#e0f7fa', '#80deea', '#00b8d4'];
+    for (let i = 0; i < 10; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 3 + 1.5;
+      this.embers.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: Math.random() * 2.5 + 1,
+        alpha: 1.0,
+        color: shardColors[Math.floor(Math.random() * shardColors.length)],
+        life: Math.floor(Math.random() * 10 + 12),
+      });
+    }
+  }
+
   public triggerFreezeEffect() {
     this.freezeOverlayAlpha = 0.45;
   }
@@ -242,11 +276,13 @@ export class ParticleManager {
     }
 
     // Render Shockwave Rings
+    // O laranja era fixo aqui e ignorava s.color, então todo anel saía igual.
     for (const s of this.shockwaves) {
       ctx.save();
+      ctx.globalAlpha = Math.max(0, s.alpha);
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255, 109, 0, ${s.alpha})`;
+      ctx.strokeStyle = s.color;
       ctx.lineWidth = 4;
       ctx.stroke();
       ctx.restore();
