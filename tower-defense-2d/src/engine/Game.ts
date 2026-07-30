@@ -97,6 +97,12 @@ export class Game2D {
   private hasAwardedStars = false;
   private currentSavedMapId: MapId = 'MAP_1';
   private currentSavedChallengeMode: ChallengeMode = 'NORMAL';
+  /**
+   * Preferência do jogador para o Modo Infinito, independente do modo desafio.
+   * Sem isto, `initGame()` recriava o WaveManager a cada restart/troca de mapa
+   * e o infinito voltava a `false` — parecia que só existia no Morte Certa.
+   */
+  private currentSavedEndlessMode = false;
 
   constructor() {
     this.databaseManager = new DatabaseManager();
@@ -131,12 +137,11 @@ export class Game2D {
     this.gameState = new GameState(this.talentManager, this.currentSavedChallengeMode);
     this.gameState.setStatus('PLAYING');
     this.waveManager = new WaveManager(this.rng);
-    if (this.currentSavedChallengeMode === 'MORTE_CERTA') {
-      this.waveManager.isMorteCerta = true;
-      this.waveManager.setEndlessMode(true);
+    this.waveManager.isMorteCerta = this.currentSavedChallengeMode === 'MORTE_CERTA';
+    // Morte Certa é sempre infinito; nos demais modos vale a preferência salva do jogador.
+    this.waveManager.setEndlessMode(this.currentSavedEndlessMode || this.waveManager.isMorteCerta);
+    if (this.waveManager.isMorteCerta) {
       this.waveManager.setAutoMode(true);
-    } else {
-      this.waveManager.isMorteCerta = false;
     }
     this.mapManager = new MapManager2D(this.currentSavedMapId);
     this.fxManager = new FXManager();
@@ -208,6 +213,16 @@ export class Game2D {
   public changeChallengeMode(mode: ChallengeMode) {
     this.currentSavedChallengeMode = mode;
     this.initGame();
+  }
+
+  /**
+   * Liga/desliga o Modo Infinito na partida atual e persiste a preferência
+   * para sobreviver a restart/troca de mapa/troca de modo (exceto Morte
+   * Certa, que sempre força infinito independente disto).
+   */
+  public setEndlessMode(enabled: boolean) {
+    this.currentSavedEndlessMode = enabled;
+    this.waveManager.setEndlessMode(enabled || this.waveManager.isMorteCerta);
   }
 
   private restartGame() {

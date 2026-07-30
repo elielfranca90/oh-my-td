@@ -108,7 +108,7 @@ export class UIManager {
             </div>
             <div class="hud-stat-badge wave" title="Onda Atual">
               <span class="icon">🌊</span>
-              <span class="wave-title hud-label-text">WAVE</span>
+              <span class="wave-title hud-label-text">ONDA</span>
               <strong id="hud-wave-val">0/10</strong>
               <span id="hud-boss-badge" class="boss-badge hidden">⚠️ BOSS</span>
             </div>
@@ -356,6 +356,21 @@ export class UIManager {
               <div class="changelog-item latest">
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v2.3</strong>
+                  <span class="changelog-title">Especializações de Torres & Efeito Glacial</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Especialização Nível 3:</strong> Escolha entre 2 rotas exclusivas de upgrade para cada classe de torre no nível 3.</li>
+                  <li><strong>Pulso Glacial Visual:</strong> Onda de choque visível na Torre de Gelo indicando desaceleração de área.</li>
+                  <li><strong>Preview de Ondas:</strong> Visualização da composição da próxima horda diretamente na HUD.</li>
+                  <li><strong>Modo Infinito Inteligente:</strong> Hordas estruturadas por arquétipos e salvamento automático da preferência do jogador.</li>
+                  <li><strong>Dicas de Terreno:</strong> Toque longo ou hover em tiles especiais (como o Broto) para visualizar bônus de terreno.</li>
+                  <li><strong>Novos Inimigos:</strong> Inimigo com Escudo e Espectro ativados com suporte a conquistas.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
+                  <span class="badge-tag new">NOVO</span>
                   <strong class="version-tag">v2.2</strong>
                   <span class="changelog-title">Árvore de Talentos & Novas Conquistas</span>
                 </div>
@@ -459,7 +474,8 @@ export class UIManager {
 
         <!-- END GAME ANALYTICS MODAL -->
         <div id="modal-overlay" class="modal-overlay hidden pointer-events-auto">
-          <div class="modal-card analytics-modal">
+          <div class="modal-card analytics-modal" style="position: relative;">
+            <button id="endgame-close-btn" class="close-icon-btn" title="Encerrar" style="position: absolute; top: 16px; right: 16px;">✖</button>
             <h1 id="modal-title">Game Over</h1>
             <p id="modal-desc">Sua base foi destruída!</p>
             <div id="analytics-details" class="analytics-details">
@@ -640,6 +656,10 @@ export class UIManager {
     document.getElementById('endgame-leaderboard-btn')?.addEventListener('click', () => {
       this.openLeaderboardModal();
     });
+    document.getElementById('endgame-close-btn')?.addEventListener('click', () => {
+      this.overlayEl.classList.add('hidden');
+      this.onRestartCallback();
+    });
     document.getElementById('close-leaderboard-btn')?.addEventListener('click', () => {
       this.dismissModal();
     });
@@ -698,7 +718,7 @@ export class UIManager {
     if (endlessToggle) {
       endlessToggle.checked = this.waveManager.isEndlessMode;
       endlessToggle.addEventListener('change', (e) => {
-        this.waveManager.setEndlessMode((e.target as HTMLInputElement).checked);
+        this.game.setEndlessMode((e.target as HTMLInputElement).checked);
       });
     }
 
@@ -1092,6 +1112,14 @@ export class UIManager {
 
     const challengeSelect = document.getElementById('settings-challenge-select') as HTMLSelectElement;
     if (challengeSelect) challengeSelect.value = this.gameState.challengeMode;
+
+    const endlessToggle = document.getElementById('settings-endless-toggle') as HTMLInputElement;
+    if (endlessToggle) {
+      const isMorteCerta = this.gameState.challengeMode === 'MORTE_CERTA';
+      endlessToggle.checked = this.waveManager.isEndlessMode;
+      endlessToggle.disabled = isMorteCerta;
+      endlessToggle.title = isMorteCerta ? 'Morte Certa é sempre infinito' : '';
+    }
   }
 
   private updateTalentsModal() {
@@ -1372,8 +1400,8 @@ export class UIManager {
         }
       }
     }
-    // Safety check for End Game modal display
-    if (this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') {
+    // Safety check for End Game modal display (skip while a sub-modal opened from it, like the leaderboard, is active)
+    if ((this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') && this.activeParentModal !== this.overlayEl) {
       this.updateEndGameModal();
     }
   }

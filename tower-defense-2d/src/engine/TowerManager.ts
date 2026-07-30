@@ -219,6 +219,11 @@ export class TowerManager2D {
       // 1. Frost Tower: AoE Glacial Pulse
       if (tower.data.type === 'FROST') {
         this.audioManager.playFrostShot();
+        this.particleManager?.triggerFrostPulse(
+          tower.data.position.x,
+          tower.data.position.y,
+          tower.data.range
+        );
         const spec = tower.data.specialization;
         for (const enemy of inRangeEnemies) {
           const dmgDealt = enemy.takeDamage(tower.data.damage, true);
