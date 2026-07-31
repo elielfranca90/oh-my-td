@@ -226,9 +226,10 @@ export class UIManager {
         </div>
 
         <div class="speed-buttons">
-          <button id="speed-1x" class="hud-btn speed-btn active">1x</button>
-          <button id="speed-2x" class="hud-btn speed-btn">2x</button>
-          <button id="speed-4x" class="hud-btn speed-btn">4x</button>
+          <button id="btn-speed-1x" class="hud-btn speed-btn active">1x</button>
+          <button id="btn-speed-2x" class="hud-btn speed-btn">2x</button>
+          <button id="btn-speed-4x" class="hud-btn speed-btn">4x</button>
+          <button id="btn-auto-mode" class="hud-btn auto-toggle-btn" title="Avanço Automático">Auto</button>
         </div>
 
         <button id="btn-next-wave" class="start-wave-main-btn">
@@ -808,6 +809,14 @@ export class UIManager {
       this.waveManager.setAutoMode(isAuto);
       document.getElementById('btn-auto-mode')?.classList.toggle('active', isAuto);
     });
+
+    // Initial sync for speed and auto mode
+    if (this.waveManager?.isAutoMode) {
+      document.getElementById('btn-auto-mode')?.classList.add('active');
+    }
+    if (this.game?.gameSpeedMultiplier) {
+      this.setGameSpeed(this.game.gameSpeedMultiplier);
+    }
 
     document.getElementById('btn-next-wave')?.addEventListener('click', () => {
       this.waveManager.startNextWave();

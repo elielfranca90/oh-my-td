@@ -131,4 +131,84 @@ describe('Main HUD Buttons Integration Test', () => {
     const ui = createDummyUIManager();
     expect(() => ui.destroy()).not.toThrow();
   });
+  it('should render speed and auto mode buttons in HUD', () => {
+    createDummyUIManager();
+
+    const speed1x = document.getElementById('btn-speed-1x');
+    const speed2x = document.getElementById('btn-speed-2x');
+    const speed4x = document.getElementById('btn-speed-4x');
+    const autoBtn = document.getElementById('btn-auto-mode');
+
+    expect(speed1x).not.toBeNull();
+    expect(speed2x).not.toBeNull();
+    expect(speed4x).not.toBeNull();
+    expect(autoBtn).not.toBeNull();
+  });
+
+  it('should toggle game speed multiplier and active class when speed buttons are clicked', () => {
+    const mockGame = { gameSpeedMultiplier: 1, mapManager: { currentMapId: 'map_1' } };
+    const gameState = new GameState();
+    new UIManager(
+      gameState,
+      {} as any,
+      { getTowerCost: () => 50 } as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      mockGame as any,
+      () => {}
+    );
+
+    const speed1x = document.getElementById('btn-speed-1x');
+    const speed2x = document.getElementById('btn-speed-2x');
+    const speed4x = document.getElementById('btn-speed-4x');
+
+    expect(speed1x?.classList.contains('active')).toBe(true);
+
+    speed2x?.click();
+    expect(mockGame.gameSpeedMultiplier).toBe(2);
+    expect(speed2x?.classList.contains('active')).toBe(true);
+    expect(speed1x?.classList.contains('active')).toBe(false);
+
+    speed4x?.click();
+    expect(mockGame.gameSpeedMultiplier).toBe(4);
+    expect(speed4x?.classList.contains('active')).toBe(true);
+    expect(speed2x?.classList.contains('active')).toBe(false);
+  });
+
+  it('should toggle auto mode state and active class when btn-auto-mode is clicked', () => {
+    let autoModeState = false;
+    const mockWaveManager = {
+      isAutoMode: false,
+      setAutoMode: (val: boolean) => {
+        mockWaveManager.isAutoMode = val;
+      },
+    };
+    const gameState = new GameState();
+    new UIManager(
+      gameState,
+      mockWaveManager as any,
+      { getTowerCost: () => 50 } as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      { mapManager: { currentMapId: 'map_1' } } as any,
+      () => {}
+    );
+
+    const autoBtn = document.getElementById('btn-auto-mode');
+    expect(autoBtn?.classList.contains('active')).toBe(false);
+
+    autoBtn?.click();
+    expect(mockWaveManager.isAutoMode).toBe(true);
+    expect(autoBtn?.classList.contains('active')).toBe(true);
+
+    autoBtn?.click();
+    expect(mockWaveManager.isAutoMode).toBe(false);
+    expect(autoBtn?.classList.contains('active')).toBe(false);
+  });
 });
