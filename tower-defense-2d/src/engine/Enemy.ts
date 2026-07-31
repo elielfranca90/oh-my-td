@@ -74,7 +74,7 @@ export class Enemy2D {
       case 'BOSS':
         return { hp: 160, shield: 0, speed: 0.8, radius: 26, reward: 100, color: '#d50000', baseDamage: 5, armorFactor: 0.8, dodgeChance: 0.0 };
       case 'BLACK_MEGA_BOSS':
-        return { hp: 450, shield: 120, speed: 0.55, radius: 32, reward: 300, color: '#11111a', baseDamage: 10, armorFactor: 0.45, dodgeChance: 0.0 };
+        return { hp: 380, shield: 90, speed: 0.55, radius: 32, reward: 300, color: '#11111a', baseDamage: 10, armorFactor: 0.45, dodgeChance: 0.0 };
       default:
         return { hp: 10, shield: 0, speed: 2.0, radius: 15, reward: 10, color: '#e53935', baseDamage: 1, armorFactor: 1.0, dodgeChance: 0.0 };
     }

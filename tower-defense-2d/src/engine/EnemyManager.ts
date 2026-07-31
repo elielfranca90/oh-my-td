@@ -100,8 +100,8 @@ export class EnemyManager2D {
       this.attackTimer = 0;
       for (const enemy of this.enemies) {
         if (!enemy.data.isDead && (enemy.data.type === 'BLACK_MEGA_BOSS' || enemy.data.type === 'BOSS')) {
-          const attackPower = enemy.data.type === 'BLACK_MEGA_BOSS' ? 25 : 12;
-          const attackRange = enemy.data.type === 'BLACK_MEGA_BOSS' ? 140 : 100;
+          const attackPower = enemy.data.type === 'BLACK_MEGA_BOSS' ? 15 : 12;
+          const attackRange = enemy.data.type === 'BLACK_MEGA_BOSS' ? 120 : 100;
 
           for (const tower of towers) {
             if (!tower.data.isDestroyed) {

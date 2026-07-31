@@ -10,8 +10,8 @@ describe('Black Mega Boss & Renderer Safety Tests', () => {
 
   it('should initialize BLACK_MEGA_BOSS with high HP and armor', () => {
     const boss = new Enemy2D(mockWaypoints, 'BLACK_MEGA_BOSS', 'boss-1', 1.0);
-    expect(boss.data.maxHp).toBe(450);
-    expect(boss.data.maxShieldHp).toBe(120);
+    expect(boss.data.maxHp).toBe(380);
+    expect(boss.data.maxShieldHp).toBe(90);
     expect(boss.data.radius).toBe(32);
     expect(boss.data.color).toBe('#11111a');
   });
