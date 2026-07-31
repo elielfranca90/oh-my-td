@@ -1,8 +1,8 @@
 {
-  "name": "tower-defense-2d",
+  "name": "oh-my-td",
   "private": true,
   "license": "MIT",
-  "version": "0.0.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" href="/favicon.svg" />
-    <title>Tower Defense 2D · DOM Overlay UI 2.0</title>
+    <title>Oh My TD · v0.3.0</title>
     <style>
       * {
         box-sizing: border-box;
@@ -26,16 +26,59 @@
         touch-action: manipulation;
       }
 
-      /* 100% Viewport Fixed Canvas */
-      #game-area {
-        position: fixed;
-        inset: 0;
-        width: 100vw;
+      /* APP LAYOUT - 4 Parts Strict Flow */
+      .app-layout {
+        display: flex;
+        flex-direction: column;
         height: 100vh;
-        z-index: 1;
+        height: 100dvh;
+        width: 100vw;
+        overflow: hidden;
+      }
+
+      .layout-part-1 {
+        flex-shrink: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        width: 100%;
+        z-index: 20;
+        pointer-events: none;
+      }
+
+      .layout-part-2 {
+        flex-shrink: 0;
+        z-index: 20;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      #game-area {
+        flex: 1;
+        min-height: 0;
         display: flex;
         justify-content: center;
         align-items: center;
+        z-index: 1;
+        position: relative;
+      }
+
+      .layout-part-4 {
+        flex-shrink: 0;
+        z-index: 20;
+        pointer-events: none;
+      }
+
+      .layout-modals {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 30;
       }
 
       canvas {
@@ -51,47 +94,62 @@
         -webkit-touch-callout: none;
       }
 
-      /* UI OVERLAY CONTAINER (Fullscreen, pointer-events: none) */
-      .ui-wrapper {
-        position: fixed;
-        inset: 0;
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
-        pointer-events: none;
-        z-index: 10;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        padding: 10px;
-        box-sizing: border-box;
-      }
-
       .pointer-events-auto {
         pointer-events: auto;
       }
 
       /* 1. TOP HUD STATUS BAR */
-.hud-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: min(100%, var(--canvas-width, 840px));
-  max-width: var(--canvas-width, 840px);
-  margin: 0 auto;
-  padding: 6px 14px;
-  background: rgba(18, 18, 26, 0.88);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-  box-sizing: border-box;
-}
-      .hud-left-stats {
+      .hud-top {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        background: rgba(18, 18, 26, 0.88);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        z-index: 20;
+      }
+
+      .game-title-bar {
+        display: flex;
+        align-items: baseline;
+        pointer-events: none;
+        z-index: 20;
+      }
+
+      .game-title {
+        margin: 0;
+        font-size: 1.4rem;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+      }
+
+      .game-version {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #aaaaaa;
+        letter-spacing: 1px;
+        margin-left: 6px;
+      }
+
+      .hud-stats-bar {
         display: flex;
         align-items: center;
         gap: 10px;
+        padding: 6px 14px;
+        background: rgba(18, 18, 26, 0.88);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        box-sizing: border-box;
       }
 
       .hud-stat-badge {
@@ -161,19 +219,18 @@
       }
 
       /* 2. FIXED RED ZONE ACTION TOOLBAR (Just below top bar, above map) */
-.action-toolbar {
-  width: min(100%, var(--canvas-width, 840px));
-  max-width: var(--canvas-width, 840px);
-  margin: 6px auto 0 auto;
-  padding: 6px 14px;
-  background: rgba(18, 18, 26, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
-  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
-  box-sizing: border-box;
-}
+      .action-toolbar {
+        width: min(100%, var(--canvas-width, 840px));
+        max-width: var(--canvas-width, 840px);
+        padding: 6px 14px;
+        background: rgba(18, 18, 26, 0.92);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 12px;
+        box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55);
+        box-sizing: border-box;
+      }
       .toolbar-state {
         display: flex;
         flex-direction: column;
@@ -385,6 +442,31 @@
   gap: 8px;
   z-index: 30;
 }
+      .wave-indicator {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(18, 18, 26, 0.88);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #ffffff;
+        white-space: nowrap;
+      }
+
+      .wave-indicator-label {
+        color: #90caf9;
+        font-size: 0.7rem;
+        letter-spacing: 0.5px;
+      }
+
+      .wave-indicator-dot {
+        font-size: 0.6rem;
+      }
 
       .active-mode-badge {
         display: flex;
@@ -865,9 +947,6 @@
     padding: 4px 8px;
     gap: 6px;
   }
-  .hud-left-stats { gap: 6px; }
-  .hud-stat-badge { padding: 4px 6px; font-size: 0.8rem; }
-  .hud-center-wave { padding: 4px 6px; font-size: 0.8rem; }
 
   .action-toolbar {
     padding: 4px 8px;
@@ -906,6 +985,9 @@
   .hud-btn-text {
     display: none;
   }
+  .wave-indicator-label {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -938,6 +1020,9 @@
     padding: 2px 6px;
     gap: 4px;
   }
+  .game-title {
+    font-size: 1rem;
+  }
 }
 
 @media (max-height: 500px) {
@@ -951,6 +1036,9 @@
   .hud-top {
     padding: 3px 6px;
   }
+  .game-title-bar {
+    display: none;
+  }
 }
 
 @media (max-aspect-ratio: 1/1) {
@@ -960,9 +1048,12 @@
 }
 </style>
   </head>
-  <body>
+  <body class="app-layout">
+    <div id="layout-part-1" class="layout-part-1"></div>
+    <div id="layout-part-2" class="layout-part-2"></div>
     <div id="game-area"></div>
-    <div id="ui-container"></div>
+    <div id="layout-part-4" class="layout-part-4"></div>
+    <div id="ui-container" class="layout-modals"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -58,6 +58,12 @@ export class UIManager {
   private lastFreezeCdHidden: boolean | null = null;
   private unbindEvents: Array<() => void> = [];
   private activeParentModal: HTMLElement | null = null;
+  private waveIndNumEl: HTMLElement | null = null;
+  private waveIndEnemiesEl: HTMLElement | null = null;
+  private lastWaveIndEnemies = '';
+  private waveIndEl: HTMLElement | null = null;
+  private waveIndLabelEl: HTMLElement | null = null;
+  private lastWaveIndHidden: boolean | null = null;
 
 
   constructor(
@@ -88,146 +94,157 @@ export class UIManager {
   }
 
   private createUI() {
-    const container = document.getElementById('ui-container');
-    if (!container) return;
+    const part1 = document.getElementById('layout-part-1');
+    const part2 = document.getElementById('layout-part-2');
+    const part4 = document.getElementById('layout-part-4');
+    const modals = document.getElementById('ui-container') || document.body;
 
-    container.innerHTML = `
-      <!-- UI OVERLAY CONTAINER (Fixed Fullscreen, pointer-events: none) -->
-      <div id="ui-wrapper" class="ui-wrapper">
-        
-        <!-- 1. TOP HUD STATUS BAR -->
-        <header id="hud-top" class="hud-top pointer-events-auto">
-          <div class="hud-left-stats">
-            <div class="hud-stat-badge hp" title="Vida da Base">
-              <span class="icon">❤️</span>
-              <strong id="hud-hp-val">${this.gameState.baseHp}/${this.gameState.maxBaseHp}</strong>
-            </div>
-            <div class="hud-stat-badge gold" title="Ouro Disponível">
-              <span class="icon">🪙</span>
-              <strong id="hud-gold-val">${this.gameState.gold}</strong>
-            </div>
-            <div class="hud-stat-badge wave" title="Onda Atual">
-              <span class="icon">🌊</span>
-              <span class="wave-title hud-label-text">ONDA</span>
-              <strong id="hud-wave-val">0/10</strong>
-              <span id="hud-boss-badge" class="boss-badge hidden">⚠️ BOSS</span>
-            </div>
-            <button id="hud-pause-btn" class="hud-btn pause-btn" title="Pausar / Retomar Jogo">
-              ⏸️
-            </button>
-          </div>
-          <div class="hud-right-controls">
-            <button id="main-leaderboard-btn" class="hud-btn highlight-btn" title="Placar Global (🏆)" aria-label="Placar Global">
-              🏆<span class="hud-btn-text"> Placar Global</span>
-            </button>
-            <button id="main-profile-btn" class="hud-btn highlight-btn" title="Perfil de Jogador (👤)" aria-label="Perfil">
-              👤<span class="hud-btn-text"> Perfil</span>
-            </button>
-            <button id="changelog-btn" class="hud-btn changelog-gift-btn" title="Últimas Atualizações (🎁)" aria-label="Novidades">
-              🎁<span class="changelog-btn-text"> Novidades</span>
-            </button>
-            <button id="settings-toggle-btn" class="hud-btn settings-btn" title="Configurações & Menus (⚙️)">
-              ⚙️
-            </button>
-          </div>
-        </header>
+    const part1Html = `
+      <div id="game-title-bar" class="game-title-bar">
+        <h1 class="game-title">OH MY TD <span class="game-version">v0.3.0</span></h1>
+      </div>
 
-        <!-- 2. FIXED RED ZONE ACTION TOOLBAR (Just below top bar, above map) -->
-        <nav id="action-toolbar" class="action-toolbar pointer-events-auto">
-          <!-- STORE STATE -->
-          <div id="store-state" class="toolbar-state active">
-            <!-- ROW 1: TOWERS -->
-            <div class="toolbar-row">
-              <span class="toolbar-label">🏗️ TORRES:</span>
-              <div class="toolbar-items-row">
-                <button id="card-basic" class="toolbar-card active" data-type="BASIC" title="Torre Básica (50g)">
-                  <img class="tower-card-icon" src="/assets/basic_tower_icon.svg" alt="Básica" />
-                  <span class="name">Básica</span>
-                  <span class="cost">🪙 50g</span>
-                </button>
-                <button id="card-frost" class="toolbar-card" data-type="FROST" title="Torre de Gelo (70g)">
-                  <img class="tower-card-icon" src="/assets/frost_tower_icon.svg" alt="Gelo" />
-                  <span class="name">Gelo</span>
-                  <span class="cost">🪙 70g</span>
-                </button>
-                <button id="card-solar" class="toolbar-card" data-type="SOLAR_PRISM" title="Prisma Solar (100g)">
-                  <img class="tower-card-icon" src="/assets/solar_prism_icon.svg" alt="Prisma" />
-                  <span class="name">Prisma</span>
-                  <span class="cost">🪙 100g</span>
-                </button>
-                <button id="card-cannon" class="toolbar-card" data-type="CANNON" title="Canhão (105g)">
-                  <img class="tower-card-icon" src="/assets/cannon_tower_icon.svg" alt="Canhão" />
-                  <span class="name">Canhão</span>
-                  <span class="cost">🪙 105g</span>
-                </button>
-                <button id="card-artillery" class="toolbar-card" data-type="ARTILLERY" title="Artilharia (110g)">
-                  <img class="tower-card-icon" src="/assets/artillery_tower_icon.svg" alt="Artilharia" />
-                  <span class="name">Artilharia</span>
-                  <span class="cost">🪙 110g</span>
-                </button>
-              </div>
-            </div>
+      <header id="hud-top" class="hud-top pointer-events-auto">
+        <button id="main-leaderboard-btn" class="hud-btn highlight-btn" title="Placar Global (🏆)" aria-label="Placar Global">
+          🏆<span class="hud-btn-text"> Placar Global</span>
+        </button>
+        <button id="main-profile-btn" class="hud-btn highlight-btn" title="Perfil de Jogador (👤)" aria-label="Perfil">
+          👤<span class="hud-btn-text"> Perfil</span>
+        </button>
+        <button id="changelog-btn" class="hud-btn changelog-gift-btn" title="Últimas Atualizações (🎁)" aria-label="Novidades">
+          🎁<span class="changelog-btn-text"> Novidades</span>
+        </button>
+        <button id="settings-toggle-btn" class="hud-btn settings-btn" title="Configurações & Menus (⚙️)">
+          ⚙️
+        </button>
+      </header>
+    `;
 
-            <!-- ROW 2: POWERS (BELOW TOWERS) -->
-            <div class="toolbar-row">
-              <span class="toolbar-label">☄️ PODERES:</span>
-              <div class="toolbar-items-row">
-                <button id="chip-meteor" class="toolbar-chip" title="Invocar Meteoro (150g)">
-                  <span>☄️ Meteoro</span>
-                  <span id="meteor-chip-cost" class="cost">150g</span>
-                  <span id="meteor-chip-cd" class="cd hidden"></span>
-                </button>
-                <button id="chip-freeze" class="toolbar-chip" title="Congelamento Global (120g)">
-                  <span>❄️ Congelar</span>
-                  <span id="freeze-chip-cost" class="cost">120g</span>
-                  <span id="freeze-chip-cd" class="cd hidden"></span>
-                </button>
-              </div>
+    const part2Html = `
+      <div id="hud-stats-bar" class="hud-stats-bar pointer-events-auto">
+        <div class="hud-stat-badge hp" title="Vida da Base">
+          <span class="icon">❤️</span>
+          <strong id="hud-hp-val">${this.gameState.baseHp}/${this.gameState.maxBaseHp}</strong>
+        </div>
+        <div class="hud-stat-badge gold" title="Ouro Disponível">
+          <span class="icon">🪙</span>
+          <strong id="hud-gold-val">${this.gameState.gold}</strong>
+        </div>
+        <div class="hud-stat-badge wave" title="Onda Atual">
+          <span class="icon">🌊</span>
+          <span class="wave-title hud-label-text">ONDA</span>
+          <strong id="hud-wave-val">0/10</strong>
+          <span id="hud-boss-badge" class="boss-badge hidden">⚠️ BOSS</span>
+        </div>
+        <button id="hud-pause-btn" class="hud-btn pause-btn" title="Pausar / Retomar Jogo">
+          ⏸️
+        </button>
+      </div>
+
+      <!-- 2. FIXED RED ZONE ACTION TOOLBAR (Just below top bar, above map) -->
+      <nav id="action-toolbar" class="action-toolbar pointer-events-auto">
+        <!-- STORE STATE -->
+        <div id="store-state" class="toolbar-state active">
+          <!-- ROW 1: TOWERS -->
+          <div class="toolbar-row">
+            <span class="toolbar-label">🏗️ TORRES:</span>
+            <div class="toolbar-items-row">
+              <button id="card-basic" class="toolbar-card active" data-type="BASIC" title="Torre Básica (50g)">
+                <img class="tower-card-icon" src="/assets/basic_tower_icon.svg" alt="Básica" />
+                <span class="name">Básica</span>
+                <span class="cost">🪙 50g</span>
+              </button>
+              <button id="card-frost" class="toolbar-card" data-type="FROST" title="Torre de Gelo (70g)">
+                <img class="tower-card-icon" src="/assets/frost_tower_icon.svg" alt="Gelo" />
+                <span class="name">Gelo</span>
+                <span class="cost">🪙 70g</span>
+              </button>
+              <button id="card-solar" class="toolbar-card" data-type="SOLAR_PRISM" title="Prisma Solar (100g)">
+                <img class="tower-card-icon" src="/assets/solar_prism_icon.svg" alt="Prisma" />
+                <span class="name">Prisma</span>
+                <span class="cost">🪙 100g</span>
+              </button>
+              <button id="card-cannon" class="toolbar-card" data-type="CANNON" title="Canhão (105g)">
+                <img class="tower-card-icon" src="/assets/cannon_tower_icon.svg" alt="Canhão" />
+                <span class="name">Canhão</span>
+                <span class="cost">🪙 105g</span>
+              </button>
+              <button id="card-artillery" class="toolbar-card" data-type="ARTILLERY" title="Artilharia (110g)">
+                <img class="tower-card-icon" src="/assets/artillery_tower_icon.svg" alt="Artilharia" />
+                <span class="name">Artilharia</span>
+                <span class="cost">🪙 110g</span>
+              </button>
             </div>
           </div>
 
-          <!-- INSPECTOR STATE -->
-          <div id="inspector-state" class="toolbar-state hidden">
-            <div class="inspector-toolbar-row">
-              <div class="inspector-info-group">
-                <strong id="inspector-title">Torre Nível 1</strong>
-                <div id="inspector-stats-summary" class="stats-summary-inline"></div>
-              </div>
-
-              <div class="inspector-toolbar-actions">
-                <button id="btn-inspect-target" class="btn secondary btn-inspect-action">🎯 FIRST</button>
-                <button id="btn-inspect-repair" class="btn success btn-inspect-action">🔧 Reparo</button>
-                <button id="btn-inspect-upgrade" class="btn success btn-inspect-action">⬆️ Upgrade (40g)</button>
-                <button id="btn-inspect-sell" class="btn danger btn-inspect-action">💰 Vender (35g)</button>
-                <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
-              </div>
+          <!-- ROW 2: POWERS (BELOW TOWERS) -->
+          <div class="toolbar-row">
+            <span class="toolbar-label">☄️ PODERES:</span>
+            <div class="toolbar-items-row">
+              <button id="chip-meteor" class="toolbar-chip" title="Invocar Meteoro (150g)">
+                <span>☄️ Meteoro</span>
+                <span id="meteor-chip-cost" class="cost">150g</span>
+                <span id="meteor-chip-cd" class="cd hidden"></span>
+              </button>
+              <button id="chip-freeze" class="toolbar-chip" title="Congelamento Global (120g)">
+                <span>❄️ Congelar</span>
+                <span id="freeze-chip-cost" class="cost">120g</span>
+                <span id="freeze-chip-cd" class="cd hidden"></span>
+              </button>
             </div>
-
-            <!-- Escolha de especialização (nível 2 -> 3) -->
-            <div id="inspector-spec-choice" class="spec-choice hidden"></div>
           </div>
-        </nav>
-
-        <!-- 3. FLOATING TIME & WAVE CONTROLS (Bottom Right) -->
-        <div id="time-controls" class="time-controls pointer-events-auto">
-          <div id="active-mode-badge" class="active-mode-badge" title="Modo de Jogo Ativo">
-            <span id="active-mode-name" class="mode-name">Modo Padrão</span>
-          </div>
-
-          <div class="speed-btns-group">
-            <button id="btn-speed-1x" class="speed-btn active">1x</button>
-            <button id="btn-speed-2x" class="speed-btn">2x</button>
-            <button id="btn-speed-4x" class="speed-btn">4x</button>
-            <button id="btn-auto-mode" class="auto-toggle-btn">⚡ Auto</button>
-          </div>
-
-          <div id="hud-wave-preview" class="wave-preview hidden"></div>
-
-          <button id="btn-next-wave" class="start-wave-main-btn">
-            <span id="start-wave-label">Iniciar Onda 1</span>
-          </button>
         </div>
 
+        <!-- INSPECTOR STATE -->
+        <div id="inspector-state" class="toolbar-state hidden">
+          <div class="inspector-toolbar-row">
+            <div class="inspector-info-group">
+              <strong id="inspector-title">Torre Nível 1</strong>
+              <div id="inspector-stats-summary" class="stats-summary-inline"></div>
+            </div>
+
+            <div class="inspector-toolbar-actions">
+              <button id="btn-inspect-target" class="btn secondary btn-inspect-action">🎯 FIRST</button>
+              <button id="btn-inspect-repair" class="btn success btn-inspect-action">🔧 Reparo</button>
+              <button id="btn-inspect-upgrade" class="btn success btn-inspect-action">⬆️ Upgrade (40g)</button>
+              <button id="btn-inspect-sell" class="btn danger btn-inspect-action">💰 Vender (35g)</button>
+              <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
+            </div>
+          </div>
+
+          <!-- Escolha de especialização (nível 2 -> 3) -->
+          <div id="inspector-spec-choice" class="spec-choice hidden"></div>
+        </div>
+      </nav>
+    `;
+
+    const part4Html = `
+      <!-- 3. FLOATING TIME & WAVE CONTROLS (Bottom Right) -->
+      <div id="time-controls" class="time-controls pointer-events-auto">
+        <div id="active-mode-badge" class="active-mode-badge" title="Modo de Jogo Ativo">
+          <span id="active-mode-name" class="mode-name">Modo Padrão</span>
+        </div>
+
+        <div class="speed-buttons">
+          <button id="speed-1x" class="hud-btn speed-btn active">1x</button>
+          <button id="speed-2x" class="hud-btn speed-btn">2x</button>
+          <button id="speed-4x" class="hud-btn speed-btn">4x</button>
+        </div>
+
+        <button id="btn-next-wave" class="start-wave-main-btn">
+          <span id="start-wave-label">Iniciar Onda 1</span>
+        </button>
+      </div>
+    `;
+
+    if (part1) part1.innerHTML = part1Html;
+    if (part2) part2.innerHTML = part2Html;
+    if (part4) part4.innerHTML = part4Html;
+
+    const fallbackHtml = (part1 ? '' : part1Html) + (part2 ? '' : part2Html) + (part4 ? '' : part4Html);
+
+    if (modals) {
+      modals.innerHTML = fallbackHtml + `
         <!-- SETTINGS & META-GAME MODAL (⚙️) -->
         <div id="settings-modal-overlay" class="modal-overlay hidden pointer-events-auto">
           <div class="modal-card settings-modal-card">
@@ -354,6 +371,17 @@ export class UIManager {
             </div>
             <div id="changelog-list" class="changelog-list">
               <div class="changelog-item latest">
+                <div class="changelog-item-header">
+                  <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v0.3.0</strong>
+                  <span class="changelog-title">Oh My TD — Nova Interface</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Rebrand:</strong> O jogo agora se chama "Oh My TD" com título e versão exibidos no topo da tela.</li>
+                  <li><strong>Novo Layout:</strong> Botões informativos no canto superior direito, dados de jogo em barra dedicada, e indicador de onda/inimigos na barra inferior.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
                   <strong class="version-tag">v2.3</strong>
@@ -492,8 +520,8 @@ export class UIManager {
             </div>
           </div>
         </div>
-      </div>
-    `;
+      `;
+    }
 
     this.overlayEl = document.getElementById('modal-overlay')!;
     this.settingsOverlayEl = document.getElementById('settings-modal-overlay')!;
@@ -1258,8 +1286,8 @@ export class UIManager {
     if (!this.wavePreviewEl) return;
 
     const titulo = preview.archetype
-      ? `Onda ${preview.waveNumber} · ${UIManager.ARCHETYPE_LABELS[preview.archetype]}`
-      : `Onda ${preview.waveNumber}`;
+      ? `Ameaças · ${UIManager.ARCHETYPE_LABELS[preview.archetype]}`
+      : `Ameaças:`;
 
     const chips = preview.entries
       .map(entry => {
@@ -1354,6 +1382,42 @@ export class UIManager {
       }
     }
 
+    // 2b. Wave indicator in bottom bar
+    if (!this.waveIndEl) {
+      this.waveIndEl = document.getElementById('wave-indicator');
+      this.waveIndLabelEl = this.waveIndEl?.querySelector('.wave-indicator-label') as HTMLElement | null;
+    }
+    if (!this.waveIndNumEl || !this.waveIndEnemiesEl) {
+      this.waveIndNumEl = document.getElementById('wave-indicator-num');
+      this.waveIndEnemiesEl = document.getElementById('wave-indicator-enemies');
+    }
+
+    if (this.waveIndEl) {
+      const isHidden = !this.waveManager.isWaveActive;
+      if (this.lastWaveIndHidden !== isHidden) {
+        this.waveIndEl.classList.toggle('hidden', isHidden);
+        this.lastWaveIndHidden = isHidden;
+        
+        if (!isHidden && this.waveIndLabelEl) {
+          this.waveIndLabelEl.innerText = "RESTANTES";
+          if (this.waveIndNumEl) this.waveIndNumEl.style.display = 'none';
+        }
+      }
+    }
+
+    if (this.waveIndEnemiesEl && this.waveManager.isWaveActive) {
+      // Remaining enemies = spawn queue + alive enemies on screen
+      const aliveEnemies = (this.game as any)['enemyManager'].getEnemies().filter(
+        (e: any) => !e.data.isDead
+      ).length;
+      const remaining = this.waveManager.spawnQueueLength + aliveEnemies;
+      const newWaveIndEnemiesText = `${remaining}`;
+      if (this.lastWaveIndEnemies !== newWaveIndEnemiesText) {
+        this.waveIndEnemiesEl.innerText = newWaveIndEnemiesText;
+        this.lastWaveIndEnemies = newWaveIndEnemiesText;
+      }
+    }
+
     // 3. Spells Cooldown text
     if (!this.meteorCdEl) {
       this.meteorCdEl = document.getElementById('meteor-chip-cd');
@@ -1419,8 +1483,11 @@ export class UIManager {
     const usernameInput = document.getElementById('profile-username-input') as HTMLInputElement | null;
     const avatarSelect = document.getElementById('profile-avatar-select') as HTMLSelectElement | null;
 
-    const db = this.game.databaseManager;
-    if (!db) return;
+    const db = this.game?.databaseManager;
+    if (!db) {
+      this.setProfileStatus('Modo offline: as alterações ficam salvas neste dispositivo.');
+      return;
+    }
 
     // Preenche na hora com o perfil local, sem esperar a rede.
     const local = db.loadLocalProfile();
@@ -1431,7 +1498,6 @@ export class UIManager {
       this.setProfileStatus('Modo offline: as alterações ficam salvas neste dispositivo.');
       return;
     }
-
     this.setProfileStatus('⌛ Sincronizando...');
     const res = await db.syncProfileWithRemote();
 
@@ -1499,7 +1565,7 @@ export class UIManager {
 
     content.innerHTML = '<p style="text-align: center; padding: 20px;">⌛ Carregando placar global...</p>';
 
-    const db = this.game.databaseManager;
+    const db = this.game?.databaseManager;
     if (!db || !db.isConnected()) {
       content.innerHTML = '<p style="text-align: center; color: #ff5252; padding: 20px;">⚠️ Placar indisponível no modo offline. Conecte-se ao Supabase para visualizar o ranking.</p>';
       return;

@@ -260,6 +260,10 @@ export class WaveManager {
     this.rng = rng || new Rng(Date.now());
   }
 
+  public get spawnQueueLength(): number {
+    return this.spawnQueue.length;
+  }
+
   public setAutoMode(enabled: boolean) {
     this.isAutoMode = enabled;
     if (enabled && !this.isWaveActive) {
