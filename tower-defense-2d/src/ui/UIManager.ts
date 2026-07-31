@@ -284,10 +284,7 @@ export class UIManager {
                   <span>Modo Desafio:</span>
                   <select id="settings-challenge-select" class="challenge-select">
                     <option value="NORMAL">Modo: Padrão</option>
-                    <option value="NO_SPELLS">Modo: Sem Magias 🚫</option>
-                    <option value="FAST_ENEMIES">Modo: Invasão Veloz ⚡</option>
                     <option value="HARDCORE">Modo: Hardcore (1 HP) 💀</option>
-                    <option value="TURBO_GOLD">Modo: Corrida do Ouro 🪙</option>
                     <option value="MORTE_CERTA">Modo: ☠️ Morte Certa (Insano!)</option>
                   </select>
                 </div>
@@ -956,10 +953,7 @@ export class UIManager {
     const badgeEl = document.getElementById('active-mode-badge');
     const modeLabels: Record<ChallengeMode, string> = {
       NORMAL: 'Modo Padrão',
-      NO_SPELLS: 'Modo Sem Magias 🚫',
-      FAST_ENEMIES: 'Invasão Veloz ⚡',
       HARDCORE: 'Hardcore (1 HP) 💀',
-      TURBO_GOLD: 'Corrida do Ouro 🪙',
       MORTE_CERTA: '☠️ Morte Certa (Insano!)',
     };
     if (badgeName) badgeName.innerText = modeLabels[mode] || 'Modo Padrão';
@@ -1006,7 +1000,7 @@ export class UIManager {
       }
     });
 
-    const isNoSpells = this.gameState.challengeMode === 'NO_SPELLS' || this.gameState.challengeMode === 'MORTE_CERTA';
+    const isNoSpells = this.gameState.challengeMode === 'MORTE_CERTA';
 
     const meteorChip = document.getElementById('chip-meteor') as HTMLButtonElement;
     const meteorCostEl = document.getElementById('meteor-chip-cost');
@@ -1246,10 +1240,7 @@ export class UIManager {
       if (modalChallenge) {
         const modeLabels: Record<ChallengeMode, string> = {
           NORMAL: 'Padrão',
-          NO_SPELLS: 'Sem Magias 🚫',
-          FAST_ENEMIES: 'Invasão Veloz ⚡',
           HARDCORE: 'Hardcore (1 HP) 💀',
-          TURBO_GOLD: 'Corrida do Ouro 🪙',
           MORTE_CERTA: '☠️ Morte Certa (Insano!)',
         };
         modalChallenge.innerText = modeLabels[this.gameState.challengeMode] || 'Padrão';

@@ -161,8 +161,8 @@ export class EnemyManager2D {
     }
 
     const waypoints = this.mapManager.getWaypoints(pathIndex);
-    const isFast = this.gameState.challengeMode === 'FAST_ENEMIES' || this.gameState.challengeMode === 'MORTE_CERTA';
-    const isTurbo = this.gameState.challengeMode === 'TURBO_GOLD' || this.gameState.challengeMode === 'MORTE_CERTA';
+    const isFast = this.gameState.challengeMode === 'MORTE_CERTA';
+    const isTurbo = this.gameState.challengeMode === 'MORTE_CERTA';
     const speedMultiplier = isFast ? 1.4 : 1.0;
     const currentWaveNum = this.waveManager.currentWaveIndex + 1;
     let goldMultiplier = isTurbo ? 1.5 : 1.0;

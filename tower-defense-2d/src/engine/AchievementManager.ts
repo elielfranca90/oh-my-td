@@ -125,26 +125,6 @@ export class AchievementManager {
       maxProgress: 1,
       icon: '💀',
     },
-    WAR_ECONOMY_MASTER: {
-      id: 'WAR_ECONOMY_MASTER',
-      title: 'War Economy Master',
-      desc: 'Win a match in War Economy Mode',
-      rewardStars: 5,
-      unlocked: false,
-      progress: 0,
-      maxProgress: 1,
-      icon: '🪙',
-    },
-    NO_POWERS_CHALLENGER: {
-      id: 'NO_POWERS_CHALLENGER',
-      title: 'Pure Skill',
-      desc: 'Win a match in No Powers Mode',
-      rewardStars: 5,
-      unlocked: false,
-      progress: 0,
-      maxProgress: 1,
-      icon: '🎯',
-    },
   };
 
   public activeToasts: ToastNotification[] = [];

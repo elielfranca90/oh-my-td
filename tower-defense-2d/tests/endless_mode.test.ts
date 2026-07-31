@@ -47,7 +47,7 @@ describe('Persistência do Modo Infinito entre modos de desafio', () => {
     game.changeMap('MAP_2');
     expect(game.waveManager.isEndlessMode).toBe(true);
 
-    game.changeChallengeMode('TURBO_GOLD');
+    game.changeChallengeMode('HARDCORE');
     expect(game.waveManager.isEndlessMode).toBe(true);
   });
 

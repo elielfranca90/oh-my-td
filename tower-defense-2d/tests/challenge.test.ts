@@ -22,41 +22,6 @@ describe('Challenge Mode Mechanics Tests', () => {
     expect(hardcoreState.maxBaseHp).toBe(1);
   });
 
-  it('should increase enemy speed by +40% in FAST_ENEMIES mode', () => {
-    const standardNormal = new Enemy2D(mockWaypoints, 'STANDARD', '1', 1.0, 0, 1.0, 1.0);
-    const standardFast = new Enemy2D(mockWaypoints, 'STANDARD', '2', 1.0, 0, 1.4, 1.0);
-
-    expect(standardNormal.data.speed).toBe(2.0);
-    expect(standardFast.data.speed).toBe(2.8);
-  });
-
-  it('should increase enemy gold reward by +50% in TURBO_GOLD mode', () => {
-    const normalEnemy = new Enemy2D(mockWaypoints, 'STANDARD', '1', 1.0, 0, 1.0, 1.0);
-    const turboEnemy = new Enemy2D(mockWaypoints, 'STANDARD', '2', 1.0, 0, 1.0, 1.5);
-
-    expect(normalEnemy.data.goldReward).toBe(10);
-    expect(turboEnemy.data.goldReward).toBe(15);
-  });
-
-  it('should prevent casting spells when in NO_SPELLS mode', () => {
-    const noSpellsState = new GameState(undefined, 'NO_SPELLS');
-    noSpellsState.gold = 1000;
-
-    const fx = new FXManager();
-    const audio = new AudioManager();
-    const particles = new ParticleManager();
-    const spellManager = new SpellManager(noSpellsState, fx, audio, particles);
-
-    spellManager.selectSpell('METEOR');
-    expect(spellManager.activeSpell).toBeNull();
-
-    const enemy = new Enemy2D(mockWaypoints, 'STANDARD', '1', 1.0);
-    const freezeCasted = spellManager.triggerGlobalFreeze([enemy]);
-    expect(freezeCasted).toBe(false);
-
-    const meteorCasted = spellManager.castMeteorAt(50, 50, [enemy]);
-    expect(meteorCasted).toBe(false);
-  });
   it('should combine all challenge and special rules in MORTE_CERTA mode', () => {
     const morteCertaState = new GameState(undefined, 'MORTE_CERTA');
     morteCertaState.gold = 1000;
