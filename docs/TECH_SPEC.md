@@ -13,6 +13,22 @@ $$Y_{pixel} = row \cdot S_{tile} + \frac{S_{tile}}{2}$$
 
 ---
 
+### Coordenadas do Pointer com Aspect Ratio e Letterboxing (Mobile & Desktop Scaling)
+Para suportar o escalonamento fluido do canvas (`object-fit: contain`) sem distorção das coordenadas de clique e toque em telas móveis e desktop, a conversão da coordenada do ponteiro $(X_{client}, Y_{client})$ para o espaço interno do jogo $(X_{game}, Y_{game})$ calcula o deslocamento do offset visual dinâmico:
+
+$$\text{contentRatio} = \frac{\text{rect.width}}{\text{rect.height}}, \quad \text{canvasRatio} = \frac{\text{canvas.width}}{\text{canvas.height}}$$
+
+$$\text{se } \text{contentRatio} > \text{canvasRatio}: \quad \text{renderedWidth} = \text{rect.height} \times \text{canvasRatio}, \quad \text{offsetX} = \frac{\text{rect.width} - \text{renderedWidth}}{2}$$
+
+$$\text{se } \text{contentRatio} \le \text{canvasRatio}: \quad \text{renderedHeight} = \frac{\text{rect.width}}{\text{canvasRatio}}, \quad \text{offsetY} = \frac{\text{rect.height} - \text{renderedHeight}}{2}$$
+
+$$\text{scaleX} = \frac{\text{canvas.width}}{\text{renderedWidth}}, \quad \text{scaleY} = \frac{\text{canvas.height}}{\text{renderedHeight}}$$
+
+$$X_{game} = (X_{client} - \text{rect.left} - \text{borderLeft} - \text{offsetX}) \times \text{scaleX}$$
+
+$$Y_{game} = (Y_{client} - \text{rect.top} - \text{borderTop} - \text{offsetY}) \times \text{scaleY}$$
+
+
 ### Algoritmo de Movimentação por Waypoints Sem Perda de Quadro (*Precise Corner Turning*)
 Para evitar desvios e sobreposições nas curvas mesmo em altas velocidades, o movimento consome a distância restante quadro a quadro:
 

@@ -1,6 +1,5 @@
 import type { Vector2D } from '../types';
 import { Rng } from './Rng';
-import { SpriteManager } from './SpriteManager';
 
 export const TileType = {
   BUILDABLE: 0,
@@ -16,13 +15,11 @@ export class MapManager2D {
   public readonly cols = 14;
   public readonly rows = 10;
   public readonly tileSize = 60; // 840x600 canvas resolution
-  private spriteManager: SpriteManager;
 
   public currentMapId: MapId = 'MAP_1';
   private mapData: TileType[][] = [];
 
   constructor(mapId: MapId = 'MAP_1') {
-    this.spriteManager = new SpriteManager();
     this.setMap(mapId);
   }
 
@@ -41,6 +38,10 @@ export class MapManager2D {
         break;
     }
   }
+  public getMapData(): TileType[][] {
+    return this.mapData;
+  }
+
 
   // --- MAP 1: DESFILADEIRO VERDE (S-Path) ---
   private getMap1Data(): TileType[][] {
@@ -90,17 +91,8 @@ export class MapManager2D {
     ];
   }
 
-  public render(ctx: CanvasRenderingContext2D) {
-    for (let row = 0; row < this.rows; row++) {
-      for (let col = 0; col < this.cols; col++) {
-        const type = this.mapData[row][col];
-        this.spriteManager.drawTile(ctx, this.currentMapId, type, col * this.tileSize, row * this.tileSize);
-
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(col * this.tileSize, row * this.tileSize, this.tileSize, this.tileSize);
-      }
-    }
+  public render(_ctx: CanvasRenderingContext2D) {
+    // Terreno agora é renderizado via WebGL no ThreeRenderer.
   }
 
   public isBuildable(gridX: number, gridY: number): boolean {

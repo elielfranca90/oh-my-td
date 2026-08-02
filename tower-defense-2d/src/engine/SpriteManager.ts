@@ -28,6 +28,12 @@ export class SpriteManager {
     }
     return SpriteManager.instance;
   }
+  public getAtlas(mapId: MapId): HTMLCanvasElement {
+    if (mapId === 'MAP_2') return this.map2Atlas;
+    if (mapId === 'MAP_3') return this.map3Atlas;
+    return this.map1Atlas;
+  }
+
 
   private buildCanvasSprites() {
     if (typeof document === 'undefined') return;
