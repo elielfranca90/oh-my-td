@@ -47,4 +47,4 @@ O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real execut
 * **Performance:** Manter 60 FPS estáveis mesmo com 50+ entidades simultâneas em velocidade 4x com sub-stepping.
 * **Tamanho do Bundle:** Build de produção otimizado com suporte a Three.js para o background synthwave.
 * **Layout Zero-Scroll:** Garantir que 100% dos elementos da interface caibam na tela em `100vh` e `100dvh` com suporte a *Safe Area Insets*.
-* **Testes Automatizados:** Suíte de 139 testes unitários e de integração divididos em 22 arquivos de teste (Vitest) passando com 100% de sucesso.
+* **Testes Automatizados:** Suíte de 140 testes unitários e de integração divididos em 22 arquivos de teste (Vitest) passando com 100% de sucesso.

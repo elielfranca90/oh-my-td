@@ -88,6 +88,24 @@ export class WelcomeScreen {
     uiContent.appendChild(subtitle);
     uiContent.appendChild(btnContainer);
     this.overlayEl.appendChild(uiContent);
+    // Create developer links footer
+    const devFooter = document.createElement('div');
+    devFooter.className = 'welcome-dev-footer';
+    devFooter.innerHTML = `
+      <span class="dev-footer-text">Desenvolvido por <strong>Eliel França</strong></span>
+      <div class="dev-footer-links">
+        <a href="https://www.linkedin.com/in/eliel-franca/" target="_blank" rel="noopener noreferrer" class="dev-link linkedin-link" title="LinkedIn">
+          <span class="dev-icon">👔</span> LinkedIn
+        </a>
+        <a href="https://github.com/elielfranca90" target="_blank" rel="noopener noreferrer" class="dev-link github-link" title="GitHub">
+          <span class="dev-icon">🐙</span> GitHub
+        </a>
+        <a href="https://x.com/elielofranca" target="_blank" rel="noopener noreferrer" class="dev-link twitter-link" title="X (Twitter)">
+          <span class="dev-icon">𝕏</span> Twitter
+        </a>
+      </div>
+    `;
+    this.overlayEl.appendChild(devFooter);
 
     document.body.appendChild(this.overlayEl);
   }

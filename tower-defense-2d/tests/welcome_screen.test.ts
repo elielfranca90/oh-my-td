@@ -33,6 +33,31 @@ describe('WelcomeScreen Component Test', () => {
     expect(leaderboardBtn?.textContent).toBe('PLACAR GLOBAL');
   });
 
+  it('should render developer footer with LinkedIn, GitHub, and Twitter links', () => {
+    const onStart = vi.fn();
+    new WelcomeScreen(onStart);
+
+    const overlay = document.getElementById('welcome-screen-overlay');
+    const devFooter = overlay?.querySelector('.welcome-dev-footer');
+    expect(devFooter).not.toBeNull();
+    expect(devFooter?.textContent).toContain('Eliel França');
+
+    const linkedinLink = devFooter?.querySelector('a.linkedin-link') as HTMLAnchorElement;
+    expect(linkedinLink).not.toBeNull();
+    expect(linkedinLink.href).toBe('https://www.linkedin.com/in/eliel-franca/');
+    expect(linkedinLink.target).toBe('_blank');
+
+    const githubLink = devFooter?.querySelector('a.github-link') as HTMLAnchorElement;
+    expect(githubLink).not.toBeNull();
+    expect(githubLink.href).toBe('https://github.com/elielfranca90');
+    expect(githubLink.target).toBe('_blank');
+
+    const twitterLink = devFooter?.querySelector('a.twitter-link') as HTMLAnchorElement;
+    expect(twitterLink).not.toBeNull();
+    expect(twitterLink.href).toBe('https://x.com/elielofranca');
+    expect(twitterLink.target).toBe('_blank');
+  });
+
   it('should trigger onStart with CAMPAIGN when clicking campaign button', () => {
     const onStart = vi.fn();
     new WelcomeScreen(onStart);

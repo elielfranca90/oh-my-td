@@ -1438,6 +1438,87 @@
     text-shadow: 0 0 10px #fff, 0 0 20px #ff007f, 0 0 35px #ff007f, 0 0 60px #00ffff, 0 0 90px #00ffff;
   }
 }
+
+/* Developer Footer on Welcome Screen */
+.welcome-dev-footer {
+  position: absolute;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: rgba(5, 5, 15, 0.75);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.15);
+  max-width: 90vw;
+}
+
+.dev-footer-text {
+  font-size: clamp(0.55rem, 1.4vw, 0.75rem);
+  color: #aaaaaa;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.dev-footer-text strong {
+  color: #ffca28;
+}
+
+.dev-footer-links {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.dev-link {
+  font-size: clamp(0.55rem, 1.3vw, 0.75rem);
+  color: #00ffff;
+  text-decoration: none;
+  padding: 0.3rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.dev-link:hover {
+  color: #ffffff;
+  background: rgba(0, 255, 255, 0.2);
+  border-color: #00ffff;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.dev-link.linkedin-link:hover {
+  background: rgba(10, 102, 194, 0.4);
+  border-color: #0a66c2;
+  box-shadow: 0 0 10px rgba(10, 102, 194, 0.6);
+}
+
+.dev-link.github-link:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+}
+
+.dev-link.twitter-link:hover {
+  background: rgba(29, 155, 240, 0.4);
+  border-color: #1d9bf0;
+  box-shadow: 0 0 10px rgba(29, 155, 240, 0.6);
+}
 </style>
   </head>
   <body class="app-layout">

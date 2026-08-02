@@ -8,6 +8,8 @@
   - Adicionada suíte de teste garantindo que o `colorSpace` das texturas é `srgb`.
 - [x] **Bump de Versão para v0.4.0:**
   - Versão sincronizada no `package.json`, `package-lock.json`, `index.html` e `UIManager.ts`.
+- [x] **Links de Redes Sociais do Desenvolvedor na Tela Inicial:**
+  - Adicionado rodapé flutuante com estilo Synthwave 80s contendo nome do desenvolvedor (Eliel França) e links diretos para LinkedIn, GitHub e X (Twitter).
 
 ---
 
