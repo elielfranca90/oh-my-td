@@ -2,7 +2,7 @@
 
 ```mermaid
 graph TD
-    WS[WelcomeScreen - Synthwave 3D & Mode Select] --> A[Game Loop - Fixed Timestep & Sub-stepping]
+    WS[WelcomeScreen - 3D Nature Diorama & Mode Select] --> A[Game Loop - Fixed Timestep & Sub-stepping]
     A --> B[Input Event Listeners - Mouse, Touch & Press-Hold]
     A --> C[Game State - Campaign & Challenge Modes]
     C --> D[Wave Manager - Campaign 20 Waves / Endless]
@@ -41,7 +41,7 @@ graph TD
 
 ## 🧩 Descrição dos Módulos Principais
 
-* **`WelcomeScreen` (Three.js & Retro UI):** Tela inicial com background 3D synthwave, menu de início, seleção de modo (Campanha ou Infinito com Desafios) e perfil do jogador.
+* **`WelcomeScreen` (Three.js & Retro UI):** Tela inicial com background 3D diorama low-poly de natureza (ilha flutuante, pinheiros, sol bucólico com efeito bloom e partículas de vaga-lumes), menu de início, seleção de modo (Campanha ou Infinito com Desafios) e perfil do jogador.
 * **`Game` & `GameState`:** Motor principal com timestep fixo e sub-stepping para simulação fluida em 2x e 4x sem perda de física.
 * **`DatabaseManager`:** Integração com Supabase para autenticação anônima persistente, sincronização cloud de conquistas e placar global (Leaderboard).
 * **`Specializations`:** Sistema de ramificação de upgrades para torres no nível 3 com habilidades ativas e passivas únicas.

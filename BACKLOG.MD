@@ -1,28 +1,17 @@
-# 📝 Backlog & Roadmap - Tower Defense 2D (Oh My TD)
+# 📌 Product Backlog - Tower Defense 2D (Oh My TD)
 
-## 🎯 Concluído recente (v0.4.0)
+## 🟢 Concluído
 
-- [x] **Correção de Cores do Mapa no ThreeRenderer (sRGB):**
-  - Adicionado `texture.colorSpace = THREE.SRGBColorSpace` em `ThreeRenderer.ts` ao instanciar os `CanvasTexture` dos tiles.
-  - Eliminada a dupla correção de gama do WebGLRenderer que deixava os biomas com aspecto lavado/pastel.
-  - Adicionada suíte de teste garantindo que o `colorSpace` das texturas é `srgb`.
-- [x] **Bump de Versão para v0.4.0:**
-  - Versão sincronizada no `package.json`, `package-lock.json`, `index.html` e `UIManager.ts`.
-- [x] **Links de Redes Sociais do Desenvolvedor na Tela Inicial:**
-  - Adicionado rodapé flutuante com estilo Synthwave 80s contendo nome do desenvolvedor (Eliel França) e links diretos para LinkedIn, GitHub e X (Twitter).
+- [x] **Diorama 3D Low-Poly de Natureza**: Substituição do background synthwave/space da `WelcomeScreen` por uma ilha flutuante 3D em Three.js com pinheiros, sol bucólico com bloom e vaga-lumes.
+- [x] **Renderização WebGL de Terrenos sRGB**: Texturas dos tiles do mapa configuradas com `THREE.SRGBColorSpace` para fidelidade de cores sem lavagem de gama.
+- [x] **Sistema de Especializações de Torres (Nível 3)**: Ramificação de caminhos de upgrade (ex: Sniper vs Gatling) para todas as 5 torres.
+- [x] **Chefão Final & Mega Boss Renderer**: Implementação de `BLACK_MEGA_BOSS` na Onda 20 do Modo Campanha com renderizador procedural dedicado.
+- [x] **Sincronização Cloud & Supabase**: Autenticação anônima, persistência de conquistas e Placar Global de High Scores.
+- [x] **Sub-stepping e Simulação Físico-Determinística**: Implementação de timestep fixo com sub-stepping para execução estável em 2x/4x.
 
----
+## 🟡 Em Andamento / Próximas Iterações
 
-## 🚀 Próximas Funcionalidades & Melhorias (Roadmap)
-
-### 🎨 Visual & Efeitos FX
-- [ ] Implementar shaders customizados WebGL para efeitos de lava incandescente no Map 2 (Death Pass).
-- [ ] Adicionar partículas de névoa e clima dinâmico por bioma (chuva no Map 1, poeira de cinzas no Map 2, faíscas arcanas no Map 3).
-
-### ⚔️ Jogabilidade & Conteúdo
-- [ ] Adicionar novas torres secundárias de suporte (ex: Torre de Buffer Arcano / Gerador de Ouro).
-- [ ] Modo Co-op / Multiplayer assíncrono para defesa em dupla.
-
-### 📊 Performance & Infraestrutura
-- [ ] Implementar Code Splitting dinâmico via `import()` no Vite para otimizar os chunks do Three.js (< 500kB).
-- [ ] Adicionar cache local de assets compilados via Service Worker para suporte PWA offline.
+- [ ] **Novos Biomas & Mapas Fantasia**: Adição do Mapa 4 (Grave Pass / Cemitério Obscuro) com mecânicas de névoa e portais de invocação.
+- [ ] **Modo Co-op Multiplayer Local**: Suporte para dois jogadores na mesma tela com divisão de recursos e construção compartilhada.
+- [ ] **Novas Torres Elementais**: Torre Arcana de Teleporte e Torre de Terremoto com desaceleração em área física.
+- [ ] **Trilha Sonora Orquestrada Sintetizada**: Expansão do motor Web Audio API com polifonia estendida e efeitos de arpejador dinâmico.

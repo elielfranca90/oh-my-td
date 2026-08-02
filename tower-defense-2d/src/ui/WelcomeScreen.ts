@@ -17,9 +17,7 @@ export class WelcomeScreen {
   private renderer: THREE.WebGLRenderer | null = null;
   private composer: EffectComposer | null = null;
 
-  private grid1: THREE.GridHelper | null = null;
-  private grid2: THREE.GridHelper | null = null;
-  private sunMesh: THREE.Mesh | null = null;
+  private dioramaGroup: THREE.Group | null = null;
   private particleSystem: THREE.Points | null = null;
 
   private animationFrameId: number | null = null;
@@ -245,8 +243,10 @@ export class WelcomeScreen {
     const height = window.innerHeight;
 
     // 1. Scene
+    // 1. Scene & Fog / Sky
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x030308, 0.012);
+    this.scene.background = new THREE.Color(0x87CEEB);
+    this.scene.fog = new THREE.FogExp2(0x87CEEB, 0.005);
 
     // 2. Camera
     this.camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
@@ -265,56 +265,76 @@ export class WelcomeScreen {
       return;
     }
 
-    // 4. Synthwave Grids (Infinite Highway Effect)
-    const gridSize = 200;
-    const gridDivisions = 80;
-    const colorCenterLine = 0xff007f; // Neon Pink
-    const colorGrid = 0x00ffff;      // Neon Cyan
+    // 4. Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    this.scene.add(ambientLight);
 
-    this.grid1 = new THREE.GridHelper(gridSize, gridDivisions, colorCenterLine, colorGrid);
-    this.grid1.position.set(0, 0, 0);
-    this.scene.add(this.grid1);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 10);
+    this.scene.add(dirLight);
 
-    this.grid2 = new THREE.GridHelper(gridSize, gridDivisions, colorCenterLine, colorGrid);
-    this.grid2.position.set(0, 0, -gridSize);
-    this.scene.add(this.grid2);
+    // 5. Diorama Base (Floating Island)
+    this.dioramaGroup = new THREE.Group();
+    this.dioramaGroup.position.set(0, -5, -20);
 
-    // 5. Horizon Synthwave Wireframe Sun
-    const sunGeo = new THREE.IcosahedronGeometry(22, 4);
-    const sunMat = new THREE.MeshBasicMaterial({
-      color: 0xff007f,
-      wireframe: true,
-    });
-    this.sunMesh = new THREE.Mesh(sunGeo, sunMat);
-    this.sunMesh.position.set(0, 12, -140);
-    this.scene.add(this.sunMesh);
+    const islandBaseGeo = new THREE.CylinderGeometry(20, 16, 5, 8);
+    const islandBaseMat = new THREE.MeshStandardMaterial({ color: 0x4CAF50, flatShading: true });
+    const islandBase = new THREE.Mesh(islandBaseGeo, islandBaseMat);
+    this.dioramaGroup.add(islandBase);
 
-    // 6. Floating Particles
-    const particleCount = 400;
+    // 6. Low-Poly Pine Trees
+    const trunkGeo = new THREE.CylinderGeometry(0.5, 0.5, 2, 5);
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x795548, flatShading: true });
+    const leavesGeo = new THREE.ConeGeometry(2, 5, 5);
+    const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2E7D32, flatShading: true });
+
+    const treeCount = 18;
+    for (let i = 0; i < treeCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * 15;
+      const tx = Math.cos(angle) * radius;
+      const tz = Math.sin(angle) * radius;
+
+      const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+      trunk.position.set(tx, 3.5, tz);
+      this.dioramaGroup.add(trunk);
+
+      const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+      leaves.position.set(tx, 7, tz);
+      this.dioramaGroup.add(leaves);
+    }
+
+    this.scene.add(this.dioramaGroup);
+
+    // 7. Glowing Sun in the Distance
+    const sunGeo = new THREE.SphereGeometry(15, 16, 16);
+    const sunMat = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+    const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+    sunMesh.position.set(-40, 30, -100);
+    this.scene.add(sunMesh);
+
+    // 8. Firefly Particles
+    const particleCount = 200;
     const particleGeo = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
 
     for (let i = 0; i < particleCount; i++) {
-      particlePositions[i * 3] = (Math.random() - 0.5) * 160;
-      particlePositions[i * 3 + 1] = Math.random() * 50;
-      particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+      particlePositions[i * 3] = (Math.random() - 0.5) * 50;
+      particlePositions[i * 3 + 1] = Math.random() * 25 - 5;
+      particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 50 - 20;
     }
 
     particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
     const particleMat = new THREE.PointsMaterial({
-      color: 0x00ffff,
-      size: 0.8,
+      color: 0xADFF2F,
+      size: 0.6,
       transparent: true,
       opacity: 0.8,
     });
     this.particleSystem = new THREE.Points(particleGeo, particleMat);
     this.scene.add(this.particleSystem);
 
-    // 7. Ambient Light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    this.scene.add(ambientLight);
-
-    // 8. Post Processing (Bloom)
+    // 9. Post Processing (Bloom)
     try {
       this.composer = new EffectComposer(this.renderer);
       const renderPass = new RenderPass(this.scene, this.camera);
@@ -324,7 +344,7 @@ export class WelcomeScreen {
         new THREE.Vector2(width, height),
         1.3,  // strength
         0.5,  // radius
-        0.85  // threshold
+        0.9   // threshold
       );
       this.composer.addPass(bloomPass);
 
@@ -362,31 +382,15 @@ export class WelcomeScreen {
 
     this.animationFrameId = requestAnimationFrame(this.animate);
 
-    const speed = 0.5;
-    const gridSize = 200;
-
-    // Move grids towards camera for endless highway effect
-    if (this.grid1 && this.grid2) {
-      this.grid1.position.z += speed;
-      this.grid2.position.z += speed;
-
-      if (this.grid1.position.z >= gridSize) {
-        this.grid1.position.z = this.grid2.position.z - gridSize;
-      }
-      if (this.grid2.position.z >= gridSize) {
-        this.grid2.position.z = this.grid1.position.z - gridSize;
-      }
+    // Rotate and float diorama
+    if (this.dioramaGroup) {
+      this.dioramaGroup.rotation.y += 0.002;
+      this.dioramaGroup.position.y = -5 + Math.sin(Date.now() * 0.001) * 0.5;
     }
 
-    // Slowly rotate synthwave sun
-    if (this.sunMesh) {
-      this.sunMesh.rotation.y += 0.003;
-      this.sunMesh.rotation.x += 0.001;
-    }
-
-    // Slowly rotate floating particles
+    // Rotate firefly particles
     if (this.particleSystem) {
-      this.particleSystem.rotation.y += 0.0005;
+      this.particleSystem.rotation.y += 0.001;
     }
 
     // Render
@@ -468,9 +472,7 @@ export class WelcomeScreen {
     }
 
     this.camera = null;
-    this.grid1 = null;
-    this.grid2 = null;
-    this.sunMesh = null;
+    this.dioramaGroup = null;
     this.particleSystem = null;
   }
 }

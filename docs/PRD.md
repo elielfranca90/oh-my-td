@@ -3,7 +3,7 @@
 ---
 
 ## 1. Visão Geral
-O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real executado nativamente no navegador utilizando a **HTML5 Canvas 2D API** e **Three.js** para a Tela Inicial Synthwave/Retro 3D. O objetivo deste projeto é entregar uma experiência completa de defesa de rotas, combinando construção espacial em grade, 3 biomas distintos com trilhas sonoras dedicadas, táticas de disparo, especialização de upgrades no nível 3, poderes supremos, modos de jogo (Campanha e Desafios Infinitos), simulação determinística com sub-stepping, árvore de talentos permanente, autenticação e sincronização online de conquistas e placar via **Supabase**.
+O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real executado nativamente no navegador utilizando a **HTML5 Canvas 2D API** e **Three.js** para a Tela Inicial com Diorama 3D Low-Poly de Natureza. O objetivo deste projeto é entregar uma experiência completa de defesa de rotas, combinando construção espacial em grade, 3 biomas distintos com trilhas sonoras dedicadas, táticas de disparo, especialização de upgrades no nível 3, poderes supremos, modos de jogo (Campanha e Desafios Infinitos), simulação determinística com sub-stepping, árvore de talentos permanente, autenticação e sincronização online de conquistas e placar via **Supabase**.
 
 ---
 
@@ -33,7 +33,7 @@ O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real execut
 | **RF13** | Badges & Achievements | Monitorar 7 conquistas desbloqueáveis com notificações flutuantes e modal de badges. |
 | **RF14** | Analytics Pós-Partida | Exibir relatório final com Torre MVP, abates, finanças e High Score no `LocalStorage`. |
 | **RF15** | UX Mobile Responsivo | Barra de abas mobile com auto-inspector no toque da torre e controles duplos de volume BGM/SFX. |
-| **RF16** | Tela Inicial & Modos de Jogo | Tela Inicial estilo Synthwave 3D (Three.js) permitindo escolher entre Modo Campanha (20 ondas com Boss final e modal de vitória) e Modo Infinito com Seleção de Desafios (`NORMAL`, `HARDCORE`, `MORTE_CERTA`). |
+| **RF16** | Tela Inicial & Modos de Jogo | Tela Inicial com Diorama 3D Low-Poly de Natureza (Three.js) com ilha flutuante, pinheiros, sol dourado com bloom e vaga-lumes, permitindo escolher entre Modo Campanha (20 ondas com Boss final e modal de vitória) e Modo Infinito com Seleção de Desafios (`NORMAL`, `HARDCORE`, `MORTE_CERTA`). |
 | **RF17** | Especializações de Torres | Permitir ramificação e escolha de caminhos de especialização no Nível 3 para todas as 5 torres com efeitos únicos. |
 | **RF18** | Perfil & Leaderboard Supabase | Autenticação anônima com persistência de identidade, sincronização de conquistas na nuvem e placar global de High Scores via Supabase. |
 | **RF19** | Motor Determinístico & Sub-stepping | Simulação com timestep fixo e sub-stepping para execução fluida e física precisa em velocidades 2x e 4x independente do refresh rate da tela. |
@@ -45,6 +45,6 @@ O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real execut
 
 ## 4. Requisitos Não-Funcionais
 * **Performance:** Manter 60 FPS estáveis mesmo com 50+ entidades simultâneas em velocidade 4x com sub-stepping.
-* **Tamanho do Bundle:** Build de produção otimizado com suporte a Three.js para o background synthwave.
+* **Tamanho do Bundle:** Build de produção otimizado com suporte a Three.js para o background 3D low-poly de natureza.
 * **Layout Zero-Scroll:** Garantir que 100% dos elementos da interface caibam na tela em `100vh` e `100dvh` com suporte a *Safe Area Insets*.
 * **Testes Automatizados:** Suíte de 140 testes unitários e de integração divididos em 22 arquivos de teste (Vitest) passando com 100% de sucesso.
