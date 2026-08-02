@@ -37,7 +37,7 @@ describe('Roteamento do clique no canvas', () => {
 
   const setup = () => {
     const game = new Game2D();
-    const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+    const canvas = game.canvas;
     // happy-dom devolve rect zerado; forja o rect real de 840x600.
     canvas.getBoundingClientRect = () =>
       ({ left: 0, top: 0, width: 840, height: 600, right: 840, bottom: 600, x: 0, y: 0 }) as DOMRect;
@@ -222,5 +222,50 @@ describe('Roteamento do clique no canvas', () => {
     gameState.togglePause();
     clickAt(TORRE_X, TORRE_Y);
     expect(towerManager.getTowers().length).toBe(1);
+  });
+
+  describe('Cálculo de coordenadas com letterboxing (responsividade)', () => {
+    it('deve descontar o offset X quando o container for mais largo que o ratio do canvas', () => {
+      const game = new Game2D();
+      const canvas = game.canvas;
+      // Container 1000x500 (ratio 2.0 vs canvas 840/600 = 1.4)
+      // renderedWidth = 500 * 1.4 = 700, offsetX = (1000 - 700) / 2 = 150
+      // scaleX = 840 / 700 = 1.2, scaleY = 600 / 500 = 1.2
+      canvas.getBoundingClientRect = () =>
+        ({ left: 0, top: 0, width: 1000, height: 500, right: 1000, bottom: 500, x: 0, y: 0 }) as DOMRect;
+
+      // Acessando private getCanvasMousePosition para verificação
+      const posCenter = (game as any).getCanvasMousePosition(
+        new MouseEvent('click', { clientX: 500, clientY: 250, bubbles: true })
+      );
+      expect(posCenter.x).toBe(420); // Meio do canvas 840
+      expect(posCenter.y).toBe(300); // Meio do canvas 600
+
+      const posLeft = (game as any).getCanvasMousePosition(
+        new MouseEvent('click', { clientX: 150, clientY: 0, bubbles: true })
+      );
+      expect(posLeft.x).toBe(0);
+    });
+
+    it('deve descontar o offset Y quando o container for mais alto que o ratio do canvas', () => {
+      const game = new Game2D();
+      const canvas = game.canvas;
+      // Container 420x500 (ratio 0.84 vs canvas 840/600 = 1.4)
+      // renderedHeight = 420 / 1.4 = 300, offsetY = (500 - 300) / 2 = 100
+      // scaleX = 840 / 420 = 2.0, scaleY = 600 / 300 = 2.0
+      canvas.getBoundingClientRect = () =>
+        ({ left: 0, top: 0, width: 420, height: 500, right: 420, bottom: 500, x: 0, y: 0 }) as DOMRect;
+
+      const posCenter = (game as any).getCanvasMousePosition(
+        new MouseEvent('click', { clientX: 210, clientY: 250, bubbles: true })
+      );
+      expect(posCenter.x).toBe(420); // Meio do canvas 840
+      expect(posCenter.y).toBe(300); // Meio do canvas 600
+
+      const posTop = (game as any).getCanvasMousePosition(
+        new MouseEvent('click', { clientX: 0, clientY: 100, bubbles: true })
+      );
+      expect(posTop.y).toBe(0);
+    });
   });
 });

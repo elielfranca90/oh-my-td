@@ -18,6 +18,8 @@ import { getSpecializationOption } from './Specializations';
 import { TalentManager } from './TalentManager';
 import { TowerManager2D } from './TowerManager';
 import { WaveManager } from './WaveManager';
+import { ThreeRenderer } from './ThreeRenderer';
+import { SpriteManager } from './SpriteManager';
 export class Game2D {
   /**
    * Duração de um passo de simulação. A simulação SEMPRE avança em passos de
@@ -50,8 +52,9 @@ export class Game2D {
    */
   private static readonly LONG_PRESS_MOVE_TOLERANCE = 14;
 
-  private canvas: HTMLCanvasElement;
+  public canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
+  public threeRenderer!: ThreeRenderer;
 
   public gameState!: GameState;
   public waveManager!: WaveManager;
@@ -110,9 +113,17 @@ export class Game2D {
     const gameArea = document.getElementById('game-area');
     if (!gameArea) throw new Error('Game area container not found');
 
+    this.threeRenderer = new ThreeRenderer(840, 600);
+    gameArea.appendChild(this.threeRenderer.canvas);
+
     this.canvas = document.createElement('canvas');
     this.canvas.width = 840;
     this.canvas.height = 600;
+    this.canvas.style.position = 'absolute';
+    this.canvas.style.left = '50%';
+    this.canvas.style.top = '50%';
+    this.canvas.style.transform = 'translate(-50%, -50%)';
+    this.canvas.style.zIndex = '1';
     gameArea.appendChild(this.canvas);
 
     const context = this.canvas.getContext('2d');
@@ -147,6 +158,7 @@ export class Game2D {
       this.waveManager.setAutoMode(true);
     }
     this.mapManager = new MapManager2D(this.currentSavedMapId);
+    this.threeRenderer.buildMap(this.mapManager.getMapData(), this.currentSavedMapId, SpriteManager.getInstance());
     this.fxManager = new FXManager();
     this.particleManager = new ParticleManager();
     this.audioManager = new AudioManager();
@@ -244,8 +256,24 @@ export class Game2D {
     const contentWidth = rect.width - borderLeft * 2;
     const contentHeight = rect.height - borderTop * 2;
 
-    const scaleX = this.canvas.width / (contentWidth || 1);
-    const scaleY = this.canvas.height / (contentHeight || 1);
+    const canvasRatio = this.canvas.width / this.canvas.height;
+    const contentRatio = contentWidth / contentHeight;
+
+    let renderedWidth = contentWidth;
+    let renderedHeight = contentHeight;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (contentRatio > canvasRatio) {
+      renderedWidth = contentHeight * canvasRatio;
+      offsetX = (contentWidth - renderedWidth) / 2;
+    } else {
+      renderedHeight = contentWidth / canvasRatio;
+      offsetY = (contentHeight - renderedHeight) / 2;
+    }
+
+    const scaleX = this.canvas.width / (renderedWidth || 1);
+    const scaleY = this.canvas.height / (renderedHeight || 1);
 
     let clientX = 0;
     let clientY = 0;
@@ -261,8 +289,8 @@ export class Game2D {
       clientY = e.clientY;
     }
 
-    const rawX = (clientX - rect.left - borderLeft) * scaleX;
-    const rawY = (clientY - rect.top - borderTop) * scaleY;
+    const rawX = (clientX - rect.left - borderLeft - offsetX) * scaleX;
+    const rawY = (clientY - rect.top - borderTop - offsetY) * scaleY;
 
     const x = Math.max(0, Math.min(this.canvas.width - 1, rawX));
     const y = Math.max(0, Math.min(this.canvas.height - 1, rawY));
@@ -286,12 +314,15 @@ export class Game2D {
     // Sync UI Top Bar & Action Toolbar width & height with canvas DOM element size
     const syncCanvasWidth = () => {
       const rect = this.canvas.getBoundingClientRect();
-      if (rect.width > 0) {
-        document.documentElement.style.setProperty('--canvas-width', `${Math.round(rect.width)}px`);
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const canvasRatio = this.canvas.width / this.canvas.height;
+      const contentRatio = rect.width / rect.height;
+      let renderedWidth = rect.width;
+      if (contentRatio > canvasRatio) {
+        renderedWidth = rect.height * canvasRatio;
       }
-      if (rect.height > 0) {
-        document.documentElement.style.setProperty('--canvas-height', `${Math.round(rect.height)}px`);
-      }
+      document.documentElement.style.setProperty('--canvas-width', `${Math.round(renderedWidth)}px`);
+      document.documentElement.style.setProperty('--canvas-height', `${Math.round(rect.height)}px`);
     };
     syncCanvasWidth();
     window.addEventListener('resize', syncCanvasWidth);
@@ -752,6 +783,9 @@ export class Game2D {
 
       // Update UI
       this.uiManager.update();
+
+      // 1. Render WebGL background (terrain)
+      this.threeRenderer.render();
 
       // 2. Render frame
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
