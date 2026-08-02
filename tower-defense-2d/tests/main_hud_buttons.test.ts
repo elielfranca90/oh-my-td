@@ -28,16 +28,73 @@ describe('Main HUD Buttons Integration Test', () => {
     `;
   });
 
-  it('should render main-leaderboard-btn and main-profile-btn in HUD right controls', () => {
+  it('should render main-home-btn, main-leaderboard-btn and main-profile-btn in HUD right controls', () => {
     createDummyUIManager();
 
+    const homeBtn = document.getElementById('main-home-btn');
     const leaderboardBtn = document.getElementById('main-leaderboard-btn');
     const profileBtn = document.getElementById('main-profile-btn');
 
+    expect(homeBtn).not.toBeNull();
     expect(leaderboardBtn).not.toBeNull();
     expect(profileBtn).not.toBeNull();
+    expect(homeBtn?.textContent).toContain('Início');
     expect(leaderboardBtn?.textContent).toContain('Placar Global');
     expect(profileBtn?.textContent).toContain('Perfil');
+  });
+
+  it('should trigger reload without confirm when main-home-btn is clicked in PREPARATION state', () => {
+    createDummyUIManager();
+    const homeBtn = document.getElementById('main-home-btn');
+
+    let confirmCalled = false;
+    let reloadCalled = false;
+
+    const originalConfirm = window.confirm;
+
+    window.confirm = (msg?: string) => {
+      confirmCalled = true;
+      return true;
+    };
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: { reload: () => { reloadCalled = true; } }
+    });
+
+    expect(gameState.status).toBe('PREPARATION');
+    homeBtn?.click();
+
+    expect(confirmCalled).toBe(false);
+    expect(reloadCalled).toBe(true);
+
+    window.confirm = originalConfirm;
+  });
+
+  it('should ask confirm before reload when main-home-btn is clicked in PLAYING state', () => {
+    createDummyUIManager();
+    gameState.setStatus('PLAYING');
+    const homeBtn = document.getElementById('main-home-btn');
+
+    let confirmCalled = false;
+    let reloadCalled = false;
+
+    const originalConfirm = window.confirm;
+
+    window.confirm = (msg?: string) => {
+      confirmCalled = true;
+      return true;
+    };
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: { reload: () => { reloadCalled = true; } }
+    });
+
+    homeBtn?.click();
+
+    expect(confirmCalled).toBe(true);
+    expect(reloadCalled).toBe(true);
+
+    window.confirm = originalConfirm;
   });
 
   it('should open leaderboard modal when clicking main-leaderboard-btn', () => {

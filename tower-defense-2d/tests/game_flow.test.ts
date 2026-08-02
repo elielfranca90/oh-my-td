@@ -9,8 +9,13 @@ describe('Game Flow & Campaign Victory Integration Tests', () => {
 
     const statusListener = vi.fn();
     EventBus.getInstance().on('status:change', statusListener);
+    EventBus.getInstance().on('wave:start', () => {
+      if (state.status === 'PREPARATION') {
+        state.setStatus('PLAYING');
+      }
+    });
 
-    expect(state.status).toBe('PLAYING');
+    expect(state.status).toBe('PREPARATION');
 
     // Simulate completing all 10 campaign waves
     for (let waveIndex = 0; waveIndex < 10; waveIndex++) {

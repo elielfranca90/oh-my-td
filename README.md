@@ -6,8 +6,7 @@ Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower 
 
 ## 🌟 Visão Geral
 
-O projeto evoluiu de um MVP em Three.js para uma engine nativa **HTML5 Canvas 2D top-down**. A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 3 mapas com mecânicas e trilhas sonoras únicas, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida, controles por toque mobile e layout **zero-scroll** em `100vh` e `100dvh` com suporte a *Safe Area Insets* (Galaxy S23, A51/A55, iPhones).
-
+O projeto evoluiu de um MVP em Three.js para uma engine nativa **HTML5 Canvas 2D top-down** acompanhada de uma **Tela Inicial 3D Synthwave/Retro (Three.js)**. A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 3 mapas com mecânicas e trilhas sonoras únicas, 2 Modos de Jogo (**Modo Campanha com 20 Ondas e Vitória** & **Modo Infinito com Seleção de Desafios**), especializações de torres no Nível 3, simulação determinística com sub-stepping em 2x/4x, autenticação anônima persistente e placar global na nuvem via **Supabase**, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida, controles por toque mobile com *Press-and-Hold* para tooltips e layout **zero-scroll** em `100vh` e `100dvh` com suporte a *Safe Area Insets*.
 ---
 
 ## 🚀 Como Executar o Projeto
@@ -46,19 +45,18 @@ npm run build
 
 ---
 
-## 🏰 5 Tipos de Torres Especializadas
+## 🏰 5 Tipos de Torres & Especializações (Nível 3)
 
-| Torre | Custo | Alcance | Dano | Especialização & Efeito |
-| :--- | :--- | :--- | :--- | :--- |
-| **Basic** | 🪙 50g | 150px | 5 | ⚡ **Critical Hit (20% chance):** Causa 2x de dano crítico |
-| **Frost** | 🪙 70g | 130px | 2 | ❄️ **Aura Glacial Pulse AoE:** Causa dano e desacelera em 50% todos os alvos no raio |
-| **Solar Prism** | 🪙 80g | 140px | 6 | ☀️ **Lente Prismática:** Ganha +10% de dano por segundo focado no mesmo alvo |
-| **Cannon** | 🪙 90g | 120px | 18 | 💥 **Executor:** Causa 2x de dano (+100%) em Tanks e Bosses acima de 50% HP |
-| **Artillery** | 🪙 110g | 170px | 25 | 🔥 **Zona de Napalm:** Explosão em área deixa poça de fogo DoT no chão por 2.5s |
-
+| Torre | Custo | Alcance | Dano | Especialização & Efeito Primário | Caminhos de Especialização (Lvl 3) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Basic** | 🪙 50g | 150px | 5 | ⚡ **Critical Hit (20% chance):** 2x dano crítico | *Sniper Rifle* (Dano massivo a distância) / *Gatling Gun* (Cadência ultra-rápida) |
+| **Frost** | 🪙 70g | 130px | 2 | ❄️ **Aura Glacial Pulse AoE:** Dano e slow 50% em área | *Blizzard Aura* (Raio expandido) / *Permafrost* (Congelamento profundo) |
+| **Solar Prism** | 🪙 80g | 140px | 6 | ☀️ **Lente Prismática:** +10%/s de foco no alvo | *Melter Beam* (Dano acumulativo rápido) / *Refractor* (Multi-laser) |
+| **Cannon** | 🪙 90g | 120px | 18 | 💥 **Executor:** 2x dano em Tanks e Bosses acima 50% HP | *Cluster Bomb* (Sub-explosões AoE) / *Bunker Buster* (Perfura armaduras) |
+| **Artillery** | 🪙 110g | 170px | 25 | 🔥 **Zona de Napalm:** Poça DoT no solo por 2.5s | *Inferno Mortar* (Chagas de fogo persistentes) / *Nuke Cannon* (Impacto devastador) |
 ---
 
-## 👾 7 Tipos de Inimigos
+## 👾 8 Tipos de Inimigos
 
 * **Standard:** Tropa equilibrada (10 HP, 10g recompensa).
 * **Runner:** **Esquiva Ágil (25% chance)** de desviar de mísseis e tiros pesados (`DODGED!`).
@@ -67,7 +65,7 @@ npm run build
 * **Spore Sprinter:** Libera uma nuvem de esporos dando **+30% de velocidade** aos aliados quando fica com menos de 50% HP.
 * **Moss Giant:** Regenera **+3 HP/seg** enquanto pisar em blocos de grama.
 * **BOSS:** **160 HP** (escalar no modo infinito), causa 5 de dano à base e **invoca 2 Corredores de reforço** ao morrer.
-
+* **BLACK MEGA BOSS:** Chefão com alta resistência, gráficos de spritesheet com transparência e renderizador dedicado (`MegaBossSpriteRenderer`).
 ---
 
 ## ⚡ Poderes Supremos (*Ultimate Spells*)
@@ -78,27 +76,28 @@ npm run build
 
 ---
 
-## 🌟 Meta-Progressão, Conquistas & Analytics
+## 🌟 Meta-Progressão, Conquistas & Cloud (Supabase)
 
-* 🌟 **Skill Tree Permanete (`TalentManager.ts`):** Ganhe Estrelas ao jogar e evolua talentos salvos no `LocalStorage` (*Archery, Economy, Fortress, Channeling*).
-* 🏆 **Badges & Achievements (`AchievementManager.ts`):** 7 conquistas desbloqueáveis com notificações flutuantes e modal de inspeção.
+* 🌟 **Skill Tree Permanente (`TalentManager.ts`):** Ganhe Estrelas ao jogar e evolua talentos salvos no `LocalStorage` (*Archery, Economy, Fortress, Channeling*).
+* 🏆 **Badges & Achievements (`AchievementManager.ts`):** 11 conquistas desbloqueáveis com notificações flutuantes, modal de inspeção e sincronização cloud.
+* ☁️ **Perfil & Leaderboard Supabase (`DatabaseManager.ts`):** Autenticação anônima com persistência de identidade e placar de líderes global online.
 * 📊 **Análises Pós-Partida (`AnalyticsManager.ts`):** Relatório com Torre MVP, total de abates, estatísticas financeiras e recorde pessoal de maior onda (`🏆 Best: Wave X`).
 
----
-
-## 📱 UX Mobile & Áudio Independente
+## 📱 UX Mobile, Motor Determinístico & Áudio
 
 * **Mobile Tab Bar & Auto-Inspector:** Abas em celulares (`Build`, `Spells`, `Skills`, `Inspector`) com troca automática ao tocar em torres.
+* **Press-and-Hold Tooltips:** Dicas contextuais de tiles acionadas via clique prolongado em mobile ou mouse.
+* **Motor Físico com Timestep Fixo & Sub-stepping:** Simulação 100% determinística sem travamento ou perda de tiros em velocidades 2x e 4x.
 * **Controles Independentes de Áudio:** Sliders individuais para volume da Música (`🎵 BGM`) e dos Efeitos Sonoros (`🔊 SFX`) com salvamento automático.
-* **Bateria de Testes Vitest:** 15 testes unitários e de integração cobrindo motores matemáticos, wave scaling e física do grid.
+* **Bateria de Testes Vitest:** 132 testes unitários e de integração divididos em 21 suítes cobrindo motores matemáticos, wave scaling, física de sub-stepping e banco de dados.
 ---
 
 ## 📚 Documentação Técnica
 
 A arquitetura detalhada e especificações do projeto estão disponíveis na pasta [`/docs`](./docs):
-+- 📐 [**ARCHITECTURE_CANVAS.md**](./docs/ARCHITECTURE_CANVAS.md): Arquitetura do motor Canvas 2D, loop de renderização e sintetização de áudio.
-- 📝 [**PRD.md**](./docs/PRD.md): Documento de Requisitos do Produto e User Stories.
-- 🛠️ [**TECH_SPEC.md**](./docs/TECH_SPEC.md): Especificação Técnica e Contrato de Testes.
+* 📐 [**ARCHITECTURE_CANVAS.md**](./docs/ARCHITECTURE_CANVAS.md): Arquitetura do motor Canvas 2D, loop de renderização e sintetização de áudio.
+* 📝 [**PRD.md**](./docs/PRD.md): Documento de Requisitos do Produto e User Stories.
+* 🛠️ [**TECH_SPEC.md**](./docs/TECH_SPEC.md): Especificação Técnica e Contrato de Testes.
 ---
 
 ## 👤 Autor & Contato

@@ -91,6 +91,7 @@ export class UIManager {
 
     this.createUI();
     this.subscribeToEvents();
+    this.setupUIEvents();
   }
 
   private createUI() {
@@ -105,6 +106,9 @@ export class UIManager {
       </div>
 
       <header id="hud-top" class="hud-top pointer-events-auto">
+        <button id="main-home-btn" class="hud-btn highlight-btn" title="Voltar ao Menu Inicial (🏠)" aria-label="Menu Inicial">
+          🏠<span class="hud-btn-text"> Início</span>
+        </button>
         <button id="main-leaderboard-btn" class="hud-btn highlight-btn" title="Placar Global (🏆)" aria-label="Placar Global">
           🏆<span class="hud-btn-text"> Placar Global</span>
         </button>
@@ -122,6 +126,22 @@ export class UIManager {
 
     const part2Html = `
       <div id="hud-stats-bar" class="hud-stats-bar pointer-events-auto">
+        <div id="hud-challenge-badge" class="hud-stat-badge challenge ${this.gameState.isCampaignMode ? 'hidden' : ''}" title="Selecionar Modo Desafio">
+          <span class="icon">⚔️</span>
+          <select id="hud-challenge-select" class="hud-challenge-select challenge-select">
+            <option value="NORMAL">Padrão</option>
+            <option value="HARDCORE">Hardcore 💀</option>
+            <option value="MORTE_CERTA">Morte Certa ☠️</option>
+          </select>
+        </div>
+        <div id="hud-map-badge" class="hud-stat-badge map ${this.gameState.isCampaignMode ? 'hidden' : ''}" title="Selecionar Mapa">
+          <span class="icon">🗺️</span>
+          <select id="hud-map-select" class="hud-map-select map-select">
+            <option value="MAP_1">Green Valley</option>
+            <option value="MAP_2">Death Pass</option>
+            <option value="MAP_3">Cidadela</option>
+          </select>
+        </div>
         <div class="hud-stat-badge hp" title="Vida da Base">
           <span class="icon">❤️</span>
           <strong id="hud-hp-val">${this.gameState.baseHp}/${this.gameState.maxBaseHp}</strong>
@@ -136,6 +156,9 @@ export class UIManager {
           <strong id="hud-wave-val">0/10</strong>
           <span id="hud-boss-badge" class="boss-badge hidden">⚠️ BOSS</span>
         </div>
+        <button id="hud-endless-btn" class="hud-btn endless-btn" title="Alternar Modo Infinito">
+          ♾️
+        </button>
         <button id="hud-pause-btn" class="hud-btn pause-btn" title="Pausar / Retomar Jogo">
           ⏸️
         </button>
@@ -270,25 +293,9 @@ export class UIManager {
                 </div>
               </div>
 
-              <!-- Map & Challenge Selection -->
+              <!-- Game Options -->
               <div class="settings-section">
-                <h3>🗺️ Mapa & Modo Desafio</h3>
-                <div class="setting-item">
-                  <span>Selecione o Mapa:</span>
-                  <select id="settings-map-select" class="map-select">
-                    <option value="MAP_1">Green Valley</option>
-                    <option value="MAP_2">Death Pass (Dual Spawn)</option>
-                    <option value="MAP_3">Citadel (Short Route)</option>
-                  </select>
-                </div>
-                <div class="setting-item">
-                  <span>Modo Desafio:</span>
-                  <select id="settings-challenge-select" class="challenge-select">
-                    <option value="NORMAL">Modo: Padrão</option>
-                    <option value="HARDCORE">Modo: Hardcore (1 HP) 💀</option>
-                    <option value="MORTE_CERTA">Modo: ☠️ Morte Certa (Insano!)</option>
-                  </select>
-                </div>
+                <h3>🎮 Modo Infinito</h3>
                 <div class="setting-item">
                   <span>Modo Infinito:</span>
                   <label class="switch">
@@ -532,8 +539,6 @@ export class UIManager {
 
     this.storeStateEl = document.getElementById('store-state')!;
     this.inspectorStateEl = document.getElementById('inspector-state')!;
-
-    this.setupUIEvents();
   }
 
   private subscribeToEvents() {
@@ -544,6 +549,7 @@ export class UIManager {
       bus.on('gold:change', (gold: number) => this.onGoldChanged(gold)),
       bus.on('hp:change', (data: { current: number; max: number }) => this.onHpChanged(data)),
       bus.on('wave:change', (data: { current: number; max: number; isEndless: boolean }) => this.onWaveChanged(data)),
+      bus.on('wave:endlessMode', (isEndless: boolean) => this.syncEndlessButton(isEndless)),
       bus.on('tower:select', (tower: Tower2D | null) => this.onTowerSelected(tower)),
       bus.on('tower:buildType', (type: TowerType) => this.onBuildTypeChanged(type)),
       bus.on('spell:select', (spell: ActiveSpell) => this.onSpellSelected(spell)),
@@ -566,6 +572,19 @@ export class UIManager {
   private cleanupEvents() {
     this.unbindEvents.forEach((unbind) => unbind());
     this.unbindEvents = [];
+  }
+
+  private addDomListener<K extends keyof HTMLElementEventMap>(
+    elementIdOrEl: string | HTMLElement | null,
+    type: K,
+    listener: (ev: HTMLElementEventMap[K]) => void
+  ) {
+    const el = typeof elementIdOrEl === 'string' ? document.getElementById(elementIdOrEl) : elementIdOrEl;
+    if (!el) return;
+    el.addEventListener(type, listener as EventListener);
+    this.unbindEvents.push(() => {
+      el.removeEventListener(type, listener as EventListener);
+    });
   }
 
   public closeAllModals() {
@@ -605,12 +624,16 @@ export class UIManager {
   }
 
   private setupUIEvents() {
-    document.getElementById('hud-pause-btn')?.addEventListener('click', () => {
+    this.addDomListener('hud-pause-btn', 'click', () => {
       this.gameState.togglePause();
+    });
+    this.addDomListener('hud-endless-btn', 'click', () => {
+      if (this.gameState.isCampaignMode || this.gameState.challengeMode === 'MORTE_CERTA') return;
+      this.game.setEndlessMode(!this.waveManager.isEndlessMode);
     });
 
     // Settings Toggle & Close
-    document.getElementById('settings-toggle-btn')?.addEventListener('click', () => {
+    this.addDomListener('settings-toggle-btn', 'click', () => {
       this.closeAllModals();
       this.activeParentModal = null;
       this.gameState.isPaused = true;
@@ -618,82 +641,89 @@ export class UIManager {
       this.syncSettingsControls();
       this.settingsOverlayEl.classList.remove('hidden');
     });
-    document.getElementById('settings-close-btn')?.addEventListener('click', () => {
+
+    this.addDomListener('settings-close-btn', 'click', () => {
       this.dismissModal();
     });
 
-    document.getElementById('settings-resume-btn')?.addEventListener('click', () => {
+    this.addDomListener('settings-resume-btn', 'click', () => {
       this.dismissModal();
     });
 
     // Settings Sub-Modals
-    document.getElementById('settings-talents-btn')?.addEventListener('click', () => {
+    this.addDomListener('settings-talents-btn', 'click', () => {
       this.updateTalentsModal();
       this.openSubModal(this.talentsOverlayEl);
     });
 
-    document.getElementById('close-talents-btn')?.addEventListener('click', () => {
+    this.addDomListener('close-talents-btn', 'click', () => {
       this.dismissModal();
     });
 
-    document.getElementById('settings-badges-btn')?.addEventListener('click', () => {
+    this.addDomListener('settings-badges-btn', 'click', () => {
       this.openAchievementsModal();
     });
 
-    document.getElementById('close-achievements-btn')?.addEventListener('click', () => {
+    this.addDomListener('close-achievements-btn', 'click', () => {
       this.dismissModal();
     });
 
-    document.getElementById('settings-changelog-btn')?.addEventListener('click', () => {
+    this.addDomListener('settings-changelog-btn', 'click', () => {
       this.openSubModal(this.changelogOverlayEl);
     });
 
-    document.getElementById('changelog-btn')?.addEventListener('click', () => {
+    this.addDomListener('changelog-btn', 'click', () => {
       this.openSubModal(this.changelogOverlayEl);
     });
 
-    document.getElementById('close-changelog-btn')?.addEventListener('click', () => {
+    this.addDomListener('close-changelog-btn', 'click', () => {
       this.dismissModal();
     });
 
     // Profile & Leaderboard Events
-    document.getElementById('main-profile-btn')?.addEventListener('click', () => {
+    this.addDomListener('main-profile-btn', 'click', () => {
       this.openProfileModal();
     });
-    document.getElementById('settings-profile-btn')?.addEventListener('click', () => {
+    this.addDomListener('settings-profile-btn', 'click', () => {
       this.openProfileModal();
     });
-    document.getElementById('close-profile-btn')?.addEventListener('click', () => {
+    this.addDomListener('close-profile-btn', 'click', () => {
       this.dismissModal();
     });
-    document.getElementById('close-profile-bottom-btn')?.addEventListener('click', () => {
+    this.addDomListener('close-profile-bottom-btn', 'click', () => {
       this.dismissModal();
     });
-    document.getElementById('profile-save-btn')?.addEventListener('click', () => {
+    this.addDomListener('profile-save-btn', 'click', () => {
       this.saveProfile();
     });
 
-    document.getElementById('main-leaderboard-btn')?.addEventListener('click', () => {
+    this.addDomListener('main-home-btn', 'click', () => {
+      if (this.gameState.status === 'PREPARATION' || window.confirm('Deseja voltar para a tela inicial? O progresso da partida será perdido.')) {
+        window.location.reload();
+      }
+    });
+
+    this.addDomListener('main-leaderboard-btn', 'click', () => {
       this.openLeaderboardModal();
     });
-    document.getElementById('settings-leaderboard-btn')?.addEventListener('click', () => {
+    this.addDomListener('settings-leaderboard-btn', 'click', () => {
       this.openLeaderboardModal();
     });
-    document.getElementById('endgame-leaderboard-btn')?.addEventListener('click', () => {
+    this.addDomListener('endgame-leaderboard-btn', 'click', () => {
       this.openLeaderboardModal();
     });
-    document.getElementById('endgame-close-btn')?.addEventListener('click', () => {
+    this.addDomListener('endgame-close-btn', 'click', () => {
       this.overlayEl.classList.add('hidden');
       this.onRestartCallback();
     });
-    document.getElementById('close-leaderboard-btn')?.addEventListener('click', () => {
+    this.addDomListener('close-leaderboard-btn', 'click', () => {
       this.dismissModal();
     });
-    document.getElementById('close-leaderboard-bottom-btn')?.addEventListener('click', () => {
+    this.addDomListener('close-leaderboard-bottom-btn', 'click', () => {
       this.dismissModal();
     });
 
-    document.getElementById('settings-restart-btn')?.addEventListener('click', () => {
+    this.addDomListener('settings-restart-btn', 'click', () => {
       if (window.confirm('Reiniciar a partida atual? Todo o progresso da onda será perdido.')) {
         this.closeAllModals();
         this.activeParentModal = null;
@@ -714,7 +744,7 @@ export class UIManager {
 
     modalOverlays.forEach((overlay) => {
       if (!overlay) return;
-      overlay.addEventListener('click', (e) => {
+      this.addDomListener(overlay, 'click', (e) => {
         if (e.target === overlay) {
           this.dismissModal();
         }
@@ -722,19 +752,19 @@ export class UIManager {
     });
 
     // Audio & Settings Sliders
-    const mapSelect = document.getElementById('settings-map-select') as HTMLSelectElement;
-    if (mapSelect) {
-      mapSelect.value = this.game['mapManager'].currentMapId;
-      mapSelect.addEventListener('change', (e) => {
+    const hudMapSelect = document.getElementById('hud-map-select') as HTMLSelectElement;
+    if (hudMapSelect) {
+      hudMapSelect.value = this.game.currentMapId;
+      this.addDomListener(hudMapSelect, 'change', (e) => {
         const val = (e.target as HTMLSelectElement).value as MapId;
         this.game.changeMap(val);
       });
     }
 
-    const challengeSelect = document.getElementById('settings-challenge-select') as HTMLSelectElement;
+    const challengeSelect = (document.getElementById('hud-challenge-select') || document.getElementById('settings-challenge-select')) as HTMLSelectElement;
     if (challengeSelect) {
       challengeSelect.value = this.gameState.challengeMode;
-      challengeSelect.addEventListener('change', (e) => {
+      this.addDomListener(challengeSelect, 'change', (e) => {
         const val = (e.target as HTMLSelectElement).value as ChallengeMode;
         this.game.changeChallengeMode(val);
       });
@@ -743,17 +773,17 @@ export class UIManager {
     const endlessToggle = document.getElementById('settings-endless-toggle') as HTMLInputElement;
     if (endlessToggle) {
       endlessToggle.checked = this.waveManager.isEndlessMode;
-      endlessToggle.addEventListener('change', (e) => {
+      this.addDomListener(endlessToggle, 'change', (e) => {
         this.game.setEndlessMode((e.target as HTMLInputElement).checked);
       });
     }
 
-    document.getElementById('settings-bgm-mute-btn')?.addEventListener('click', () => {
+    this.addDomListener('settings-bgm-mute-btn', 'click', () => {
       this.audioManager.toggleBgmMute();
       this.syncSettingsControls();
     });
 
-    document.getElementById('settings-sfx-mute-btn')?.addEventListener('click', () => {
+    this.addDomListener('settings-sfx-mute-btn', 'click', () => {
       this.audioManager.toggleSfxMute();
       this.syncSettingsControls();
     });
@@ -761,19 +791,20 @@ export class UIManager {
     const bgmSlider = document.getElementById('settings-bgm-slider') as HTMLInputElement;
     if (bgmSlider) {
       bgmSlider.value = Math.round(this.audioManager.bgmVolume * 100).toString();
-      bgmSlider.addEventListener('input', (e) => {
+      this.addDomListener(bgmSlider, 'input', (e) => {
         const val = parseInt((e.target as HTMLInputElement).value, 10) / 100;
         this.audioManager.setBgmVolume(val);
       });
     }
 
-    document.getElementById('changelog-btn')?.addEventListener('click', () => {
+    this.addDomListener('changelog-btn', 'click', () => {
       this.changelogOverlayEl.classList.remove('hidden');
     });
+
     const sfxSlider = document.getElementById('settings-sfx-slider') as HTMLInputElement;
     if (sfxSlider) {
       sfxSlider.value = Math.round(this.audioManager.sfxVolume * 100).toString();
-      sfxSlider.addEventListener('input', (e) => {
+      this.addDomListener(sfxSlider, 'input', (e) => {
         const val = parseInt((e.target as HTMLInputElement).value, 10) / 100;
         this.audioManager.setSfxVolume(val);
       });
@@ -782,7 +813,7 @@ export class UIManager {
     // Tower Cards
     const towerCards = document.querySelectorAll<HTMLButtonElement>('.toolbar-card');
     towerCards.forEach((card) => {
-      card.addEventListener('click', () => {
+      this.addDomListener(card, 'click', () => {
         const type = card.getAttribute('data-type') as TowerType;
         if (type) {
           this.setBuildType(type);
@@ -791,20 +822,19 @@ export class UIManager {
     });
 
     // Spells Chips
-    document.getElementById('chip-meteor')?.addEventListener('click', () => {
+    this.addDomListener('chip-meteor', 'click', () => {
       this.spellManager.selectSpell('METEOR');
     });
 
-    document.getElementById('chip-freeze')?.addEventListener('click', () => {
+    this.addDomListener('chip-freeze', 'click', () => {
       this.spellManager.triggerGlobalFreeze(this.game['enemyManager'].getEnemies());
     });
 
+    this.addDomListener('btn-speed-1x', 'click', () => this.setGameSpeed(1));
+    this.addDomListener('btn-speed-2x', 'click', () => this.setGameSpeed(2));
+    this.addDomListener('btn-speed-4x', 'click', () => this.setGameSpeed(4));
 
-    document.getElementById('btn-speed-1x')?.addEventListener('click', () => this.setGameSpeed(1));
-    document.getElementById('btn-speed-2x')?.addEventListener('click', () => this.setGameSpeed(2));
-    document.getElementById('btn-speed-4x')?.addEventListener('click', () => this.setGameSpeed(4));
-
-    document.getElementById('btn-auto-mode')?.addEventListener('click', () => {
+    this.addDomListener('btn-auto-mode', 'click', () => {
       const isAuto = !this.waveManager.isAutoMode;
       this.waveManager.setAutoMode(isAuto);
       document.getElementById('btn-auto-mode')?.classList.toggle('active', isAuto);
@@ -818,81 +848,96 @@ export class UIManager {
       this.setGameSpeed(this.game.gameSpeedMultiplier);
     }
 
-    document.getElementById('btn-next-wave')?.addEventListener('click', () => {
+    this.addDomListener('btn-next-wave', 'click', () => {
       this.waveManager.startNextWave();
     });
 
     // Inspector Actions
-    document.getElementById('inspector-close-btn')?.addEventListener('click', () => {
+    this.addDomListener('inspector-close-btn', 'click', () => {
       this.towerManager.selectedTower = null;
       EventBus.getInstance().emit('tower:select', null);
     });
 
-    document.getElementById('btn-inspect-target')?.addEventListener('click', () => {
+    this.addDomListener('btn-inspect-target', 'click', () => {
       this.towerManager.cycleSelectedTowerTargeting();
     });
 
-    document.getElementById('btn-inspect-repair')?.addEventListener('click', () => {
+    this.addDomListener('btn-inspect-repair', 'click', () => {
       this.towerManager.repairSelectedTower();
     });
 
-    document.getElementById('btn-inspect-upgrade')?.addEventListener('click', () => {
+    this.addDomListener('btn-inspect-upgrade', 'click', () => {
       this.towerManager.upgradeSelectedTower();
     });
 
     // Delegação: os botões de especialização são recriados a cada renderInspector.
-    document.getElementById('inspector-spec-choice')?.addEventListener('click', (e) => {
+    this.addDomListener('inspector-spec-choice', 'click', (e) => {
       const btn = (e.target as HTMLElement | null)?.closest('.spec-btn') as HTMLElement | null;
       if (!btn) return;
       const spec = btn.dataset.spec as TowerSpecialization | undefined;
       if (spec) this.towerManager.upgradeSelectedTower(spec);
     });
 
-    document.getElementById('btn-inspect-sell')?.addEventListener('click', () => {
+    this.addDomListener('btn-inspect-sell', 'click', () => {
       this.towerManager.sellSelectedTower();
     });
 
-    document.getElementById('restart-btn')?.addEventListener('click', () => {
+    this.addDomListener('restart-btn', 'click', () => {
       this.overlayEl.classList.add('hidden');
+      if (this.gameState.isCampaignMode && this.gameState.status === 'VICTORY') {
+        const currentMap = this.game.currentMapId;
+        if (currentMap === 'MAP_1') {
+          this.game.changeMap('MAP_2');
+          return;
+        } else if (currentMap === 'MAP_2') {
+          this.game.changeMap('MAP_3');
+          return;
+        } else if (currentMap === 'MAP_3') {
+          window.location.reload();
+          return;
+        }
+      }
       this.onRestartCallback();
     });
 
     // Skill Tree Upgrade Buttons
-    document.getElementById('talent-dmg-btn')?.addEventListener('click', () => {
+    this.addDomListener('talent-dmg-btn', 'click', () => {
       if (this.talentManager.upgradeTalent('damageLvl')) {
         this.updateTalentsModal();
       }
     });
 
-    document.getElementById('talent-gold-btn')?.addEventListener('click', () => {
+    this.addDomListener('talent-gold-btn', 'click', () => {
       if (this.talentManager.upgradeTalent('goldLvl')) {
         this.updateTalentsModal();
       }
     });
 
-    document.getElementById('talent-hp-btn')?.addEventListener('click', () => {
+    this.addDomListener('talent-hp-btn', 'click', () => {
       if (this.talentManager.upgradeTalent('hpLvl')) {
         this.updateTalentsModal();
       }
     });
 
-    document.getElementById('talent-cd-btn')?.addEventListener('click', () => {
+    this.addDomListener('talent-cd-btn', 'click', () => {
       if (this.talentManager.upgradeTalent('cdLvl')) {
         this.updateTalentsModal();
       }
     });
 
-    document.getElementById('talent-repair-btn')?.addEventListener('click', () => {
+    this.addDomListener('talent-repair-btn', 'click', () => {
       if (this.talentManager.upgradeTalent('repairLvl')) {
         this.updateTalentsModal();
       }
     });
 
-    document.getElementById('talent-crit-btn')?.addEventListener('click', () => {
+    this.addDomListener('talent-crit-btn', 'click', () => {
       if (this.talentManager.upgradeTalent('critLvl')) {
         this.updateTalentsModal();
       }
     });
+
+    this.syncEndlessButton(this.waveManager.isEndlessMode);
   }
 
   // --- REACTION HANDLERS ---
@@ -970,6 +1015,7 @@ export class UIManager {
       badgeEl.classList.toggle('morte-certa', mode === 'MORTE_CERTA');
     }
     this.updateTowerAffordability();
+    this.syncEndlessButton(this.waveManager.isEndlessMode);
   }
 
   private switchContextState(state: 'STORE' | 'INSPECTOR') {
@@ -1138,18 +1184,62 @@ export class UIManager {
     const sfxMuteBtn = document.getElementById('settings-sfx-mute-btn');
     if (sfxMuteBtn) sfxMuteBtn.innerText = this.audioManager.isSfxMuted ? '🔇' : '🔊';
 
-    const mapSelect = document.getElementById('settings-map-select') as HTMLSelectElement;
-    if (mapSelect) mapSelect.value = this.game['mapManager'].currentMapId;
+    const isCampaign = this.gameState.isCampaignMode;
 
-    const challengeSelect = document.getElementById('settings-challenge-select') as HTMLSelectElement;
-    if (challengeSelect) challengeSelect.value = this.gameState.challengeMode;
+    const hudMapBadge = document.getElementById('hud-map-badge');
+    if (hudMapBadge) {
+      hudMapBadge.classList.toggle('hidden', isCampaign);
+    }
 
+    const hudMapSelect = document.getElementById('hud-map-select') as HTMLSelectElement;
+    if (hudMapSelect) {
+      hudMapSelect.value = this.game.currentMapId;
+    }
+
+    const hudChallengeBadge = document.getElementById('hud-challenge-badge');
+    if (hudChallengeBadge) {
+      hudChallengeBadge.classList.toggle('hidden', isCampaign);
+    }
+
+    const challengeSelect = (document.getElementById('hud-challenge-select') || document.getElementById('settings-challenge-select')) as HTMLSelectElement;
+    if (challengeSelect) {
+      challengeSelect.value = this.gameState.challengeMode;
+      challengeSelect.disabled = isCampaign;
+      challengeSelect.title = isCampaign ? 'Modo de desafio desabilitado no Modo Campanha' : '';
+    }
+
+    this.syncEndlessButton(this.waveManager.isEndlessMode);
+  }
+
+  private syncEndlessButton(isEndless: boolean) {
+    const endlessBtn = document.getElementById('hud-endless-btn') as HTMLButtonElement;
     const endlessToggle = document.getElementById('settings-endless-toggle') as HTMLInputElement;
+    const isCampaign = this.gameState.isCampaignMode;
+    const isMorteCerta = this.gameState.challengeMode === 'MORTE_CERTA';
+    const isDisabled = isCampaign || isMorteCerta;
+
+    const title = isCampaign
+      ? 'Modo Infinito desabilitado no Modo Campanha'
+      : isMorteCerta
+      ? 'Morte Certa é sempre infinito'
+      : 'Alternar Modo Infinito';
+
+    if (endlessBtn) {
+      endlessBtn.classList.toggle('active', isEndless);
+      endlessBtn.disabled = isDisabled;
+      endlessBtn.title = title;
+    }
+
     if (endlessToggle) {
-      const isMorteCerta = this.gameState.challengeMode === 'MORTE_CERTA';
-      endlessToggle.checked = this.waveManager.isEndlessMode;
-      endlessToggle.disabled = isMorteCerta;
-      endlessToggle.title = isMorteCerta ? 'Morte Certa é sempre infinito' : '';
+      endlessToggle.checked = isEndless;
+      endlessToggle.disabled = isDisabled;
+      endlessToggle.title = title;
+    }
+
+    const waveVal = document.getElementById('hud-wave-val');
+    if (waveVal) {
+      const waveNum = this.currentWave > 0 ? this.currentWave : (this.waveManager ? this.waveManager.currentWaveIndex + 1 : 1);
+      waveVal.innerText = isEndless ? `${waveNum}/♾️` : `${waveNum}/10`;
     }
   }
 
@@ -1219,14 +1309,34 @@ export class UIManager {
       this.overlayEl.classList.remove('hidden');
       const title = document.getElementById('modal-title');
       const desc = document.getElementById('modal-desc');
+      const restartBtn = document.getElementById('restart-btn');
 
       if (this.gameState.status === 'GAME_OVER') {
         if (title) title.innerText = '💀 Game Over';
         const survivedWave = Math.max(1, this.waveManager.currentWaveIndex + 1);
         if (desc) desc.innerText = `Inimigos invadiram a base na Onda ${survivedWave}!`;
+        if (restartBtn) restartBtn.innerText = 'Jogar Novamente';
       } else {
         if (title) title.innerText = '🏆 Vitória!';
         if (desc) desc.innerText = 'Você defendeu a base em todas as 10 Ondas!';
+        if (restartBtn) restartBtn.innerText = 'Jogar Novamente';
+
+        if (this.gameState.isCampaignMode) {
+          const currentMap = this.game.currentMapId;
+          if (currentMap === 'MAP_1') {
+            if (title) title.innerText = 'Green Valley Concluído!';
+            if (desc) desc.innerText = 'Prepare-se para o Vale da Morte.';
+            if (restartBtn) restartBtn.innerText = 'Próxima Fase (Death Pass)';
+          } else if (currentMap === 'MAP_2') {
+            if (title) title.innerText = 'Death Pass Concluído!';
+            if (desc) desc.innerText = 'O último desafio aguarda na Cidadela.';
+            if (restartBtn) restartBtn.innerText = 'Batalha Final (Cidadela)';
+          } else if (currentMap === 'MAP_3') {
+            if (title) title.innerText = 'Campanha Concluída!';
+            if (desc) desc.innerText = 'Você salvou o mundo de Oh My TD!';
+            if (restartBtn) restartBtn.innerText = 'Voltar ao Menu';
+          }
+        }
       }
 
       const recordBadge = document.getElementById('record-badge');

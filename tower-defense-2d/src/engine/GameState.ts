@@ -2,7 +2,7 @@ import type { ChallengeMode } from '../types';
 import { EventBus } from './EventBus';
 import { TalentManager } from './TalentManager';
 
-export type GameStatus = 'PLAYING' | 'GAME_OVER' | 'VICTORY';
+export type GameStatus = 'PREPARATION' | 'PLAYING' | 'GAME_OVER' | 'VICTORY';
 
 export class GameState {
   public gold: number;
@@ -10,9 +10,10 @@ export class GameState {
   public maxBaseHp: number;
   public currentWave = 0;
   public maxWaves = 10;
-  public status: GameStatus = 'PLAYING';
+  public status: GameStatus = 'PREPARATION';
   public isPaused = false;
   public challengeMode: ChallengeMode = 'NORMAL';
+  public isCampaignMode: boolean = false;
 
   constructor(_talentManager?: TalentManager, challengeMode: ChallengeMode = 'NORMAL') {
     this.challengeMode = challengeMode;
@@ -34,7 +35,7 @@ export class GameState {
   }
 
   public togglePause(): boolean {
-    if (this.status !== 'PLAYING') return false;
+    if (this.status !== 'PLAYING' && this.status !== 'PREPARATION') return false;
     this.isPaused = !this.isPaused;
     EventBus.getInstance().emit('pause:change', this.isPaused);
     return this.isPaused;

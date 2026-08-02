@@ -24,12 +24,15 @@ npm run build
 
 ## 🛠️ Recursos Implementados
 
-* **3 Biomas Visuais & Trilhas Sonoras Únicas:** Green Valley (Bucólico), Death Pass (Lava/Basalto) e Citadel (Arcano-Punk Neon).
-* **5 Torres Especializadas:** Basic (Crit 20%), Frost (AoE Pulse), Solar Prism (Laser Focus), Cannon (Executor 2x), Artillery (Napalm DoT).
-* **7 Inimigos Únicos:** Standard, Runner (Esquiva), Tank (Armadura), Shielded (Escudo de Energia), Spore Sprinter (Nuvem de Velocidade), Moss Giant (Regeneração) e BOSS (Reinforcements).
-* **Meta-Progressão & Badges:** Skill Tree permanente (🌟 Stars) e Modal de Conquistas (`🏆 Badges`).
-* **Relatório Pós-Partida & Recordes:** Painel de Analytics com Torre MVP e salvamento de High Score no `LocalStorage`.
-* **UX Mobile Responsivo & Zero-Scroll:** Suporte completo a `100dvh` (Dynamic Viewport Height) para Safari iOS/Android, suporte a *Safe Area Insets* (Notch/Dynamic Island), compactação responsiva de status para telas ultra-estreitas (Galaxy S23, A51/A55, iPhone SE/13/14/15), barra de abas mobile com auto-inspector e controle duplo de volume (BGM & SFX).
+* **🎮 Tela Inicial 3D Synthwave & Modos de Jogo:** Interface de entrada retro 3D (Three.js) com suporte ao Modo Campanha (20 Ondas + Boss Final com Modal de Vitória) e Modo Infinito com Seleção de Desafios (`NORMAL`, `HARDCORE`, `MORTE_CERTA`).
+* **🏰 5 Torres Especializadas & Upgrades Ramificados (Lvl 3):** Basic, Frost, Solar Prism, Cannon e Artillery com escolha de caminhos de especialização no Nível 3.
+* **👾 8 Tipos de Inimigos:** Standard, Runner (Esquiva), Tank (Armadura), Shielded (Escudo de Energia), Spore Sprinter (Velocidade), Moss Giant (Regeneração), BOSS (Reinforcements) e `BLACK_MEGA_BOSS` com renderizador customizado.
+* **☁️ Perfil do Jogador & Leaderboard Supabase:** Autenticação anônima persistente com sincronização cloud de conquistas e placar de líderes global online.
+* **⚡ Motor Determinístico & Sub-stepping:** Timestep fixo ($1/60$s) e sub-stepping para movimentação e física sem falhas em acelerações de 2x e 4x.
+* **🌟 Meta-Progressão & Badges:** Árvore de Talentos permanente salvando no LocalStorage e 11 Conquistas desbloqueáveis com notificações flutuantes.
+* **📊 Analytics Pós-Partida:** Painel de relatório exibindo a Torre MVP da partida, finanças, contagem de abates e recordes.
+* **📱 UX Mobile Responsivo & Press-and-Hold:** Suporte a `100dvh`, *Safe Area Insets*, abas mobile com auto-inspector, seletores rápidos na HUD, tooltips por toque longo (*press-and-hold*) e controle duplo de áudio BGM/SFX.
+* **🧪 Bateria de Testes Automatizados (Vitest):** 132 testes passando em 21 suítes cobrindo motor matemático, física, banco de dados, fluxo de ondas e UI.
 ---
 
 ## 👤 Autor & Contato

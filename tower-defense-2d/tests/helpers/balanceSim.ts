@@ -163,6 +163,12 @@ export function runBalanceSim(options: SimOptions): SimResult {
   const unsubscribe = EventBus.getInstance().on('hp:change', () => {
     leaks++;
   });
+  const unsubWaveStart = EventBus.getInstance().on('wave:start', () => {
+    if (state.status === 'PREPARATION') {
+      state.setStatus('PLAYING');
+    }
+  });
+
 
   let towersBuilt = 0;
   const failedOrders: SimBuildOrder[] = [];
@@ -257,6 +263,7 @@ export function runBalanceSim(options: SimOptions): SimResult {
     }
   } finally {
     unsubscribe();
+    unsubWaveStart();
   }
 
   return {

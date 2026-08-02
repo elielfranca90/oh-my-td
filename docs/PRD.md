@@ -3,16 +3,15 @@
 ---
 
 ## 1. Visão Geral
-O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real executado nativamente no navegador utilizando a **HTML5 Canvas 2D API**. O objetivo deste projeto é entregar uma experiência completa de defesa de rotas, combinando construção espacial em grade, 3 biomas distintos com trilhas sonoras dedicadas, táticas de disparo, poderes supremos, modos de automação, árvore de talentos permanente e ondas procedurais infinitas.
+O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real executado nativamente no navegador utilizando a **HTML5 Canvas 2D API** e **Three.js** para a Tela Inicial Synthwave/Retro 3D. O objetivo deste projeto é entregar uma experiência completa de defesa de rotas, combinando construção espacial em grade, 3 biomas distintos com trilhas sonoras dedicadas, táticas de disparo, especialização de upgrades no nível 3, poderes supremos, modos de jogo (Campanha e Desafios Infinitos), simulação determinística com sub-stepping, árvore de talentos permanente, autenticação e sincronização online de conquistas e placar via **Supabase**.
 
 ---
 
 ## 2. Objetivos Principais
-* Oferecer jogabilidade fluida mantendo 60 FPS estáveis sem travamentos ou scroll em qualquer resolução.
+* Oferecer jogabilidade fluida mantendo 60 FPS estáveis sem travamentos ou scroll em qualquer resolução (`100vh` / `100dvh`).
 * Garantir 100% de precisão de movimentação de inimigos sobre as rotas de 14x10 tiles dos 3 mapas.
-* Manter um código-fonte modular em TypeScript desacoplando renderização, simulação, áudio sintetizado e interface DOM.
-* Garantir integridade de código via testes automatizados (Vitest).
-
+* Manter um código-fonte modular em TypeScript desacoplando renderização, simulação determinística com RNG semeado, áudio sintetizado, persistência na nuvem (Supabase) e interface DOM.
+* Garantir a integridade do jogo com uma suíte abrangente de testes automatizados (Vitest).
 ---
 
 ## 3. Requisitos Funcionais
@@ -34,11 +33,17 @@ O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real execut
 | **RF13** | Badges & Achievements | Monitorar 7 conquistas desbloqueáveis com notificações flutuantes e modal de badges. |
 | **RF14** | Analytics Pós-Partida | Exibir relatório final com Torre MVP, abates, finanças e High Score no `LocalStorage`. |
 | **RF15** | UX Mobile Responsivo | Barra de abas mobile com auto-inspector no toque da torre e controles duplos de volume BGM/SFX. |
+| **RF16** | Tela Inicial & Modos de Jogo | Tela Inicial estilo Synthwave 3D (Three.js) permitindo escolher entre Modo Campanha (20 ondas com Boss final e modal de vitória) e Modo Infinito com Seleção de Desafios (`NORMAL`, `HARDCORE`, `MORTE_CERTA`). |
+| **RF17** | Especializações de Torres | Permitir ramificação e escolha de caminhos de especialização no Nível 3 para todas as 5 torres com efeitos únicos. |
+| **RF18** | Perfil & Leaderboard Supabase | Autenticação anônima com persistência de identidade, sincronização de conquistas na nuvem e placar global de High Scores via Supabase. |
+| **RF19** | Motor Determinístico & Sub-stepping | Simulação com timestep fixo e sub-stepping para execução fluida e física precisa em velocidades 2x e 4x independente do refresh rate da tela. |
+| **RF20** | Tooltip Press-and-Hold | Exibição contextual de dicas de terreno/tile via press-and-hold (toque longo em telas sensíveis ao toque e mouse). |
+| **RF21** | Mega Boss & Renderização Customizada | Suporte ao chefão lendário `BLACK_MEGA_BOSS` com spritesheet com transparência e renderizador procedural dedicado (`MegaBossSpriteRenderer`). |
 
 ---
 
 ## 4. Requisitos Não-Funcionais
-* **Performance:** Manter 60 FPS estáveis mesmo com 50+ entidades simultâneas em velocidade 4x.
-* **Tamanho do Bundle:** Build de produção inferior a 90 kB minificado com todos os recursos.
-* **Layout Zero-Scroll:** Garantir que 100% dos elementos da interface caibam na tela em `100vh`.
-* **Testes Automatizados:** Suíte de 15+ testes unitários e de integração (Vitest) passando sem falhas.
+* **Performance:** Manter 60 FPS estáveis mesmo com 50+ entidades simultâneas em velocidade 4x com sub-stepping.
+* **Tamanho do Bundle:** Build de produção otimizado com suporte a Three.js para o background synthwave.
+* **Layout Zero-Scroll:** Garantir que 100% dos elementos da interface caibam na tela em `100vh` e `100dvh` com suporte a *Safe Area Insets*.
+* **Testes Automatizados:** Suíte de 132 testes unitários e de integração divididos em 21 arquivos de teste (Vitest) passando com 100% de sucesso.

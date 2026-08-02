@@ -4,6 +4,7 @@ import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
 import { DatabaseManager } from './DatabaseManager';
 import { AudioManager, type BGMTrack } from './AudioManager';
+import { EventBus } from './EventBus';
 import { EnemyManager2D } from './EnemyManager';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
@@ -134,8 +135,10 @@ export class Game2D {
     this.analyticsManager = new AnalyticsManager();
     this.talentManager = new TalentManager(this.databaseManager);
     this.achievementManager = new AchievementManager(this.talentManager, this.databaseManager);
+    const wasCampaignMode = this.gameState ? this.gameState.isCampaignMode : false;
     this.gameState = new GameState(this.talentManager, this.currentSavedChallengeMode);
-    this.gameState.setStatus('PLAYING');
+    this.gameState.isCampaignMode = wasCampaignMode;
+    this.gameState.setStatus('PREPARATION');
     this.waveManager = new WaveManager(this.rng);
     this.waveManager.isMorteCerta = this.currentSavedChallengeMode === 'MORTE_CERTA';
     // Morte Certa é sempre infinito; nos demais modos vale a preferência salva do jogador.
@@ -206,6 +209,10 @@ export class Game2D {
     );
   }
 
+  public get currentMapId(): MapId {
+    return this.currentSavedMapId;
+  }
+
   public changeMap(mapId: MapId) {
     this.currentSavedMapId = mapId;
     this.initGame();
@@ -267,7 +274,7 @@ export class Game2D {
     // Global User Interaction Listener to Unlock Web Audio API in Browsers
     const unlockAudio = () => {
       this.audioManager.unlockAudio();
-      if (!this.audioManager.isBGMPlaying && !this.audioManager.isBgmMuted && this.gameState.status === 'PLAYING') {
+      if (!this.audioManager.isBGMPlaying && !this.audioManager.isBgmMuted && (this.gameState.status === 'PLAYING' || this.gameState.status === 'PREPARATION')) {
         const initialTrack: BGMTrack = (this.mapManager.currentMapId as BGMTrack) || 'MAP_1';
         this.audioManager.startBGM(this.gameSpeedMultiplier, initialTrack);
       }
@@ -301,6 +308,12 @@ export class Game2D {
         this.gameState.togglePause();
       }
     });
+    EventBus.getInstance().on('wave:start', () => {
+      if (this.gameState.status === 'PREPARATION') {
+        this.gameState.setStatus('PLAYING');
+      }
+    });
+
 
     // Mouse & Touch Move
     const handleMove = (e: MouseEvent | TouchEvent) => {
@@ -350,7 +363,7 @@ export class Game2D {
     };
 
     this.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
-      if (this.gameState.status !== 'PLAYING') return;
+      if (this.gameState.status !== 'PLAYING' && this.gameState.status !== 'PREPARATION') return;
       cancelLongPress();
       this.tooltipGrid = null;
       this.longPressFired = false;
@@ -388,7 +401,7 @@ export class Game2D {
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     const handleTap = (e: MouseEvent | TouchEvent) => {
-      if (this.gameState.status !== 'PLAYING' || this.gameState.isPaused) return;
+      if ((this.gameState.status !== 'PLAYING' && this.gameState.status !== 'PREPARATION') || this.gameState.isPaused) return;
 
       // A pressão já foi consumida pelo tip: não constrói nem seleciona.
       if (this.longPressFired) {
@@ -434,7 +447,7 @@ export class Game2D {
   }
 
   private renderGhostPlacement() {
-    if (!this.hoveredGrid || this.gameState.status !== 'PLAYING' || this.gameState.isPaused || this.spellManager.activeSpell !== null) return;
+    if (!this.hoveredGrid || (this.gameState.status !== 'PLAYING' && this.gameState.status !== 'PREPARATION') || this.gameState.isPaused || this.spellManager.activeSpell !== null) return;
 
     const { x, y } = this.hoveredGrid;
     const existing = this.towerManager.getTowerAt(x, y);
@@ -631,7 +644,7 @@ export class Game2D {
       this.achievementManager.setProgress('ENDLESS_SURVIVOR', this.waveManager.currentWaveIndex + 1);
     }
 
-    if (this.gameState.status !== 'PLAYING') return false;
+    if (this.gameState.status !== 'PLAYING' && this.gameState.status !== 'PREPARATION') return false;
 
     // Check Victory
     if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
@@ -679,7 +692,7 @@ export class Game2D {
       this.audioManager.setTrack(targetTrack);
 
       // Manage BGM state & tempo
-      if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
+      if ((this.gameState.status === 'PLAYING' || this.gameState.status === 'PREPARATION') && !this.gameState.isPaused) {
         if (!this.audioManager.isBGMPlaying && !this.audioManager.isBgmMuted) {
           this.audioManager.startBGM(this.gameSpeedMultiplier, targetTrack);
         } else {
@@ -690,7 +703,7 @@ export class Game2D {
       }
 
       // 1. Update logic (only if active and NOT paused)
-      if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
+      if ((this.gameState.status === 'PLAYING' || this.gameState.status === 'PREPARATION') && !this.gameState.isPaused) {
         // A velocidade (1x/2x/4x) não escala o delta: ela faz o acumulador
         // encher N vezes mais rápido, logo N vezes mais passos fixos por frame.
         const speed = Math.max(1, Math.min(4, this.gameSpeedMultiplier));
