@@ -192,7 +192,7 @@ export class WelcomeScreen {
           <tr>
             <td class="rank-col ${rankClass}">${medal}</td>
             <td><strong>${icon} ${entry.username || 'Anônimo'}</strong></td>
-            <td><span style="font-size:0.75rem; background:#334; padding:2px 6px; border-radius:4px;">${entry.challenge_mode}</span></td>
+            <td><span style="font-size:0.675rem; background:#334; padding:2px 6px; border-radius:4px;">${entry.challenge_mode}</span></td>
             <td style="color:#ffca28; font-weight:bold;">Onda ${entry.wave_reached}</td>
             <td>⚔️ ${entry.total_kills}</td>
             <td>🪙 ${entry.gold_earned}g</td>

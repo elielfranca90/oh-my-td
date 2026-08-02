@@ -84,6 +84,14 @@ $$\text{RNG}(seed) = \frac{t \oplus (t \gg 14)}{4294967296}$$
 
 * **Modo Campanha:** Vitória garantida ao concluir a Onda 20 (derrotando o Chefão Final `BLACK_MEGA_BOSS`), com exibição de modal de comemoração e encerramento de pontuação da campanha.
 
+
+---
+
+### Renderização WebGL de Terrenos com Preservação de Espaço de Cor (sRGB Color Space)
+Para evitar lavagem/opacidade de cores por correção dupla de gama na renderização de tiles de mapa via `ThreeRenderer`:
+1. Os tiles são renderizados proceduralmente em um `HTMLCanvasElement` 2D individual a partir do atlas do bioma.
+2. Ao instanciar `THREE.CanvasTexture(tileCanvas)`, atribui-se explicitamente `texture.colorSpace = THREE.SRGBColorSpace`.
+3. O Three.js passa a reconhecer que os texels da imagem fonte já estão no espaço de cores sRGB, permitindo que o `WebGLRenderer` aplique a conversão correta na etapa final do pipeline gráfico sem perdas de saturação.
 ---
 ## 2. Modelagem de Interfaces (TypeScript)
 

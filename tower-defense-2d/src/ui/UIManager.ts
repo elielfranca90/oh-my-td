@@ -102,7 +102,7 @@ export class UIManager {
 
     const part1Html = `
       <div id="game-title-bar" class="game-title-bar">
-        <h1 class="game-title">OH MY TD <span class="game-version">v0.3.0</span></h1>
+        <h1 class="game-title">OH MY TD <span class="game-version">v0.4.0</span></h1>
       </div>
 
       <header id="hud-top" class="hud-top pointer-events-auto">
@@ -378,7 +378,7 @@ export class UIManager {
               <div class="changelog-item latest">
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
-                  <strong class="version-tag">v0.3.0</strong>
+                  <strong class="version-tag">v0.4.0</strong>
                   <span class="changelog-title">Oh My TD — Nova Interface</span>
                 </div>
                 <ul class="changelog-bullets">
@@ -1704,7 +1704,7 @@ export class UIManager {
           <tr>
             <td class="rank-col ${rankClass}">${medal}</td>
             <td><strong>${icon} ${entry.username || 'Anônimo'}</strong></td>
-            <td><span style="font-size:0.75rem; background:#334; padding:2px 6px; border-radius:4px;">${entry.challenge_mode}</span></td>
+            <td><span style="font-size:0.675rem; background:#334; padding:2px 6px; border-radius:4px;">${entry.challenge_mode}</span></td>
             <td style="color:#ffca28; font-weight:bold;">Onda ${entry.wave_reached}</td>
             <td>⚔️ ${entry.total_kills}</td>
             <td>🪙 ${entry.gold_earned}g</td>

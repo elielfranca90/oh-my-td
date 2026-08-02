@@ -77,6 +77,7 @@ export class ThreeRenderer {
       }
 
       const texture = new THREE.CanvasTexture(tileCanvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
       texture.minFilter = THREE.LinearFilter;
       texture.magFilter = THREE.LinearFilter;
       this.textures.push(texture);

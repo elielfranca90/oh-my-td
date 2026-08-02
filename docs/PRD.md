@@ -39,6 +39,7 @@ O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real execut
 | **RF19** | Motor Determinístico & Sub-stepping | Simulação com timestep fixo e sub-stepping para execução fluida e física precisa em velocidades 2x e 4x independente do refresh rate da tela. |
 | **RF20** | Tooltip Press-and-Hold | Exibição contextual de dicas de terreno/tile via press-and-hold (toque longo em telas sensíveis ao toque e mouse). |
 | **RF21** | Mega Boss & Renderização Customizada | Suporte ao chefão lendário `BLACK_MEGA_BOSS` com spritesheet com transparência e renderizador procedural dedicado (`MegaBossSpriteRenderer`). |
+| **RF22** | Renderização WebGL sRGB | Renderizar os tiles dos mapas via `ThreeRenderer` usando `THREE.CanvasTexture` configurados com `THREE.SRGBColorSpace`, garantindo fidelidade de cores vivas e vibrantes sem desbotamento por dupla correção de gama. |
 
 ---
 
@@ -46,4 +47,4 @@ O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real execut
 * **Performance:** Manter 60 FPS estáveis mesmo com 50+ entidades simultâneas em velocidade 4x com sub-stepping.
 * **Tamanho do Bundle:** Build de produção otimizado com suporte a Three.js para o background synthwave.
 * **Layout Zero-Scroll:** Garantir que 100% dos elementos da interface caibam na tela em `100vh` e `100dvh` com suporte a *Safe Area Insets*.
-* **Testes Automatizados:** Suíte de 132 testes unitários e de integração divididos em 21 arquivos de teste (Vitest) passando com 100% de sucesso.
+* **Testes Automatizados:** Suíte de 139 testes unitários e de integração divididos em 22 arquivos de teste (Vitest) passando com 100% de sucesso.

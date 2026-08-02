@@ -26,6 +26,8 @@ graph TD
     H --> O
     I --> O
     N --> O
+    N --> TR[ThreeRenderer - WebGL sRGB Map Terrain Layer z:0]
+    TR --> WebGLCanvas[WebGL Canvas z:0]
     MegaBoss --> O
     
     D --> P[UIManager - DOM Responsive Overlay & HUD Badges]
@@ -45,3 +47,4 @@ graph TD
 * **`Specializations`:** Sistema de ramificação de upgrades para torres no nível 3 com habilidades ativas e passivas únicas.
 * **`Rng`:** Gerador pseudo-aleatório semeado (Mulberry32) para partidas determinísticas e simulação headless.
 * **`MegaBossSpriteRenderer`:** Renderizador procedural otimizado com transparência para o chefão `BLACK_MEGA_BOSS`.
+* **`ThreeRenderer`:** Renderizador WebGL (Three.js) dedicado aos tiles do mapa na camada inferior (`z-index: 0`) com texturas configuradas em `THREE.SRGBColorSpace` para fidelidade sRGB de cores.

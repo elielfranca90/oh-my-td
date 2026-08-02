@@ -1,12 +1,12 @@
-# 🏰 Tower Defense 2D - Oh My TD
+# 🏰 Tower Defense 2D - Oh My TD (v0.4.0)
 
-Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower Defense 2D** desenvolvido com **HTML5 Canvas 2D**, **TypeScript 5.x** e **Vite**.
+Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower Defense 2D** desenvolvido com **HTML5 Canvas 2D / WebGL (Three.js)**, **TypeScript 5.x** e **Vite**.
 
 ---
 
 ## 🌟 Visão Geral
 
-O projeto evoluiu de um MVP em Three.js para uma engine nativa **HTML5 Canvas 2D top-down** acompanhada de uma **Tela Inicial 3D Synthwave/Retro (Three.js)**. A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 3 mapas com mecânicas e trilhas sonoras únicas, 2 Modos de Jogo (**Modo Campanha com 20 Ondas e Vitória** & **Modo Infinito com Seleção de Desafios**), especializações de torres no Nível 3, simulação determinística com sub-stepping em 2x/4x, autenticação anônima persistente e placar global na nuvem via **Supabase**, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida, controles por toque mobile com *Press-and-Hold* para tooltips e layout **zero-scroll** em `100vh` e `100dvh` com suporte a *Safe Area Insets*.
+O projeto utiliza uma arquitetura híbrida de renderização (**WebGL via Three.js** para renderização de terrenos em sRGB e background 3D Synthwave/Retro + **HTML5 Canvas 2D** para entidades e projéteis em tempo real). A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 3 mapas com mecânicas e trilhas sonoras únicas, 2 Modos de Jogo (**Modo Campanha com 20 Ondas e Vitória** & **Modo Infinito com Seleção de Desafios**), especializações de torres no Nível 3, simulação determinística com sub-stepping em 2x/4x, autenticação anônima persistente e placar global na nuvem via **Supabase**, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida, controles por toque mobile com *Press-and-Hold* para dicas de terreno.
 ---
 
 ## 🚀 Como Executar o Projeto

@@ -54,6 +54,20 @@ describe('ThreeRenderer & WebGL Integration (Fase 1)', () => {
     expect(firstMesh.position.y).toBe(570);
   });
 
+  it('configura o colorSpace das texturas dos tiles como SRGBColorSpace', () => {
+    const renderer = new ThreeRenderer(840, 600);
+    (renderer as unknown as { renderer: unknown }).renderer = {};
+    const mapManager = new MapManager2D('MAP_1');
+    const spriteManager = SpriteManager.getInstance();
+    renderer.buildMap(mapManager.getMapData(), 'MAP_1', spriteManager);
+
+    const textures = (renderer as unknown as { textures: THREE.CanvasTexture[] }).textures;
+    expect(textures.length).toBe(4);
+    for (const texture of textures) {
+      expect(texture.colorSpace).toBe('srgb');
+    }
+  });
+
   it('monta a arquitetura híbrida de canvas (WebGL z:0 e Canvas 2D z:1) no Game2D', () => {
     const fakeCtx = new Proxy(
       {},
