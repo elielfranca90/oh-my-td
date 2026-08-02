@@ -121,7 +121,8 @@ CLAUDE.md
 AGENTS.md
 BACKLOG.MD
 BACKLOG.md
-
+.claude/
+skills/
 
 # Oh My Pi harness
 .omp/
