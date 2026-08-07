@@ -51,6 +51,9 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 
+# Vercel deploy artifact
+.vercel/
+
 # dotenv environment variable files
 .env
 .env.development.local
