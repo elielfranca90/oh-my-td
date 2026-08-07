@@ -61,7 +61,18 @@ export class Tower2D {
     for (let l = 1; l < this.data.level; l++) {
       totalInvested += Math.floor(this.data.cost * 0.8 * l);
     }
-    return Math.floor(totalInvested * 0.7);
+    // Integer math: `170 * 0.7` is 118.99999999999999 in binary floating point, so the
+    // refund silently lost 1 gold on some levels.
+    return Math.floor((totalInvested * 7) / 10);
+  }
+
+  /** Single source of truth for the shot cooldown, in fixed simulation steps. */
+  public getEffectiveFireRate(): number {
+    return Math.max(1, this.data.fireRate);
+  }
+
+  public resetCooldown() {
+    this.data.cooldownTimer = this.getEffectiveFireRate();
   }
 
   public upgrade(): boolean {

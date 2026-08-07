@@ -116,12 +116,14 @@ export class SpellManager {
       for (const enemy of allEnemies) {
         if (enemy.data.isDead) continue;
         const dist = Math.hypot(enemy.data.position.x - x, enemy.data.position.y - y);
-        if (dist <= radius) {
-          enemy.takeDamage(damage, false);
-          this.fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${damage}`, '#ff3d00');
-          if (enemy.data.hp <= 0) {
-            enemy.data.isDead = true;
-          }
+        if (dist > radius) continue;
+
+        // Report what actually landed: a Runner that dodges still used to show "-90".
+        const dmgDealt = enemy.takeDamage(damage, false);
+        if (dmgDealt === -1) {
+          this.fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, 'DODGED!', '#ff9800');
+        } else {
+          this.fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${dmgDealt}`, '#ff3d00');
         }
       }
     });

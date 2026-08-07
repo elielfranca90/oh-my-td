@@ -1,5 +1,7 @@
 import type { FirePatch } from '../types';
 import { Enemy2D } from './Enemy';
+import { FXManager } from './FXManager';
+import { createId } from './ids';
 
 export interface MeteorAnim {
   id: string;
@@ -56,7 +58,7 @@ export class ParticleManager {
     const startY = targetY - 350;
 
     this.meteors.push({
-      id: `meteor-${Date.now()}-${Math.random()}`,
+      id: createId('meteor'),
       startX,
       startY,
       targetX,
@@ -101,7 +103,7 @@ export class ParticleManager {
     // 3. Scorch mark / Napalm Fire Patch
     if (isArtillery) {
       this.firePatches.push({
-        id: `fire-${Date.now()}-${Math.random()}`,
+        id: createId('fire'),
         x,
         y,
         radius: 40,
@@ -123,7 +125,11 @@ export class ParticleManager {
     this.freezeOverlayAlpha = 0.45;
   }
 
-  public update(allEnemies: Enemy2D[] = [], fxManager?: unknown) {
+  public getFirePatches(): readonly FirePatch[] {
+    return this.firePatches;
+  }
+
+  public update(allEnemies: Enemy2D[] = [], fxManager?: FXManager) {
     // 1. Update Meteors
     for (let i = this.meteors.length - 1; i >= 0; i--) {
       const m = this.meteors[i];
@@ -194,9 +200,9 @@ export class ParticleManager {
           if (enemy.data.isDead) continue;
           const dist = Math.hypot(enemy.data.position.x - fp.x, enemy.data.position.y - fp.y);
           if (dist <= fp.radius) {
-            enemy.takeDamage(fp.damage, true);
-            if (fxManager && typeof fxManager === 'object' && 'addDamageText' in fxManager && typeof fxManager.addDamageText === 'function') {
-              fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${fp.damage}`, '#ff9100');
+            const dmgDealt = enemy.takeDamage(fp.damage, true);
+            if (fxManager && dmgDealt > 0) {
+              fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${dmgDealt}`, '#ff9100');
             }
           }
         }
@@ -276,16 +282,22 @@ export class ParticleManager {
       ctx.restore();
     }
 
-    // Render Freeze Screen Overlay & Shards
-    if (this.freezeOverlayAlpha > 0) {
-      ctx.save();
-      ctx.fillStyle = `rgba(0, 229, 255, ${this.freezeOverlayAlpha})`;
-      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  }
 
-      ctx.strokeStyle = `rgba(128, 222, 234, ${this.freezeOverlayAlpha * 1.5})`;
-      ctx.lineWidth = 12;
-      ctx.strokeRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      ctx.restore();
-    }
+  /**
+   * Screen-space overlay: must be drawn OUTSIDE the screen-shake transform, otherwise the
+   * translated full-canvas rect left an unpainted strip at the edges.
+   */
+  public renderFreezeOverlay(ctx: CanvasRenderingContext2D) {
+    if (this.freezeOverlayAlpha <= 0) return;
+
+    ctx.save();
+    ctx.fillStyle = `rgba(0, 229, 255, ${this.freezeOverlayAlpha})`;
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    ctx.strokeStyle = `rgba(128, 222, 234, ${this.freezeOverlayAlpha * 1.5})`;
+    ctx.lineWidth = 12;
+    ctx.strokeRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.restore();
   }
 }

@@ -1,4 +1,5 @@
 import type { FloatingText } from '../types';
+import { createId } from './ids';
 
 export class FXManager {
   private floatingTexts: FloatingText[] = [];
@@ -6,7 +7,7 @@ export class FXManager {
 
   public addDamageText(x: number, y: number, text: string, color = '#ffeb3b') {
     this.floatingTexts.push({
-      id: `text-${Date.now()}-${Math.random()}`,
+      id: createId('text'),
       text,
       x: x + (Math.random() * 16 - 8),
       y: y - 10,

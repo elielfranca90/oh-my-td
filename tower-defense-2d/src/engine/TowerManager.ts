@@ -4,11 +4,15 @@ import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
+import { createId } from './ids';
 import { MapManager2D } from './MapManager';
 import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
 import { TalentManager } from './TalentManager';
 import { Tower2D } from './Tower';
+
+/** Simulation steps of continuous focus needed for each +10% Solar Prism damage tier. */
+const SOLAR_FOCUS_STEPS_PER_TIER = 60;
 
 export class TowerManager2D {
   private towers: Tower2D[] = [];
@@ -20,9 +24,11 @@ export class TowerManager2D {
   private talentManager?: TalentManager;
   private analyticsManager?: AnalyticsManager;
 
+  /** Reused between frames so target selection allocates nothing per tower per step. */
+  private readonly inRangeBuffer: Enemy2D[] = [];
+
   public selectedBuildType: TowerType = 'BASIC';
   public selectedTower: Tower2D | null = null;
-  public sproutTiles: { x: number; y: number }[] = [];
 
   constructor(
     mapManager: MapManager2D,
@@ -40,10 +46,6 @@ export class TowerManager2D {
     this.particleManager = particleManager;
     this.talentManager = talentManager;
     this.analyticsManager = analyticsManager;
-  }
-
-  public setParticleManager(pm: ParticleManager) {
-    this.particleManager = pm;
   }
 
   public getTowerAt(gridX: number, gridY: number): Tower2D | undefined {
@@ -83,14 +85,7 @@ export class TowerManager2D {
       this.analyticsManager.recordGoldSpent(cost);
     }
 
-    const tower = new Tower2D(gridX, gridY, this.mapManager.tileSize, this.selectedBuildType, `tower-${Date.now()}`);
-
-    // Check Overgrowth Sprout Twist (+25% range bonus)
-    const isSproutTile = this.sproutTiles.some(s => s.x === gridX && s.y === gridY);
-    if (isSproutTile) {
-      tower.data.onSproutTile = true;
-      tower.data.range = Math.round(tower.data.range * 1.25);
-    }
+    const tower = new Tower2D(gridX, gridY, this.mapManager.tileSize, this.selectedBuildType, createId('tower'));
 
     // Apply Talent Damage Bonus if unlocked
     if (this.talentManager) {
@@ -135,18 +130,43 @@ export class TowerManager2D {
     }
   }
 
-  public update(enemies: Enemy2D[], fxManager?: FXManager) {
+  /** Fills `inRangeBuffer` with living enemies inside the tower's radius. */
+  private collectInRange(tower: Tower2D, enemies: Enemy2D[]): Enemy2D[] {
+    const buffer = this.inRangeBuffer;
+    buffer.length = 0;
+
+    // Squared comparison avoids a sqrt per enemy per tower per step.
+    const rangeSq = tower.data.range * tower.data.range;
+    for (const enemy of enemies) {
+      if (enemy.data.isDead) continue;
+      const dx = enemy.data.position.x - tower.data.position.x;
+      const dy = enemy.data.position.y - tower.data.position.y;
+      if (dx * dx + dy * dy <= rangeSq) buffer.push(enemy);
+    }
+
+    return buffer;
+  }
+
+  private selectTarget(tower: Tower2D, inRange: Enemy2D[]): Enemy2D {
+    switch (tower.data.targeting) {
+      case 'STRONGEST':
+        return inRange.reduce((prev, curr) => (curr.data.hp > prev.data.hp ? curr : prev));
+      case 'WEAKEST':
+        return inRange.reduce((prev, curr) => (curr.data.hp < prev.data.hp ? curr : prev));
+      case 'LAST':
+        return inRange.reduce((prev, curr) => (curr.data.waypointIndex < prev.data.waypointIndex ? curr : prev));
+      case 'FIRST':
+      default:
+        return inRange.reduce((prev, curr) => (curr.data.waypointIndex > prev.data.waypointIndex ? curr : prev));
+    }
+  }
+
+  public update(enemies: Enemy2D[], fxManager: FXManager) {
     for (const tower of this.towers) {
       const readyToShoot = tower.update();
       if (!readyToShoot) continue;
 
-      // Filter in-range enemies
-      const inRangeEnemies = enemies.filter(e => {
-        if (e.data.isDead) return false;
-        const dx = e.data.position.x - tower.data.position.x;
-        const dy = e.data.position.y - tower.data.position.y;
-        return Math.hypot(dx, dy) <= tower.data.range;
-      });
+      const inRangeEnemies = this.collectInRange(tower, enemies);
 
       if (inRangeEnemies.length === 0) {
         tower.data.laserTargetId = undefined;
@@ -164,132 +184,129 @@ export class TowerManager2D {
           }
           enemy.applySlow(tower.data.slowFactor || 0.5, 120);
         }
-        tower.data.cooldownTimer = tower.data.fireRate;
+        tower.resetCooldown();
         continue;
       }
 
-      // Select target according to tower's targeting strategy
-      let target: Enemy2D = inRangeEnemies[0];
-      switch (tower.data.targeting) {
-        case 'STRONGEST':
-          target = inRangeEnemies.reduce((prev, curr) => (curr.data.hp > prev.data.hp ? curr : prev));
-          break;
-        case 'WEAKEST':
-          target = inRangeEnemies.reduce((prev, curr) => (curr.data.hp < prev.data.hp ? curr : prev));
-          break;
-        case 'LAST':
-          target = inRangeEnemies.reduce((prev, curr) => (curr.data.waypointIndex < prev.data.waypointIndex ? curr : prev));
-          break;
-        case 'FIRST':
-        default:
-          target = inRangeEnemies.reduce((prev, curr) => (curr.data.waypointIndex > prev.data.waypointIndex ? curr : prev));
-          break;
-      }
+      const target = this.selectTarget(tower, inRangeEnemies);
 
-      if (target) {
-        // 2. Solar Prism Laser Beam (Focus mechanic: +10% damage per sec)
-        if (tower.data.type === 'SOLAR_PRISM') {
-          if (tower.data.laserTargetId === target.data.id) {
-            tower.data.beamDuration = (tower.data.beamDuration || 0) + 1;
-          } else {
-            tower.data.laserTargetId = target.data.id;
-            tower.data.beamDuration = 0;
-          }
+      // 2. Solar Prism Laser Beam (Focus mechanic: +10% damage per second of focus)
+      if (tower.data.type === 'SOLAR_PRISM') {
+        const cooldownSteps = tower.getEffectiveFireRate();
 
-          const focusBonus = Math.min(1.0, Math.floor((tower.data.beamDuration || 0) / 60) * 0.1);
-          const laserDmg = Math.round(tower.data.damage * (1 + focusBonus));
-
-          const dmgDealt = target.takeDamage(laserDmg, false);
-          if (dmgDealt > 0 && this.analyticsManager) {
-            this.analyticsManager.recordDamage('SOLAR_PRISM', dmgDealt);
-          }
-
-          if (fxManager && Math.random() < 0.3) {
-            fxManager.addDamageText(target.data.position.x, target.data.position.y, `-${dmgDealt}`, '#ffff8d');
-          }
-
-          tower.data.cooldownTimer = Math.max(8, tower.data.onSproutTile ? 12 : 24);
-          continue;
+        if (tower.data.laserTargetId === target.data.id) {
+          // beamDuration counts SIMULATION STEPS of focus, not shots. It used to be
+          // incremented by 1 per shot while being divided by 60, so the advertised
+          // "+10% per second" only landed after ~24s and +100% needed 4 minutes.
+          tower.data.beamDuration = (tower.data.beamDuration || 0) + cooldownSteps;
+        } else {
+          tower.data.laserTargetId = target.data.id;
+          tower.data.beamDuration = 0;
         }
 
-        let damage = tower.data.damage;
-        let color = '#ffeb3b';
-        let speed = 9;
-        let radius = 4;
-        let splashRadius: number | undefined;
-        let isCrit = false;
+        const focusTiers = Math.floor((tower.data.beamDuration || 0) / SOLAR_FOCUS_STEPS_PER_TIER);
+        const focusBonus = Math.min(1.0, focusTiers * 0.1);
+        const laserDmg = Math.round(tower.data.damage * (1 + focusBonus));
 
-        if (tower.data.type === 'BASIC') {
-          // 20% Critical Hit chance (2x damage)
-          if (Math.random() < 0.20) {
-            damage *= 2;
-            isCrit = true;
-            color = '#ffea00';
-          }
-          this.audioManager.playBasicShot();
-        } else if (tower.data.type === 'CANNON') {
-          // Executioner (+100% damage against Tanks & Bosses > 50% HP)
-          const targetHpRatio = target.data.hp / target.data.maxHp;
-          if ((target.data.type === 'TANK' || target.data.type === 'BOSS') && targetHpRatio >= 0.5) {
-            damage *= 2;
-            isCrit = true;
-          }
-          color = '#ff5722';
-          speed = 6;
-          radius = 7;
-          this.audioManager.playCannonShot();
-        } else if (tower.data.type === 'ARTILLERY') {
-          color = '#ea80fc';
-          speed = 5;
-          radius = 9;
-          splashRadius = tower.data.splashRadius;
-          this.audioManager.playArtilleryShot();
-
-          // Spawn Napalm Fire Patch on impact location
-          if (this.particleManager) {
-            this.particleManager.triggerImpactExplosion(target.data.position.x, target.data.position.y, true);
-          }
+        const dmgDealt = target.takeDamage(laserDmg, false);
+        if (dmgDealt > 0 && this.analyticsManager) {
+          this.analyticsManager.recordDamage('SOLAR_PRISM', dmgDealt);
         }
 
-        this.projectileManager.fire(
-          tower.data.position,
-          target.data,
-          damage,
-          color,
-          speed,
-          radius,
-          splashRadius,
-          undefined,
-          isCrit,
-          tower.data.type
-        );
-        tower.data.cooldownTimer = tower.data.onSproutTile ? Math.floor(tower.data.fireRate / 2) : tower.data.fireRate;
+        if (dmgDealt === -1) {
+          fxManager.addDamageText(target.data.position.x, target.data.position.y, 'DODGED!', '#ff9800');
+        } else if (Math.random() < 0.3) {
+          fxManager.addDamageText(target.data.position.x, target.data.position.y, `-${dmgDealt}`, '#ffff8d');
+        }
+
+        tower.resetCooldown();
+        continue;
       }
+
+      let damage = tower.data.damage;
+      let color = '#ffeb3b';
+      let speed = 9;
+      let radius = 4;
+      let splashRadius: number | undefined;
+      let isCrit = false;
+      let onImpact: ((x: number, y: number) => void) | undefined;
+
+      if (tower.data.type === 'BASIC') {
+        // 20% Critical Hit chance (2x damage)
+        if (Math.random() < 0.20) {
+          damage *= 2;
+          isCrit = true;
+          color = '#ffea00';
+        }
+        this.audioManager.playBasicShot();
+      } else if (tower.data.type === 'CANNON') {
+        // Executioner (+100% damage against Tanks & Bosses > 50% HP)
+        const targetHpRatio = target.data.hp / target.data.maxHp;
+        if ((target.data.type === 'TANK' || target.data.type === 'BOSS') && targetHpRatio >= 0.5) {
+          damage *= 2;
+          isCrit = true;
+        }
+        color = '#ff5722';
+        speed = 6;
+        radius = 7;
+        this.audioManager.playCannonShot();
+      } else if (tower.data.type === 'ARTILLERY') {
+        color = '#ea80fc';
+        speed = 5;
+        radius = 9;
+        splashRadius = tower.data.splashRadius;
+        this.audioManager.playArtilleryShot();
+
+        // The napalm patch is spawned when the shell lands, not when it leaves the barrel:
+        // against fast targets the fire used to appear 120+ px away from the impact.
+        const particleManager = this.particleManager;
+        if (particleManager) {
+          onImpact = (x, y) => particleManager.triggerImpactExplosion(x, y, true);
+        }
+      }
+
+      this.projectileManager.fire(tower.data.position, target.data, damage, {
+        color,
+        speed,
+        radius,
+        splashRadius,
+        isCrit,
+        towerType: tower.data.type,
+        onImpact,
+      });
+      tower.resetCooldown();
     }
   }
 
-  public render(ctx: CanvasRenderingContext2D, mousePos: { x: number; y: number } | null) {
-    // Render Solar Prism Laser Beams
+  public render(ctx: CanvasRenderingContext2D, mousePos: { x: number; y: number } | null, enemies: Enemy2D[]) {
+    // Render Solar Prism Laser Beams towards their actual target (it used to be a fixed
+    // 40 px vertical stub that ignored where the enemy was).
     for (const tower of this.towers) {
-      if (tower.data.type === 'SOLAR_PRISM' && tower.data.laserTargetId) {
-        // Find target position
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(tower.data.position.x, tower.data.position.y);
-        ctx.lineTo(tower.data.position.x + (Math.random() * 6 - 3), tower.data.position.y - 40);
-        ctx.strokeStyle = '#ffff8d';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.restore();
-      }
+      if (tower.data.type !== 'SOLAR_PRISM' || !tower.data.laserTargetId) continue;
+
+      const target = enemies.find(e => e.data.id === tower.data.laserTargetId && !e.data.isDead);
+      if (!target) continue;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(tower.data.position.x, tower.data.position.y);
+      ctx.lineTo(
+        target.data.position.x + (Math.random() * 6 - 3),
+        target.data.position.y + (Math.random() * 6 - 3)
+      );
+      ctx.strokeStyle = '#ffff8d';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
     }
 
+    const hoverRadiusSq = (this.mapManager.tileSize / 2) ** 2;
     for (const tower of this.towers) {
       let isHovered = false;
       if (mousePos) {
         const dx = mousePos.x - tower.data.position.x;
         const dy = mousePos.y - tower.data.position.y;
-        isHovered = Math.hypot(dx, dy) < this.mapManager.tileSize / 2;
+        isHovered = dx * dx + dy * dy < hoverRadiusSq;
       }
       const isSelected = this.selectedTower === tower;
       tower.render(ctx, isSelected, isHovered);

@@ -6,8 +6,6 @@ export class GameState {
   public gold: number;
   public baseHp: number;
   public maxBaseHp: number;
-  public currentWave = 0;
-  public maxWaves = 10;
   public status: GameStatus = 'PLAYING';
   public isPaused = false;
 
@@ -43,9 +41,5 @@ export class GameState {
     if (this.baseHp <= 0) {
       this.status = 'GAME_OVER';
     }
-  }
-
-  public nextWave() {
-    this.currentWave++;
   }
 }

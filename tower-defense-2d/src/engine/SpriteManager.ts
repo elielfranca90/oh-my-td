@@ -211,9 +211,6 @@ export class SpriteManager {
     if (mapId === 'MAP_2') atlas = this.map2Atlas;
     if (mapId === 'MAP_3') atlas = this.map3Atlas;
 
-    const atlasCtx = atlas.getContext('2d');
-    if (!atlasCtx) return;
-
     ctx.drawImage(
       atlas,
       tileType * this.tileSize,

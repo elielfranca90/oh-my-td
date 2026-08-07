@@ -1,6 +1,12 @@
 
 export type BGMTrack = 'MAP_1' | 'MAP_2' | 'MAP_3' | 'BOSS';
 
+/** Persisted volumes are untrusted input: only accept finite numbers inside [0, 1]. */
+function readVolume(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.max(0, Math.min(1, value));
+}
+
 export class AudioManager {
   private ctx: AudioContext | null = null;
 
@@ -20,6 +26,10 @@ export class AudioManager {
   public isBGMPlaying = false;
   private currentSpeed = 1;
   public currentTrack: BGMTrack = 'MAP_1';
+
+  /** True once the context is actually running (i.e. after a real user gesture). */
+  public isUnlocked = false;
+  private resumeRequested = false;
 
   private readonly PREFS_KEY = 'td2d_audio_prefs_v1';
 
@@ -78,13 +88,16 @@ export class AudioManager {
   private loadPrefs() {
     try {
       const saved = localStorage.getItem(this.PREFS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        this.sfxVolume = typeof parsed.sfxVolume === 'number' ? parsed.sfxVolume : 0.8;
-        this.bgmVolume = typeof parsed.bgmVolume === 'number' ? parsed.bgmVolume : 0.6;
-        this.isSfxMuted = Boolean(parsed.isSfxMuted);
-        this.isBgmMuted = Boolean(parsed.isBgmMuted);
-      }
+      if (!saved) return;
+
+      const parsed: unknown = JSON.parse(saved);
+      if (typeof parsed !== 'object' || parsed === null) return;
+      const raw = parsed as Record<string, unknown>;
+
+      this.sfxVolume = readVolume(raw.sfxVolume, 0.8);
+      this.bgmVolume = readVolume(raw.bgmVolume, 0.6);
+      this.isSfxMuted = raw.isSfxMuted === true;
+      this.isBgmMuted = raw.isBgmMuted === true;
     } catch {
       // Ignore
     }
@@ -103,26 +116,79 @@ export class AudioManager {
     }
   }
 
+  /** Creates the AudioContext + gain graph once. Shared by ensureContext/unlockAudio. */
+  private createContext(): boolean {
+    if (this.ctx) return true;
+
+    const win = window as Window & { webkitAudioContext?: typeof AudioContext };
+    const AudioCtx = window.AudioContext || win.webkitAudioContext;
+    if (!AudioCtx) return false;
+
+    this.ctx = new AudioCtx();
+    this.sfxGainNode = this.ctx.createGain();
+    this.bgmGainNode = this.ctx.createGain();
+    this.sfxGainNode.connect(this.ctx.destination);
+    this.bgmGainNode.connect(this.ctx.destination);
+    this.updateNodeVolumes();
+
+    return true;
+  }
+
+  /**
+   * Requests a resume at most once per pending attempt. It used to be fired on every
+   * frame before the first user gesture, producing ~60 rejected promises per second.
+   */
+  private requestResume() {
+    if (!this.ctx || this.resumeRequested) return;
+    this.resumeRequested = true;
+    this.ctx
+      .resume()
+      .then(() => {
+        this.resumeRequested = false;
+        if (this.ctx && this.ctx.state === 'running') this.isUnlocked = true;
+      })
+      .catch(() => {
+        this.resumeRequested = false;
+      });
+  }
+
   public ensureContext(): boolean {
-    if (!this.ctx) {
-      const win = window as Window & { webkitAudioContext?: typeof AudioContext };
-      const AudioCtx = window.AudioContext || win.webkitAudioContext;
-      if (!AudioCtx) return false;
-      this.ctx = new AudioCtx();
-
-      this.sfxGainNode = this.ctx.createGain();
-      this.bgmGainNode = this.ctx.createGain();
-      this.sfxGainNode.connect(this.ctx.destination);
-      this.bgmGainNode.connect(this.ctx.destination);
-
-      this.updateNodeVolumes();
-    }
+    if (!this.createContext() || !this.ctx) return false;
 
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume().catch(() => {});
+      this.requestResume();
+      return false;
     }
 
-    return this.ctx.state === 'running';
+    const running = this.ctx.state === 'running';
+    if (running) this.isUnlocked = true;
+    return running;
+  }
+
+  /**
+   * Releases the AudioContext. Every New Game / map change used to leak one context;
+   * after ~6 the browser refused to create more and `new AudioContext()` threw from
+   * inside the rAF callback, freezing the game permanently.
+   */
+  public dispose() {
+    this.stopBGM();
+
+    const ctx = this.ctx;
+    this.ctx = null;
+    this.sfxGainNode = null;
+    this.bgmGainNode = null;
+    this.isUnlocked = false;
+    this.resumeRequested = false;
+
+    if (!ctx) return;
+    try {
+      if (ctx.state !== 'closed' && typeof ctx.close === 'function') {
+        const closing = ctx.close();
+        if (closing && typeof closing.catch === 'function') closing.catch(() => {});
+      }
+    } catch {
+      // Ignore: a context that refuses to close is still dropped from our graph.
+    }
   }
 
   private updateNodeVolumes() {
@@ -136,31 +202,20 @@ export class AudioManager {
     }
   }
 
+  /**
+   * Called from the first user gesture. It only unlocks the context — starting the BGM
+   * is the game loop's job, which knows whether the match is actually running. Starting
+   * it from here made every click on a paused / game-over screen emit a BGM blip.
+   */
   public unlockAudio() {
-    if (!this.ctx) {
-      const win = window as Window & { webkitAudioContext?: typeof AudioContext };
-      const AudioCtx = window.AudioContext || win.webkitAudioContext;
-      if (!AudioCtx) return;
-      this.ctx = new AudioCtx();
-
-      this.sfxGainNode = this.ctx.createGain();
-      this.bgmGainNode = this.ctx.createGain();
-      this.sfxGainNode.connect(this.ctx.destination);
-      this.bgmGainNode.connect(this.ctx.destination);
-
-      this.updateNodeVolumes();
-    }
+    if (!this.createContext() || !this.ctx) return;
 
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume().then(() => {
-        this.stopBGM();
-        if (!this.isBgmMuted) {
-          this.startBGM(this.currentSpeed, this.currentTrack);
-        }
-      }).catch(() => {});
-    } else if (!this.isBGMPlaying && !this.isBgmMuted) {
-      this.startBGM(this.currentSpeed, this.currentTrack);
+      this.requestResume();
+      return;
     }
+
+    this.isUnlocked = this.ctx.state === 'running';
   }
 
   public setSfxVolume(vol: number) {

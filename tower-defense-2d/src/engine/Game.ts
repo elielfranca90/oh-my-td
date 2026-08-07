@@ -2,7 +2,9 @@ import { UIManager } from '../ui/UIManager';
 import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager, type BGMTrack } from './AudioManager';
+import { Enemy2D } from './Enemy';
 import { EnemyManager2D } from './EnemyManager';
+import { FixedTimestep } from './FixedTimestep';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
 import { MapManager2D, type MapId } from './MapManager';
@@ -39,6 +41,7 @@ export class Game2D {
   private lastTime = 0;
   private hasAwardedStars = false;
   private currentSavedMapId: MapId = 'MAP_1';
+  private readonly timestep = new FixedTimestep();
 
   constructor() {
     const gameArea = document.getElementById('game-area');
@@ -58,9 +61,15 @@ export class Game2D {
   }
 
   private initGame() {
+    // Release the previous AudioContext instead of leaking it (browsers cap them at ~6).
     if (this.audioManager) {
-      this.audioManager.stopBGM();
+      this.audioManager.dispose();
     }
+
+    // A restart always returns to 1x, otherwise the regenerated UI (which hardcodes the
+    // 1x button as active) desynchronised from the still-4x simulation.
+    this.gameSpeedMultiplier = 1;
+    this.timestep.reset();
 
     this.analyticsManager = new AnalyticsManager();
     this.talentManager = new TalentManager();
@@ -124,6 +133,15 @@ export class Game2D {
     this.initGame();
   }
 
+  /** Read-only accessors so the UI does not need bracket access to private fields. */
+  public get currentMapId(): MapId {
+    return this.mapManager.currentMapId;
+  }
+
+  public getEnemies(): Enemy2D[] {
+    return this.enemyManager.getEnemies();
+  }
+
   private getCanvasMousePosition(e: MouseEvent | TouchEvent): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
     const borderLeft = this.canvas.clientLeft || 0;
@@ -159,25 +177,46 @@ export class Game2D {
   }
 
   private setupListeners() {
-    // Global User Interaction Listener to Unlock Web Audio API in Browsers
+    // Global User Interaction Listener to Unlock Web Audio API in Browsers.
+    // Detaches itself once the context is really running so we stop paying for it (and
+    // so BGM is never re-triggered by unrelated clicks). Starting the BGM is left to the
+    // game loop, which knows whether the match is running.
     const unlockAudio = () => {
       this.audioManager.unlockAudio();
-      if (!this.audioManager.isBGMPlaying && !this.audioManager.isBgmMuted && this.gameState.status === 'PLAYING') {
-        const initialTrack: BGMTrack = (this.mapManager.currentMapId as BGMTrack) || 'MAP_1';
-        this.audioManager.startBGM(this.gameSpeedMultiplier, initialTrack);
-      }
+      if (!this.audioManager.isUnlocked) return;
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
     };
 
     window.addEventListener('click', unlockAudio, { passive: true });
     window.addEventListener('keydown', unlockAudio, { passive: true });
     window.addEventListener('touchstart', unlockAudio, { passive: true });
 
-    // Keyboard Hotkeys
+    // Keyboard Hotkeys — ignored while a form control or button has focus, so Space/Enter
+    // keep activating the focused control instead of toggling pause.
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.code === 'KeyP') {
-        e.preventDefault();
-        this.gameState.togglePause();
+      if (e.code !== 'Space' && e.code !== 'KeyP') return;
+
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON' || target?.isContentEditable) {
+        return;
       }
+
+      e.preventDefault();
+      this.gameState.togglePause();
+    });
+
+    // Returning from a background tab must not flush a huge delta into the simulation,
+    // and the BGM setInterval (which keeps firing while rAF is paused) must be stopped.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.audioManager.stopBGM();
+        return;
+      }
+      this.lastTime = performance.now();
+      this.timestep.reset();
     });
 
     // Mouse & Touch Move
@@ -223,7 +262,16 @@ export class Game2D {
     this.canvas.addEventListener('touchend', (e) => {
       e.preventDefault();
       handleTap(e);
+      // Touch has no "leave" event: drop the pointer so the ghost/hover overlays do not
+      // stay stuck where the finger last was.
+      this.mousePos = null;
+      this.hoveredGrid = null;
     }, { passive: false });
+
+    this.canvas.addEventListener('touchcancel', () => {
+      this.mousePos = null;
+      this.hoveredGrid = null;
+    }, { passive: true });
   }
 
   private renderGhostPlacement() {
@@ -293,93 +341,126 @@ export class Game2D {
     this.ctx.restore();
   }
 
+  /**
+   * Advances the whole simulation by exactly one fixed step. Every subsystem is driven
+   * from here — the ms-based ones receive `stepMs`, the frame-based ones tick once,
+   * which keeps them in lockstep. Previously spawning was ms-based while movement,
+   * fire rate and projectiles counted rAF frames, so the speed buttons only increased
+   * enemy density and the real game speed depended on the monitor refresh rate.
+   */
+  private stepSimulation(stepMs: number) {
+    const enemies = this.enemyManager.getEnemies();
+
+    this.waveManager.updateAutoCountdown(stepMs);
+    this.enemyManager.update(stepMs);
+    this.towerManager.update(enemies, this.fxManager);
+    this.projectileManager.update(enemies, this.fxManager, this.analyticsManager);
+    this.spellManager.update(stepMs);
+    this.particleManager.update(enemies, this.fxManager);
+    this.fxManager.update();
+
+    // Check Endless Survivor Achievement
+    if (this.waveManager.isEndlessMode) {
+      this.achievementManager.setProgress('ENDLESS_SURVIVOR', this.waveManager.currentWaveIndex + 1);
+    }
+
+    // Check Victory
+    if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
+      this.gameState.status = 'VICTORY';
+    }
+  }
+
+  private updateBGM() {
+    const enemies = this.enemyManager.getEnemies();
+    const hasBossOnScreen = enemies.some(e => !e.data.isDead && e.data.type === 'BOSS');
+    const activeWaveNum = this.waveManager.currentWaveIndex + 1;
+    const isBossWave = this.waveManager.isBossWave(activeWaveNum);
+
+    const mapTrack: BGMTrack = (this.mapManager.currentMapId as BGMTrack) || 'MAP_1';
+    const targetTrack: BGMTrack = (hasBossOnScreen || (isBossWave && this.waveManager.isWaveActive)) ? 'BOSS' : mapTrack;
+
+    this.audioManager.setTrack(targetTrack);
+
+    const isRunning = this.gameState.status === 'PLAYING' && !this.gameState.isPaused;
+    if (!isRunning || !this.audioManager.isUnlocked) {
+      this.audioManager.stopBGM();
+      return;
+    }
+
+    if (!this.audioManager.isBGMPlaying && !this.audioManager.isBgmMuted) {
+      this.audioManager.startBGM(this.gameSpeedMultiplier, targetTrack);
+    } else {
+      this.audioManager.updateBGMTempo(this.gameSpeedMultiplier, targetTrack);
+    }
+  }
+
+  private renderFrame() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    const shake = this.fxManager.getShakeOffset();
+    this.ctx.save();
+    this.ctx.translate(shake.x, shake.y);
+
+    this.mapManager.render(this.ctx);
+    this.particleManager.render(this.ctx);
+    this.renderGhostPlacement();
+    this.towerManager.render(this.ctx, this.mousePos, this.enemyManager.getEnemies());
+    this.enemyManager.render(this.ctx);
+    this.projectileManager.render(this.ctx);
+    this.spellManager.renderSpellTargeting(this.ctx, this.mousePos);
+    this.fxManager.render(this.ctx);
+
+    this.ctx.restore();
+
+    // Screen-space overlays stay outside the shake transform, otherwise the toasts and
+    // the pause panel jittered along with the world.
+    this.particleManager.renderFreezeOverlay(this.ctx);
+    this.renderAchievementToasts();
+    this.renderPauseOverlay();
+  }
+
+  private tick(currentTime: number) {
+    const rawDelta = currentTime - this.lastTime;
+    this.lastTime = currentTime;
+
+    this.updateBGM();
+
+    if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
+      this.timestep.advance(rawDelta, this.gameSpeedMultiplier, (stepMs) => this.stepSimulation(stepMs));
+    } else {
+      this.timestep.reset();
+    }
+
+    // Toasts are cosmetic and must keep animating while paused, so they run on real time
+    // outside the simulation.
+    this.achievementManager.update(Math.min(Math.max(0, rawDelta), this.timestep.maxDeltaMs));
+
+    // Award Stars & High Score Check on Match End
+    if ((this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') && !this.hasAwardedStars) {
+      this.hasAwardedStars = true;
+      const wavesCompleted = Math.max(1, this.waveManager.currentWaveIndex + 1);
+      const starsEarned = Math.floor(wavesCompleted / 2) + (this.gameState.status === 'VICTORY' ? 5 : 0);
+      this.talentManager.earnStars(starsEarned);
+      this.analyticsManager.checkHighScore(wavesCompleted);
+    }
+
+    this.uiManager.update();
+    this.renderFrame();
+  }
+
   public run() {
     this.lastTime = performance.now();
 
+    // requestAnimationFrame is re-armed in `finally`: any exception thrown inside a frame
+    // (a failing AudioContext, a rendering glitch) used to kill the loop for good.
     const loop = (currentTime: number) => {
-      const rawDelta = currentTime - this.lastTime;
-      this.lastTime = currentTime;
-
-      const deltaTimeMs = rawDelta * this.gameSpeedMultiplier;
-
-      // Determine BGM track: BOSS vs MAP-SPECIFIC TRACK
-      const enemies = this.enemyManager.getEnemies();
-      const hasBossOnScreen = enemies.some(e => !e.data.isDead && e.data.type === 'BOSS');
-      const activeWaveNum = this.waveManager.currentWaveIndex + 1;
-      const isBossWave = activeWaveNum === 5 || activeWaveNum === 8 || activeWaveNum === 10 || (activeWaveNum > 10 && activeWaveNum % 3 === 0);
-
-      const mapTrack: BGMTrack = (this.mapManager.currentMapId as BGMTrack) || 'MAP_1';
-      const targetTrack: BGMTrack = (hasBossOnScreen || (isBossWave && this.waveManager.isWaveActive)) ? 'BOSS' : mapTrack;
-
-      this.audioManager.setTrack(targetTrack);
-
-      // Manage BGM state & tempo
-      if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
-        if (!this.audioManager.isBGMPlaying && !this.audioManager.isBgmMuted) {
-          this.audioManager.startBGM(this.gameSpeedMultiplier, targetTrack);
-        } else {
-          this.audioManager.updateBGMTempo(this.gameSpeedMultiplier, targetTrack);
-        }
-      } else {
-        this.audioManager.stopBGM();
+      try {
+        this.tick(currentTime);
+      } catch (error) {
+        console.error('[Game2D] erro durante o frame, simulação preservada:', error);
+      } finally {
+        requestAnimationFrame(loop);
       }
-
-      // 1. Update logic (only if active and NOT paused)
-      if (this.gameState.status === 'PLAYING' && !this.gameState.isPaused) {
-        this.waveManager.updateAutoCountdown(deltaTimeMs);
-        this.enemyManager.update(deltaTimeMs);
-        this.towerManager.update(this.enemyManager.getEnemies());
-        this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
-        this.spellManager.update(deltaTimeMs);
-        this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
-        this.achievementManager.update();
-        this.fxManager.update();
-
-        // Check Endless Survivor Achievement
-        if (this.waveManager.isEndlessMode) {
-          this.achievementManager.setProgress('ENDLESS_SURVIVOR', activeWaveNum);
-        }
-
-        // Check Victory
-        if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
-          this.gameState.status = 'VICTORY';
-        }
-      }
-
-      // Award Stars & High Score Check on Match End
-      if ((this.gameState.status === 'GAME_OVER' || this.gameState.status === 'VICTORY') && !this.hasAwardedStars) {
-        this.hasAwardedStars = true;
-        const wavesCompleted = Math.max(1, this.waveManager.currentWaveIndex + 1);
-        const starsEarned = Math.floor(wavesCompleted / 2) + (this.gameState.status === 'VICTORY' ? 5 : 0);
-        this.talentManager.earnStars(starsEarned);
-        this.analyticsManager.checkHighScore(wavesCompleted);
-      }
-
-      // Update UI
-      this.uiManager.update();
-
-      // 2. Render frame
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-      const shake = this.fxManager.getShakeOffset();
-      this.ctx.save();
-      this.ctx.translate(shake.x, shake.y);
-
-      this.mapManager.render(this.ctx);
-      this.particleManager.render(this.ctx);
-      this.renderGhostPlacement();
-      this.towerManager.render(this.ctx, this.mousePos);
-      this.enemyManager.render(this.ctx);
-      this.projectileManager.render(this.ctx);
-      this.spellManager.renderSpellTargeting(this.ctx, this.mousePos);
-      this.fxManager.render(this.ctx);
-
-      this.renderAchievementToasts();
-      this.renderPauseOverlay();
-
-      this.ctx.restore();
-
-      requestAnimationFrame(loop);
     };
 
     requestAnimationFrame(loop);

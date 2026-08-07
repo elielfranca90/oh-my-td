@@ -1,11 +1,4 @@
-export type EnemyType =
-  | 'STANDARD'
-  | 'RUNNER'
-  | 'TANK'
-  | 'SHIELDED'
-  | 'BOSS'
-  | 'SPORE_SPRINTER'
-  | 'MOSS_GIANT';
+import type { EnemyType } from '../types';
 
 export interface WaveConfig {
   waveNumber: number;
@@ -75,15 +68,16 @@ export class WaveManager {
         { type: 'RUNNER', delay: 600 },
       ],
     },
-    // Wave 6
+    // Wave 6 - FIRST ENERGY SHIELDS
     {
       waveNumber: 6,
       enemies: [
         { type: 'MOSS_GIANT', delay: 1800 },
         { type: 'RUNNER', delay: 450 },
-        { type: 'RUNNER', delay: 450 },
+        { type: 'SHIELDED', delay: 900 },
         { type: 'TANK', delay: 1200 },
         { type: 'MOSS_GIANT', delay: 1800 },
+        { type: 'SHIELDED', delay: 900 },
         { type: 'RUNNER', delay: 450 },
       ],
     },
@@ -113,14 +107,16 @@ export class WaveManager {
         { type: 'TANK', delay: 1000 },
       ],
     },
-    // Wave 9 - CHAOS
+    // Wave 9 - CHAOS (SHIELDED ESCORT)
     {
       waveNumber: 9,
       enemies: [
         { type: 'RUNNER', delay: 350 },
         { type: 'SPORE_SPRINTER', delay: 350 },
+        { type: 'SHIELDED', delay: 800 },
         { type: 'TANK', delay: 900 },
         { type: 'MOSS_GIANT', delay: 1600 },
+        { type: 'SHIELDED', delay: 800 },
         { type: 'TANK', delay: 900 },
         { type: 'RUNNER', delay: 350 },
       ],
@@ -140,6 +136,9 @@ export class WaveManager {
       ],
     },
   ];
+
+  /** Number of hand-authored campaign waves. Endless mode appends beyond this. */
+  public readonly campaignWaveCount = 10;
 
   public currentWaveIndex = -1;
   public isWaveActive = false;
@@ -163,6 +162,20 @@ export class WaveManager {
     this.isEndlessMode = enabled;
   }
 
+  /**
+   * Single source of truth for the boss-wave rule (used to be duplicated literally in
+   * Game.ts and twice in UIManager.ts).
+   */
+  public isBossWave(waveNumber: number): boolean {
+    if (waveNumber === 5 || waveNumber === 8 || waveNumber === 10) return true;
+    return waveNumber > 10 && waveNumber % 3 === 0;
+  }
+
+  /** True once the whole hand-authored campaign has been started. */
+  public isCampaignFinished(): boolean {
+    return this.currentWaveIndex >= this.campaignWaveCount - 1;
+  }
+
   public startNextWave(): boolean {
     if (this.isWaveActive) return false;
 
@@ -183,7 +196,7 @@ export class WaveManager {
   }
 
   private generateEndlessWave(waveNum: number): WaveConfig {
-    const enemyTypes: EnemyType[] = ['STANDARD', 'RUNNER', 'TANK', 'SPORE_SPRINTER', 'MOSS_GIANT'];
+    const enemyTypes: EnemyType[] = ['STANDARD', 'RUNNER', 'TANK', 'SHIELDED', 'SPORE_SPRINTER', 'MOSS_GIANT'];
     const count = 12 + Math.floor((waveNum - 10) * 2);
     const enemies: { type: EnemyType; delay: number }[] = [];
     const baseDelay = Math.max(250, 750 - (waveNum - 10) * 25);
@@ -209,7 +222,7 @@ export class WaveManager {
     if (!this.isAutoMode || this.isWaveActive) return;
 
     // Stop auto countdown if campaign is over and endless mode is off
-    if (this.currentWaveIndex >= 9 && !this.isEndlessMode && this.spawnQueue.length === 0) return;
+    if (this.isCampaignFinished() && !this.isEndlessMode) return;
 
     this.autoCountdownMs -= deltaTimeMs;
     if (this.autoCountdownMs <= 0) {
@@ -218,12 +231,17 @@ export class WaveManager {
     }
   }
 
+  /**
+   * Pops the next due enemy. Call repeatedly with `deltaTimeMs = 0` to drain everything
+   * that became due in the same step: the leftover time is carried over (it used to be
+   * reset to 0, silently discarding queued spawns on large deltas).
+   */
   public getNextEnemyToSpawn(deltaTimeMs: number): { type: EnemyType; hpMultiplier: number } | null {
     if (!this.isWaveActive || this.spawnQueue.length === 0) return null;
 
     this.timer += deltaTimeMs;
     if (this.timer >= this.spawnQueue[0].delay) {
-      this.timer = 0;
+      this.timer -= this.spawnQueue[0].delay;
       const enemy = this.spawnQueue.shift();
       if (!enemy) return null;
 
@@ -242,6 +260,7 @@ export class WaveManager {
   public onEnemyCleared(remainingEnemiesCount: number): boolean {
     if (this.isWaveActive && this.spawnQueue.length === 0 && remainingEnemiesCount === 0) {
       this.isWaveActive = false;
+      this.timer = 0;
       this.autoCountdownMs = 5000;
       return true;
     }
@@ -252,8 +271,10 @@ export class WaveManager {
     // If endless mode is on, the game NEVER ends on victory!
     if (this.isEndlessMode) return false;
 
+    // `>=` and not `===`: endless mode grows `waves[]`, so a player that reached wave 12
+    // and then turned endless off used to never be able to win again.
     return (
-      this.currentWaveIndex === 9 &&
+      this.isCampaignFinished() &&
       this.spawnQueue.length === 0 &&
       remainingEnemiesCount === 0 &&
       !this.isWaveActive

@@ -1,3 +1,4 @@
+import { createId } from './ids';
 import { TalentManager } from './TalentManager';
 
 export interface Achievement {
@@ -16,12 +17,16 @@ export interface ToastNotification {
   title: string;
   reward: number;
   icon: string;
-  life: number; // frames (~3 sec)
+  lifeMs: number;
 }
+
+const TOAST_LIFETIME_MS = 3000;
+const SAVE_DEBOUNCE_MS = 1000;
 
 export class AchievementManager {
   private talentManager: TalentManager;
   private readonly STORAGE_KEY = 'td2d_achievements_v1';
+  private saveTimeoutId: number | null = null;
 
   public achievements: Record<string, Achievement> = {
     FIRST_BLOOD: {
@@ -103,24 +108,58 @@ export class AchievementManager {
     this.loadAchievements();
   }
 
+  /**
+   * localStorage is untrusted input: a tampered payload used to inject arbitrary values
+   * into `progress` (it was only guarded by `|| 0`, so any truthy string passed through
+   * and was later interpolated into the badges modal).
+   */
   private loadAchievements() {
     try {
       const saved = localStorage.getItem(this.STORAGE_KEY);
-      if (saved !== null) {
-        const parsed: Record<string, { unlocked: boolean; progress: number }> = JSON.parse(saved);
-        for (const id of Object.keys(parsed)) {
-          if (this.achievements[id]) {
-            this.achievements[id].unlocked = parsed[id].unlocked || false;
-            this.achievements[id].progress = parsed[id].progress || 0;
-          }
-        }
+      if (saved === null) return;
+
+      const parsed: unknown = JSON.parse(saved);
+      if (typeof parsed !== 'object' || parsed === null) return;
+
+      for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
+        const ach = this.achievements[id];
+        if (!ach) continue;
+        if (typeof value !== 'object' || value === null) continue;
+
+        const entry = value as Record<string, unknown>;
+        const progress = entry.progress;
+        ach.unlocked = entry.unlocked === true;
+        ach.progress = typeof progress === 'number' && Number.isFinite(progress)
+          ? Math.max(0, Math.min(ach.maxProgress, Math.floor(progress)))
+          : 0;
+        if (ach.unlocked) ach.progress = ach.maxProgress;
       }
     } catch {
       // Fallback
     }
   }
 
+  /**
+   * Coalesces writes: saving synchronously on every single kill blocked the frame up to
+   * 30 times per achievement.
+   */
+  private scheduleSave() {
+    if (this.saveTimeoutId !== null) return;
+    if (typeof window === 'undefined' || typeof window.setTimeout !== 'function') {
+      this.saveAchievements();
+      return;
+    }
+    this.saveTimeoutId = window.setTimeout(() => {
+      this.saveTimeoutId = null;
+      this.saveAchievements();
+    }, SAVE_DEBOUNCE_MS);
+  }
+
   public saveAchievements() {
+    if (this.saveTimeoutId !== null) {
+      clearTimeout(this.saveTimeoutId);
+      this.saveTimeoutId = null;
+    }
     try {
       const data: Record<string, { unlocked: boolean; progress: number }> = {};
       for (const id of Object.keys(this.achievements)) {
@@ -143,7 +182,7 @@ export class AchievementManager {
     if (ach.progress >= ach.maxProgress) {
       this.unlockAchievement(ach);
     } else {
-      this.saveAchievements();
+      this.scheduleSave();
     }
   }
 
@@ -151,11 +190,12 @@ export class AchievementManager {
     const ach = this.achievements[id];
     if (!ach || ach.unlocked) return;
 
+    const previous = ach.progress;
     ach.progress = Math.min(ach.maxProgress, Math.max(ach.progress, value));
     if (ach.progress >= ach.maxProgress) {
       this.unlockAchievement(ach);
-    } else {
-      this.saveAchievements();
+    } else if (ach.progress !== previous) {
+      this.scheduleSave();
     }
   }
 
@@ -169,19 +209,20 @@ export class AchievementManager {
 
     // Add Toast Notification
     this.activeToasts.push({
-      id: `toast-${Date.now()}-${Math.random()}`,
+      id: createId('toast'),
       title: ach.title,
       reward: ach.rewardStars,
       icon: ach.icon,
-      life: 180, // 3s at 60fps
+      lifeMs: TOAST_LIFETIME_MS,
     });
   }
 
-  public update() {
+  /** Driven by real elapsed time so toasts keep expiring while the game is paused. */
+  public update(deltaTimeMs: number) {
     for (let i = this.activeToasts.length - 1; i >= 0; i--) {
       const toast = this.activeToasts[i];
-      toast.life--;
-      if (toast.life <= 0) {
+      toast.lifeMs -= deltaTimeMs;
+      if (toast.lifeMs <= 0) {
         this.activeToasts.splice(i, 1);
       }
     }

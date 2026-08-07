@@ -21,26 +21,36 @@ export class TalentManager {
     this.loadData();
   }
 
+  /** Persisted progression is untrusted input: validate the type and clamp every level. */
   private loadData() {
     try {
       const savedStars = localStorage.getItem(this.STARS_KEY);
       if (savedStars !== null) {
-        this.stars = parseInt(savedStars, 10) || 0;
+        const stars = parseInt(savedStars, 10);
+        this.stars = Number.isFinite(stars) ? Math.max(0, stars) : 0;
       }
 
       const savedTalents = localStorage.getItem(this.TALENTS_KEY);
       if (savedTalents !== null) {
-        const parsed = JSON.parse(savedTalents);
-        this.talents = {
-          damageLvl: parsed.damageLvl || 0,
-          goldLvl: parsed.goldLvl || 0,
-          hpLvl: parsed.hpLvl || 0,
-          cdLvl: parsed.cdLvl || 0,
-        };
+        const parsed: unknown = JSON.parse(savedTalents);
+        if (typeof parsed === 'object' && parsed !== null) {
+          const raw = parsed as Record<string, unknown>;
+          this.talents = {
+            damageLvl: this.readLevel(raw.damageLvl, 'damageLvl'),
+            goldLvl: this.readLevel(raw.goldLvl, 'goldLvl'),
+            hpLvl: this.readLevel(raw.hpLvl, 'hpLvl'),
+            cdLvl: this.readLevel(raw.cdLvl, 'cdLvl'),
+          };
+        }
       }
     } catch {
       // Fallback on defaults if localStorage fails
     }
+  }
+
+  private readLevel(value: unknown, type: keyof TalentData): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(this.getTalentMaxLvl(type), Math.floor(value)));
   }
 
   public saveData() {
@@ -58,21 +68,27 @@ export class TalentManager {
     this.saveData();
   }
 
-  // Bonus Calculators
+  // Bonus Calculators — clamped so no persisted value can exceed the designed cap.
   public getDamageBonusMultiplier(): number {
-    return 1 + this.talents.damageLvl * 0.1; // +10%, +20%, +30%
+    return 1 + this.clampedLevel('damageLvl') * 0.1; // +10%, +20%, +30%
   }
 
   public getStartingGoldBonus(): number {
-    return this.talents.goldLvl * 25; // +25g, +50g
+    return this.clampedLevel('goldLvl') * 25; // +25g, +50g
   }
 
   public getBaseHpBonus(): number {
-    return this.talents.hpLvl * 5; // +5 HP, +10 HP
+    return this.clampedLevel('hpLvl') * 5; // +5 HP, +10 HP
   }
 
   public getSpellCdReduction(): number {
-    return this.talents.cdLvl * 0.15; // -15%, -30%
+    return this.clampedLevel('cdLvl') * 0.15; // -15%, -30%
+  }
+
+  private clampedLevel(type: keyof TalentData): number {
+    const value = this.talents[type];
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(this.getTalentMaxLvl(type), value));
   }
 
   // Talent Upgrade Costs

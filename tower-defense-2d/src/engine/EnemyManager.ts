@@ -1,10 +1,11 @@
-import type { EnemyType, Vector2D } from '../types';
+import type { EnemyType } from '../types';
 
 import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { GameState } from './GameState';
+import { createId } from './ids';
 import { MapManager2D } from './MapManager';
 import { WaveManager } from './WaveManager';
 
@@ -35,10 +36,12 @@ export class EnemyManager2D {
   }
 
   public update(deltaTimeMs: number) {
-    // 1. Spawn from wave manager
-    const spawnInfo = this.waveManager.getNextEnemyToSpawn(deltaTimeMs);
-    if (spawnInfo) {
+    // 1. Spawn from wave manager — drain everything that became due in this step so a
+    //    long step never silently discards queued spawns.
+    let spawnInfo = this.waveManager.getNextEnemyToSpawn(deltaTimeMs);
+    while (spawnInfo) {
       this.spawnEnemy(spawnInfo.type, spawnInfo.hpMultiplier);
+      spawnInfo = this.waveManager.getNextEnemyToSpawn(0);
     }
 
     // 2. Update existing enemies
@@ -63,7 +66,7 @@ export class EnemyManager2D {
 
         // Boss Death Reinforcements: Spawn 2 Runners!
         if (enemy.data.type === 'BOSS') {
-          this.spawnReinforcements(enemy.data.waypointIndex, enemy.data.position);
+          this.spawnReinforcements(enemy);
         }
 
         this.enemies.splice(i, 1);
@@ -83,12 +86,25 @@ export class EnemyManager2D {
     this.waveManager.onEnemyCleared(this.enemies.length);
   }
 
-  private spawnReinforcements(waypointIndex: number, position: Vector2D) {
+  private spawnReinforcements(boss: Enemy2D) {
+    // Inherit the boss' own route (was hardcoded to path 0, sending Map 2 right-portal
+    // reinforcements down the left route).
+    const pathIndex = boss.pathIndex;
+    const waypoints = this.mapManager.getWaypoints(pathIndex);
+
+    // Clamp so the runner always has at least one waypoint ahead of it. Otherwise
+    // `waypoints[index + 1]` was undefined and Enemy.update() reported "reached base"
+    // on the very first step — free guaranteed damage on every boss kill.
+    const lastReachableIndex = Math.max(0, waypoints.length - 2);
+    const startIndex = Math.min(Math.max(0, boss.data.waypointIndex), lastReachableIndex);
+
     for (let r = 0; r < 2; r++) {
-      const waypoints = this.mapManager.getWaypoints(0);
-      const runner = new Enemy2D(waypoints, 'RUNNER', `runner-boss-${Date.now()}-${r}`);
-      runner.data.waypointIndex = waypointIndex;
-      runner.data.position = { x: position.x + (r * 12 - 6), y: position.y + (r * 12 - 6) };
+      const runner = new Enemy2D(waypoints, 'RUNNER', createId('runner-boss'), 1.0, pathIndex);
+      runner.data.waypointIndex = startIndex;
+      runner.data.position = {
+        x: boss.data.position.x + (r * 12 - 6),
+        y: boss.data.position.y + (r * 12 - 6),
+      };
       this.enemies.push(runner);
     }
   }
@@ -112,7 +128,7 @@ export class EnemyManager2D {
     }
 
     const waypoints = this.mapManager.getWaypoints(pathIndex);
-    const enemy = new Enemy2D(waypoints, type, `enemy-${Date.now()}-${Math.random()}`, hpMultiplier, pathIndex);
+    const enemy = new Enemy2D(waypoints, type, createId('enemy'), hpMultiplier, pathIndex);
     this.enemies.push(enemy);
   }
 

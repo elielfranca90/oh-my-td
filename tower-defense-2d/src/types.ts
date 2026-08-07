@@ -56,22 +56,6 @@ export interface ITower2D {
   slowFactor?: number;
   laserTargetId?: string;
   beamDuration?: number;
-  onSproutTile?: boolean;
-}
-
-export interface IProjectile2D {
-  id: string;
-  targetEnemy?: IEnemy2D;
-  targetPosition?: Vector2D;
-  damage: number;
-  speed: number;
-  position: Vector2D;
-  color: string;
-  radius: number;
-  splashRadius?: number;
-  slowFactor?: number;
-  isCrit?: boolean;
-  hasHit: boolean;
 }
 
 export interface FloatingText {

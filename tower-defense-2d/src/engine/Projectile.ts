@@ -3,6 +3,17 @@ import { AnalyticsManager } from './AnalyticsManager';
 import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
 
+export interface ProjectileOptions {
+  color?: string;
+  speed?: number;
+  radius?: number;
+  splashRadius?: number;
+  isCrit?: boolean;
+  towerType?: TowerType;
+  /** Fired at the real impact position — used by Artillery to place its napalm patch. */
+  onImpact?: (x: number, y: number) => void;
+}
+
 export class Projectile2D {
   public position: Vector2D;
   public target: IEnemy2D;
@@ -11,32 +22,21 @@ export class Projectile2D {
   public color: string;
   public radius: number;
   public splashRadius?: number;
-  public slowFactor?: number;
   public isCrit?: boolean;
   public towerType?: TowerType;
+  private onImpact?: (x: number, y: number) => void;
 
-  constructor(
-    startPos: Vector2D,
-    target: IEnemy2D,
-    damage: number,
-    color = '#ffeb3b',
-    speed = 8,
-    radius = 5,
-    splashRadius?: number,
-    slowFactor?: number,
-    isCrit?: boolean,
-    towerType?: TowerType
-  ) {
+  constructor(startPos: Vector2D, target: IEnemy2D, damage: number, options: ProjectileOptions = {}) {
     this.position = { ...startPos };
     this.target = target;
     this.damage = damage;
-    this.color = color;
-    this.speed = speed;
-    this.radius = radius;
-    this.splashRadius = splashRadius;
-    this.slowFactor = slowFactor;
-    this.isCrit = isCrit;
-    this.towerType = towerType;
+    this.color = options.color ?? '#ffeb3b';
+    this.speed = options.speed ?? 8;
+    this.radius = options.radius ?? 5;
+    this.splashRadius = options.splashRadius;
+    this.isCrit = options.isCrit;
+    this.towerType = options.towerType;
+    this.onImpact = options.onImpact;
   }
 
   public update(allEnemies: Enemy2D[], fxManager: FXManager, analyticsManager?: AnalyticsManager): boolean {
@@ -48,7 +48,9 @@ export class Projectile2D {
 
     if (distance < this.speed) {
       const targetEnemy = allEnemies.find(e => e.data === this.target);
-      const isLightShot = this.color === '#ffeb3b' || this.color === '#ffea00';
+      // Armor mitigation applies to the Basic tower's light bullets. This used to be
+      // inferred from the projectile colour, which broke as soon as a colour changed.
+      const isLightShot = this.towerType === 'BASIC';
 
       // 1. AoE Splash Damage (Artillery)
       if (this.splashRadius && this.splashRadius > 0) {
@@ -85,12 +87,13 @@ export class Projectile2D {
             analyticsManager.recordDamage(this.towerType, dmgDealt);
           }
         }
-
-        // Apply Slow (Frost Tower)
-        if (this.slowFactor) {
-          targetEnemy.applySlow(this.slowFactor, 120);
-        }
       }
+
+      // Effects anchored to where the shell actually landed.
+      if (this.onImpact) {
+        this.onImpact(this.position.x, this.position.y);
+      }
+
       return true; // Hit target
     }
 

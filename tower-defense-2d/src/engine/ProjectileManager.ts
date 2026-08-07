@@ -1,27 +1,14 @@
-import type { IEnemy2D, TowerType, Vector2D } from '../types';
+import type { IEnemy2D, Vector2D } from '../types';
 import { AnalyticsManager } from './AnalyticsManager';
 import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
-import { Projectile2D } from './Projectile';
+import { Projectile2D, type ProjectileOptions } from './Projectile';
 
 export class ProjectileManager2D {
   private projectiles: Projectile2D[] = [];
 
-  public fire(
-    startPos: Vector2D,
-    target: IEnemy2D,
-    damage: number,
-    color?: string,
-    speed?: number,
-    radius?: number,
-    splashRadius?: number,
-    slowFactor?: number,
-    isCrit?: boolean,
-    towerType?: TowerType
-  ) {
-    this.projectiles.push(
-      new Projectile2D(startPos, target, damage, color, speed, radius, splashRadius, slowFactor, isCrit, towerType)
-    );
+  public fire(startPos: Vector2D, target: IEnemy2D, damage: number, options: ProjectileOptions = {}) {
+    this.projectiles.push(new Projectile2D(startPos, target, damage, options));
   }
 
   public update(allEnemies: Enemy2D[], fxManager: FXManager, analyticsManager?: AnalyticsManager) {

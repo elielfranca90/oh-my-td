@@ -35,7 +35,8 @@ export class AnalyticsManager {
     try {
       const saved = localStorage.getItem(this.HIGH_SCORE_KEY);
       if (saved !== null) {
-        this.highScoreWave = parseInt(saved, 10) || 0;
+        const parsed = parseInt(saved, 10);
+        this.highScoreWave = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
       }
     } catch {
       // Ignore
@@ -89,9 +90,5 @@ export class AnalyticsManager {
 
   public getTotalKills(): number {
     return Object.values(this.killsByEnemy).reduce((acc, curr) => acc + curr, 0);
-  }
-
-  public getTotalDamage(): number {
-    return Object.values(this.damageByTower).reduce((acc, curr) => acc + curr, 0);
   }
 }

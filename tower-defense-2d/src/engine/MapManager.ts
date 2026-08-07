@@ -19,6 +19,7 @@ export class MapManager2D {
 
   public currentMapId: MapId = 'MAP_1';
   private mapData: TileType[][] = [];
+  private staticLayer: HTMLCanvasElement | null = null;
 
   constructor(mapId: MapId = 'MAP_1') {
     this.spriteManager = new SpriteManager();
@@ -39,6 +40,7 @@ export class MapManager2D {
         this.mapData = this.getMap1Data();
         break;
     }
+    this.prerenderStaticLayer();
   }
 
   // --- MAP 1: DESFILADEIRO VERDE (S-Path) ---
@@ -89,7 +91,30 @@ export class MapManager2D {
     ];
   }
 
-  public render(ctx: CanvasRenderingContext2D) {
+  /**
+   * The map never changes during a match, so its 140 tiles are baked once into an
+   * offscreen canvas. Redrawing them every frame cost ~25.000 canvas calls per second.
+   */
+  private prerenderStaticLayer() {
+    if (!this.staticLayer) {
+      const canvas = document.createElement('canvas');
+      canvas.width = this.cols * this.tileSize;
+      canvas.height = this.rows * this.tileSize;
+      this.staticLayer = canvas;
+    }
+
+    const layerCtx = this.staticLayer.getContext('2d');
+    if (!layerCtx) {
+      // No 2D context available (e.g. headless test env): fall back to per-frame drawing.
+      this.staticLayer = null;
+      return;
+    }
+
+    layerCtx.clearRect(0, 0, this.staticLayer.width, this.staticLayer.height);
+    this.drawTiles(layerCtx);
+  }
+
+  private drawTiles(ctx: CanvasRenderingContext2D) {
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
         const type = this.mapData[row][col];
@@ -100,6 +125,14 @@ export class MapManager2D {
         ctx.strokeRect(col * this.tileSize, row * this.tileSize, this.tileSize, this.tileSize);
       }
     }
+  }
+
+  public render(ctx: CanvasRenderingContext2D) {
+    if (this.staticLayer) {
+      ctx.drawImage(this.staticLayer, 0, 0);
+      return;
+    }
+    this.drawTiles(ctx);
   }
 
   public isBuildable(gridX: number, gridY: number): boolean {
