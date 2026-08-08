@@ -156,7 +156,7 @@ export function runBalanceSim(options: SimOptions): SimResult {
     rng
   );
 
-  towerManager.sproutTiles = map.pickSproutTiles(4, rng);
+  towerManager.sproutTiles = map.currentMapId === 'MAP_1' ? map.pickSproutTiles(4, rng) : [];
 
   // Cada vazamento gera exatamente um takeDamage -> um 'hp:change'.
   let leaks = 0;

@@ -35,14 +35,14 @@ npm run build
 
 ---
 
-## 🗺️ 3 Mapas & Biomas Únicos
+## 🗺️ 4 Mapas & Biomas Únicos
 
 | Mapa | Bioma Visual | Trilha Sonora (BGM) | Mecânica Única / Twist |
 | :--- | :--- | :--- | :--- |
 | **Map 1: Green Valley** | Grama Esmeralda, Pinheiros e Serras Nevadas | C Maior / A Menor Bucólica (150ms) | Broto de Supercrescimento (+25% Alcance) |
 | **Map 2: Death Pass** | Basalto Vulcânico e Rios de Lava Incandescente | E Menor / B Menor Vulcânica (110ms) | Rota Dupla / 2 Portais Simultâneos |
 | **Map 3: Citadel Breach** | Mármore Negro Gótico e Circuitos Neon | A Menor / F# Menor Arcano-Punk (125ms) | Rota Curta de Alta Velocidade |
-
+| **Map 4: Grave Pass** | Solo Obscuro, Tombstones e Névoa Espectral | G Menor Góico / E Frígio (135ms) | Erupção de Almas (`GRAVEYARD_SOULS` Slow AoE) |
 ---
 
 ## 🏰 5 Tipos de Torres & Especializações (Nível 3)
@@ -89,7 +89,7 @@ npm run build
 * **Press-and-Hold Tooltips:** Dicas contextuais de tiles acionadas via clique prolongado em mobile ou mouse.
 * **Motor Físico com Timestep Fixo & Sub-stepping:** Simulação 100% determinística sem travamento ou perda de tiros em velocidades 2x e 4x.
 * **Controles Independentes de Áudio:** Sliders individuais para volume da Música (`🎵 BGM`) e dos Efeitos Sonoros (`🔊 SFX`) com salvamento automático.
-* **Bateria de Testes Vitest:** 132 testes unitários e de integração divididos em 21 suítes cobrindo motores matemáticos, wave scaling, física de sub-stepping e banco de dados.
+* **Bateria de Testes Vitest:** 163 testes unitários e de integração divididos em 27 suítes cobrindo motores matemáticos, wave scaling, física de sub-stepping, banco de dados, draft roguelite e o novo Mapa 4 (Grave Pass).
 ---
 
 ## 📚 Documentação Técnica

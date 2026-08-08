@@ -73,6 +73,7 @@
 
       .layout-part-4 {
         flex-shrink: 0;
+        min-height: 140px;
         z-index: 20;
         pointer-events: none;
       }
@@ -1318,6 +1319,22 @@
     box-shadow: 0 0 12px rgba(245, 158, 11, 0.5), 0 0 20px rgba(255, 202, 40, 0.3);
   }
 }
+      .mechanics-btn-highlight {
+        animation: mechanics-pulse 1.2s infinite ease-in-out !important;
+        border-color: #ffd54f !important;
+        background: rgba(255, 213, 79, 0.25) !important;
+      }
+
+      @keyframes mechanics-pulse {
+        0%, 100% {
+          transform: scale(1);
+          box-shadow: 0 0 8px rgba(255, 213, 79, 0.6);
+        }
+        50% {
+          transform: scale(1.18);
+          box-shadow: 0 0 18px rgba(255, 213, 79, 0.95), 0 0 30px rgba(255, 193, 7, 0.8);
+        }
+      }
 
 .welcome-modal-overlay {
   position: absolute;

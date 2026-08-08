@@ -123,8 +123,23 @@ describe('Modo Campanha - Testes de Integração e UI', () => {
 
     // MAP_3 Victory
     game.gameState.setStatus('VICTORY');
+    expect(title?.innerText).toBe('Cidadela Concluída!');
+    expect(desc?.innerText).toBe('O desafio obscuro final aguarda na Passagem dos Túmulos.');
+    expect(restartBtn?.innerText).toBe('Desafio Final (Grave Pass)');
+
+    // Simular clique no botão de restart no MAP_3 para ir ao MAP_4
+    restartBtn?.click();
+    expect(game.currentMapId).toBe('MAP_4');
+
+    // Re-query após troca de mapa
+    title = document.getElementById('modal-title');
+    desc = document.getElementById('modal-desc');
+    restartBtn = document.getElementById('restart-btn');
+
+    // MAP_4 Victory
+    game.gameState.setStatus('VICTORY');
     expect(title?.innerText).toBe('Campanha Concluída!');
-    expect(desc?.innerText).toBe('Você salvou o mundo de Oh My TD!');
+    expect(desc?.innerText).toBe('Você purificou as almas e salvou o mundo de Oh My TD!');
     expect(restartBtn?.innerText).toBe('Voltar ao Menu');
   });
 });

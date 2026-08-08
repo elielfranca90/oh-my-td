@@ -1,8 +1,12 @@
-import { getSpecializationOption, isValidSpecialization } from './Specializations';
+import { getRogueliteModule, getSpecializationOption, isValidSpecialization } from './Specializations';
 import { SpriteManager } from './SpriteManager';
 import { TalentManager } from './TalentManager';
+import { EventBus } from './EventBus';
+import type { Enemy2D } from './Enemy';
+import type { GameState } from './GameState';
 import type {
   ITower2D,
+  RogueliteModuleId,
   TargetingStrategy,
   TowerSpecialization,
   TowerType,
@@ -11,8 +15,8 @@ import type {
 
 export class Tower2D {
   public data: ITower2D;
+  public vampiricAcc = 0;
   private readonly size = 40;
-
   constructor(gridX: number, gridY: number, tileSize: number, type: TowerType, id: string) {
     const center: Vector2D = {
       x: gridX * tileSize + tileSize / 2,
@@ -39,6 +43,7 @@ export class Tower2D {
       hp: Math.round(100 * (type === 'ARTILLERY' || type === 'CANNON' ? 1.5 : 1.0)),
       maxHp: Math.round(100 * (type === 'ARTILLERY' || type === 'CANNON' ? 1.5 : 1.0)),
       isDestroyed: false,
+      kills: 0,
     };
   }
 
@@ -47,7 +52,7 @@ export class Tower2D {
       case 'CANNON':
         return { cost: 105, range: 120, damage: 14, fireRate: 90 };
       case 'SOLAR_PRISM':
-        return { cost: 100, range: 140, damage: 4, fireRate: 24 };
+        return { cost: 100, range: 140, damage: 6, fireRate: 24 };
       case 'FROST':
         return { cost: 70, range: 130, damage: 2, fireRate: 40, slowFactor: 0.5 };
       case 'ARTILLERY':
@@ -170,8 +175,18 @@ export class Tower2D {
     return true;
   }
 
+  public equipModule(moduleId: RogueliteModuleId): boolean {
+    if (this.data.level < 2 || this.data.isDestroyed) return false;
+    this.data.equippedModule = moduleId;
+    return true;
+  }
+
   public update(): boolean {
     if (this.data.isDestroyed) return false;
+    if (this.data.overheatTimer && this.data.overheatTimer > 0) {
+      this.data.overheatTimer--;
+      return false;
+    }
     if (this.data.cooldownTimer > 0) {
       this.data.cooldownTimer--;
       return false;
@@ -186,7 +201,7 @@ export class Tower2D {
     if (isSelected || isHovered) {
       ctx.beginPath();
       ctx.arc(this.data.position.x, this.data.position.y, this.data.range, 0, Math.PI * 2);
-      ctx.fillStyle = isSelected ? 'rgba(255, 235, 59, 0.2)' : 'rgba(33, 150, 243, 0.15)';
+      ctx.fillStyle = isSelected ? 'rgba(255, 235, 59, 0.03)' : 'rgba(33, 150, 243, 0.03)';
       ctx.fill();
       ctx.strokeStyle = isSelected ? '#fbc02d' : '#2196f3';
       ctx.lineWidth = isSelected ? 2 : 1;
@@ -228,6 +243,28 @@ export class Tower2D {
       ctx.lineWidth = 2;
       ctx.strokeRect(this.data.position.x - half + 3, this.data.position.y - half + 3, this.size - 6, this.size - 6);
     }
+    // Marca de torre erguida em Altar Obscuro (+25% de dano necrótico)
+    if (this.data.onDarkAltarTile) {
+      ctx.strokeStyle = '#ab47bc';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(this.data.position.x - half + 3, this.data.position.y - half + 3, this.size - 6, this.size - 6);
+    }
+    // Marca de torre em Power Surge (+20% cadência)
+    if (this.data.isPowerSurged) {
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(this.data.position.x - half - 2, this.data.position.y - half - 2, this.size + 4, this.size + 4);
+    }
+
+    // Indicador de superaquecimento por erupção de lava
+    if (this.data.overheatTimer && this.data.overheatTimer > 0) {
+      ctx.fillStyle = 'rgba(255, 87, 34, 0.45)';
+      ctx.fillRect(this.data.position.x - half, this.data.position.y - half, this.size, this.size);
+      ctx.fillStyle = '#ff5722';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔥', this.data.position.x, this.data.position.y + 5);
+    }
 
     // Core icon / shape
     const drawn = SpriteManager.getInstance().drawSpriteAsset(
@@ -259,6 +296,15 @@ export class Tower2D {
         ctx.fillText(option.icon, this.data.position.x + half - 7, this.data.position.y - half + 12);
       }
     }
+    // Ícone do módulo equipado
+    if (this.data.equippedModule) {
+      const mod = getRogueliteModule(this.data.equippedModule);
+      if (mod) {
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(mod.icon, this.data.position.x - half + 7, this.data.position.y - half + 12);
+      }
+    }
 
     // Level indicator dots
     for (let i = 0; i < this.data.level; i++) {
@@ -285,6 +331,48 @@ export class Tower2D {
       const hpRatio = Math.max(0, this.data.hp / this.data.maxHp);
       ctx.fillStyle = hpRatio > 0.5 ? '#4caf50' : hpRatio > 0.25 ? '#ff9800' : '#f44336';
       ctx.fillRect(bx, by, bw * hpRatio, bh);
+    }
+  }
+}
+export function handleTowerDamageDealt(
+  tower: Tower2D,
+  enemy: Enemy2D,
+  damageDealt: number,
+  gameState: GameState
+) {
+  if (!tower) return;
+
+  // Track Vampiric Drain
+  if (tower.data.equippedModule === 'VAMPIRIC_DRAIN' && damageDealt > 0) {
+    tower.vampiricAcc += damageDealt;
+    while (tower.vampiricAcc >= 100) {
+      tower.vampiricAcc -= 100;
+      if (gameState.baseHp < gameState.maxBaseHp) {
+        gameState.baseHp = Math.min(gameState.maxBaseHp, gameState.baseHp + 1);
+        EventBus.getInstance().emit('hp:change', { current: gameState.baseHp, max: gameState.maxBaseHp });
+      }
+    }
+  }
+
+  // Track Kill & Kill-based Modules (Midas Touch & Bounty Hunter)
+  if (enemy.data.isDead || enemy.data.hp <= 0) {
+    tower.data.kills = (tower.data.kills || 0) + 1;
+
+    if (tower.data.equippedModule === 'MIDAS_TOUCH') {
+      if (tower.data.kills % 5 === 0) {
+        gameState.addGold(2);
+      }
+    }
+
+    if (tower.data.equippedModule === 'BOUNTY_HUNTER') {
+      const isBossOrTank =
+        enemy.data.type === 'BOSS' ||
+        enemy.data.type === 'BLACK_MEGA_BOSS' ||
+        enemy.data.type === 'TANK';
+      if (isBossOrTank) {
+        const bonusGold = Math.ceil((enemy.data.goldReward || 10) * 0.2);
+        gameState.addGold(bonusGold);
+      }
     }
   }
 }

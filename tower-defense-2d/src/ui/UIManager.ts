@@ -6,12 +6,12 @@ import { Game2D } from '../engine/Game';
 import { GameState } from '../engine/GameState';
 import type { MapId } from '../engine/MapManager';
 import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
-import { getSpecializationOption, getSpecializations } from '../engine/Specializations';
+import { getAllRogueliteModules, getRogueliteModule, getSpecializationOption, getSpecializations } from '../engine/Specializations';
 import { TalentManager, type TalentData } from '../engine/TalentManager';
 import type { Tower2D } from '../engine/Tower';
 import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager, type EndlessArchetype, type WavePreview } from '../engine/WaveManager';
-import type { ChallengeMode, EnemyType, TowerSpecialization, TowerType } from '../types';
+import type { ChallengeMode, EnemyType, RogueliteModuleId, TowerSpecialization, TowerType } from '../types';
 
 export class UIManager {
   private gameState: GameState;
@@ -24,14 +24,15 @@ export class UIManager {
   private analyticsManager: AnalyticsManager;
   private game: Game2D;
   private onRestartCallback: () => void;
+  public playerModules: RogueliteModuleId[] = [];
 
   private currentGold = -1;
   private currentHp = -1;
   private currentWave = -1;
-
   // DOM Overlay Elements
   private overlayEl!: HTMLElement;
   private settingsOverlayEl!: HTMLElement;
+  private mechanicsOverlayEl!: HTMLElement;
   private talentsOverlayEl!: HTMLElement;
   private achievementsOverlayEl!: HTMLElement;
   private changelogOverlayEl!: HTMLElement;
@@ -118,6 +119,9 @@ export class UIManager {
         <button id="changelog-btn" class="hud-btn changelog-gift-btn" title="Últimas Atualizações (🎁)" aria-label="Novidades">
           🎁<span class="changelog-btn-text"> Novidades</span>
         </button>
+        <button id="map-mechanics-btn" class="hud-btn mechanics-btn" title="Guia de Mecânicas & Perigos (❓)" aria-label="Mecânicas">
+          ❓
+        </button>
         <button id="settings-toggle-btn" class="hud-btn settings-btn" title="Configurações & Menus (⚙️)">
           ⚙️
         </button>
@@ -140,6 +144,7 @@ export class UIManager {
             <option value="MAP_1">Green Valley</option>
             <option value="MAP_2">Death Pass</option>
             <option value="MAP_3">Cidadela</option>
+            <option value="MAP_4">Grave Pass</option>
           </select>
         </div>
         <div class="hud-stat-badge hp" title="Vida da Base">
@@ -505,6 +510,39 @@ export class UIManager {
           </div>
         </div>
 
+        <!-- MAP MECHANICS INFO MODAL (❓) -->
+        <div id="mechanics-modal-overlay" class="modal-overlay hidden pointer-events-auto">
+          <div class="modal-card mechanics-modal-card" style="max-width: 520px; max-height: 80vh; overflow-y: auto;">
+            <div class="modal-header">
+              <h1>🗺️ Guia de Mecânicas & Perigos</h1>
+              <button id="close-mechanics-btn" class="close-icon-btn">✖</button>
+            </div>
+            <div class="mechanics-content" style="display: flex; flex-direction: column; gap: 12px; font-size: 14px; text-align: left; color: #eceff1; margin-top: 12px;">
+              <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid #4caf50;">
+                <h3 style="margin: 0 0 4px 0; color: #81c784;">🌿 Green Valley</h3>
+                <p style="margin: 0; color: #b0bec5;">Torres erguidas sobre brotos selvagens (Overgrowth Sprout) ganham +25% de alcance e 50% de redução no tempo de recarga.</p>
+              </div>
+              <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid #ff5722;">
+                <h3 style="margin: 0 0 4px 0; color: #ff7043;">🌋 Death Pass</h3>
+                <p style="margin: 0; color: #b0bec5;">Gêiseres de lava entram em erupção periodicamente no mapa, superaquecendo torres próximas e reduzindo temporariamente sua eficiência.</p>
+              </div>
+              <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid #00e5ff;">
+                <h3 style="margin: 0 0 4px 0; color: #4dd0e1;">⚡ Cidadela (Power Surge)</h3>
+                <p style="margin: 0; color: #b0bec5;">Linhas energizadas alimentam o terreno. Torres posicionadas nesses nós ganham +20% de velocidade de ataque.</p>
+              </div>
+              <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid #00e676;">
+                <h3 style="margin: 0 0 4px 0; color: #69f0ae;">💀 Grave Pass (Altar Obscuro)</h3>
+                <p style="margin: 0; color: #b0bec5;">Alcança o poder com Altares Obscuros no solo (+25% de dano necrótico) e Erupções Espirituais que aplicam 30% de desaceleração nos inimigos.</p>
+              </div>
+              <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid #ffeb3b;">
+                <h3 style="margin: 0 0 4px 0; color: #ffd54f;">🃏 Módulos Roguelite</h3>
+                <p style="margin: 0; color: #b0bec5;">Recompensas oferecidas ao completar as ondas 5, 10 e 15. Podem ser equipados em torres para conceder habilidades passivas poderosas (Ex: Toque de Midas, Dreno Vampírico, Núcleo Perfurante e Caçador de Recompensas).</p>
+              </div>
+            </div>
+            <button id="close-mechanics-bottom-btn" class="btn primary modal-restart-btn" style="margin-top: 14px;">Entendido!</button>
+          </div>
+        </div>
+
         <!-- END GAME ANALYTICS MODAL -->
         <div id="modal-overlay" class="modal-overlay hidden pointer-events-auto">
           <div class="modal-card analytics-modal" style="position: relative;">
@@ -530,12 +568,12 @@ export class UIManager {
 
     this.overlayEl = document.getElementById('modal-overlay')!;
     this.settingsOverlayEl = document.getElementById('settings-modal-overlay')!;
+    this.mechanicsOverlayEl = document.getElementById('mechanics-modal-overlay')!;
     this.talentsOverlayEl = document.getElementById('talents-modal-overlay')!;
     this.achievementsOverlayEl = document.getElementById('achievements-modal-overlay')!;
     this.changelogOverlayEl = document.getElementById('changelog-modal-overlay')!;
     this.leaderboardOverlayEl = document.getElementById('leaderboard-modal-overlay')!;
     this.profileOverlayEl = document.getElementById('profile-modal-overlay')!;
-
 
     this.storeStateEl = document.getElementById('store-state')!;
     this.inspectorStateEl = document.getElementById('inspector-state')!;
@@ -590,6 +628,7 @@ export class UIManager {
   public closeAllModals() {
     this.overlayEl?.classList.add('hidden');
     this.settingsOverlayEl?.classList.add('hidden');
+    this.mechanicsOverlayEl?.classList.add('hidden');
     this.talentsOverlayEl?.classList.add('hidden');
     this.achievementsOverlayEl?.classList.add('hidden');
     this.changelogOverlayEl?.classList.add('hidden');
@@ -649,7 +688,32 @@ export class UIManager {
     this.addDomListener('settings-resume-btn', 'click', () => {
       this.dismissModal();
     });
+    // Map Mechanics Guide
+    const mechanicsBtn = document.getElementById('map-mechanics-btn');
+    if (mechanicsBtn && localStorage.getItem('has_seen_map_mechanics') !== 'true') {
+      mechanicsBtn.classList.add('mechanics-btn-highlight');
+    }
 
+    this.addDomListener('map-mechanics-btn', 'click', () => {
+      localStorage.setItem('has_seen_map_mechanics', 'true');
+      const btn = document.getElementById('map-mechanics-btn');
+      if (btn) btn.classList.remove('mechanics-btn-highlight');
+
+      this.closeAllModals();
+      this.activeParentModal = null;
+      this.gameState.isPaused = true;
+      EventBus.getInstance().emit('pause:change', true);
+      this.mechanicsOverlayEl.classList.remove('hidden');
+    });
+    this.addDomListener('close-mechanics-btn', 'click', () => {
+      this.dismissModal();
+    });
+
+    this.addDomListener('close-mechanics-bottom-btn', 'click', () => {
+      this.dismissModal();
+    });
+
+    // Settings Sub-Modals
     // Settings Sub-Modals
     this.addDomListener('settings-talents-btn', 'click', () => {
       this.updateTalentsModal();
@@ -735,6 +799,7 @@ export class UIManager {
     const modalOverlays = [
       this.overlayEl,
       this.settingsOverlayEl,
+      this.mechanicsOverlayEl,
       this.talentsOverlayEl,
       this.achievementsOverlayEl,
       this.changelogOverlayEl,
@@ -893,6 +958,9 @@ export class UIManager {
           this.game.changeMap('MAP_3');
           return;
         } else if (currentMap === 'MAP_3') {
+          this.game.changeMap('MAP_4');
+          return;
+        } else if (currentMap === 'MAP_4') {
           window.location.reload();
           return;
         }
@@ -1171,6 +1239,43 @@ export class UIManager {
       }
     }
 
+    // render Inspector Module Socket
+    const modBox = document.getElementById('inspector-module-choice');
+    if (modBox || specBox) {
+      let container = modBox;
+      if (!container && specBox?.parentElement) {
+        container = document.createElement('div');
+        container.id = 'inspector-module-choice';
+        specBox.parentElement.appendChild(container);
+      }
+      if (container && tower.data.level >= 2) {
+        if (tower.data.equippedModule) {
+          const mod = getRogueliteModule(tower.data.equippedModule);
+          container.innerHTML = `<div style="font-size:12px; color:#ffd54f; margin-top:6px;">🧩 Módulo: ${mod.icon} ${mod.name}</div>`;
+        } else if (this.playerModules.length > 0) {
+          const options = this.playerModules.map(mId => {
+            const mod = getRogueliteModule(mId);
+            return `<button class="equip-mod-btn" data-mod="${mId}" style="margin:2px; padding:4px 8px; font-size:11px; background:#283593; color:white; border:1px solid #5c6bc0; border-radius:4px; cursor:pointer;">Equipar ${mod.icon} ${mod.name}</button>`;
+          }).join(' ');
+          container.innerHTML = `<div style="font-size:11px; color:#b0bec5; margin-top:6px;">Sockets de Módulo Disponíveis:<br>${options}</div>`;
+          container.querySelectorAll('.equip-mod-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              const mId = (e.currentTarget as HTMLElement).dataset.mod as RogueliteModuleId;
+              if (mId && tower.equipModule(mId)) {
+                const idx = this.playerModules.indexOf(mId);
+                if (idx >= 0) this.playerModules.splice(idx, 1);
+                this.renderInspector(tower);
+              }
+            });
+          });
+        } else {
+          container.innerHTML = `<div style="font-size:11px; color:#78909c; margin-top:4px;">🧩 Slot de Módulo Vazio (Ganha no Draft das ondas 5, 10, 15)</div>`;
+        }
+      } else if (container) {
+        container.innerHTML = '';
+      }
+    }
+
     const sellBtn = document.getElementById('btn-inspect-sell');
     if (sellBtn) {
       sellBtn.innerText = `💰 ${tower.getSellValue()}g`;
@@ -1332,8 +1437,12 @@ export class UIManager {
             if (desc) desc.innerText = 'O último desafio aguarda na Cidadela.';
             if (restartBtn) restartBtn.innerText = 'Batalha Final (Cidadela)';
           } else if (currentMap === 'MAP_3') {
+            if (title) title.innerText = 'Cidadela Concluída!';
+            if (desc) desc.innerText = 'O desafio obscuro final aguarda na Passagem dos Túmulos.';
+            if (restartBtn) restartBtn.innerText = 'Desafio Final (Grave Pass)';
+          } else if (currentMap === 'MAP_4') {
             if (title) title.innerText = 'Campanha Concluída!';
-            if (desc) desc.innerText = 'Você salvou o mundo de Oh My TD!';
+            if (desc) desc.innerText = 'Você purificou as almas e salvou o mundo de Oh My TD!';
             if (restartBtn) restartBtn.innerText = 'Voltar ao Menu';
           }
         }
@@ -1730,5 +1839,60 @@ export class UIManager {
         </tbody>
       </table>
     `;
+  }
+
+  public triggerDraftModal(onSelect?: (moduleId: RogueliteModuleId) => void) {
+    this.gameState.isPaused = true;
+    EventBus.getInstance().emit('pause:change', true);
+    const all = getAllRogueliteModules();
+    const shuffled = [...all].sort(() => Math.random() - 0.5);
+    const choices = shuffled.slice(0, 3);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = `
+      position: fixed; inset: 0; background: rgba(10, 15, 30, 0.92); z-index: 10000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+    `;
+
+    overlay.innerHTML = `
+      <div style="text-align: center; color: #ffeb3b; font-family: sans-serif;">
+        <h2 style="font-size: 24px; margin: 0;">🃏 DRAFT DE CARTAS ROGUELITE</h2>
+        <p style="color: #b0bec5; font-size: 14px; margin: 5px 0 0 0;">Escolha 1 módulo para adicionar ao seu inventário de combate:</p>
+      </div>
+      <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; max-width: 750px;">
+        ${choices
+          .map(
+            c => `
+          <button class="draft-card-btn" data-id="${c.id}" style="
+            background: #1a237e; border: 2px solid #3f51b5; border-radius: 12px; padding: 20px;
+            width: 210px; text-align: center; cursor: pointer; color: white; transition: transform 0.2s;
+          ">
+            <div style="font-size: 42px; margin-bottom: 10px;">${c.icon}</div>
+            <div style="font-size: 16px; font-weight: bold; color: #ffd54f; margin-bottom: 8px;">${c.name}</div>
+            <div style="font-size: 12px; color: #e0e0e0; line-height: 1.4;">${c.description}</div>
+          </button>
+        `
+          )
+          .join('')}
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll('.draft-card-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = (btn as HTMLElement).dataset.id as RogueliteModuleId;
+        if (id) {
+          this.playerModules.push(id);
+          if (onSelect) onSelect(id);
+        }
+        overlay.remove();
+        if (this.gameState.isPaused) {
+          this.gameState.isPaused = false;
+          EventBus.getInstance().emit('pause:change', false);
+        }
+      });
+    });
   }
 }

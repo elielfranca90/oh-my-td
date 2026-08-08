@@ -6,6 +6,7 @@ export class SpriteManager {
   private map1Atlas: HTMLCanvasElement;
   private map2Atlas: HTMLCanvasElement;
   private map3Atlas: HTMLCanvasElement;
+  private map4Atlas: HTMLCanvasElement;
   public readonly tileSize = 60;
 
   private images: Map<string, HTMLCanvasElement> = new Map();
@@ -15,10 +16,12 @@ export class SpriteManager {
     this.map1Atlas = this.createAtlasCanvas();
     this.map2Atlas = this.createAtlasCanvas();
     this.map3Atlas = this.createAtlasCanvas();
+    this.map4Atlas = this.createAtlasCanvas();
 
     this.generateMap1Atlas();
     this.generateMap2Atlas();
     this.generateMap3Atlas();
+    this.generateMap4Atlas();
     this.buildCanvasSprites();
   }
 
@@ -31,6 +34,7 @@ export class SpriteManager {
   public getAtlas(mapId: MapId): HTMLCanvasElement {
     if (mapId === 'MAP_2') return this.map2Atlas;
     if (mapId === 'MAP_3') return this.map3Atlas;
+    if (mapId === 'MAP_4') return this.map4Atlas;
     return this.map1Atlas;
   }
 
@@ -433,6 +437,59 @@ export class SpriteManager {
     ctx.lineWidth = 1.5;
     ctx.stroke();
   }
+  // --- MAP 4: GRAVE PASS (Dark Crypt & Spectral Emerald) ---
+  private generateMap4Atlas() {
+    const ctx = this.map4Atlas.getContext('2d');
+    if (!ctx) return;
+
+    // 0: Haunted Crypt Soil Tile
+    ctx.fillStyle = '#181124';
+    ctx.fillRect(0, 0, this.tileSize, this.tileSize);
+    ctx.strokeStyle = '#2c1b4d';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(4, 4, 52, 52);
+    ctx.fillStyle = '#4a148c';
+    ctx.fillRect(12, 12, 4, 4);
+    ctx.fillRect(44, 40, 4, 4);
+
+    // 1: Spectral Emerald Runic Trail
+    const pOff = this.tileSize;
+    ctx.fillStyle = '#211033';
+    ctx.fillRect(pOff, 0, this.tileSize, this.tileSize);
+    ctx.fillStyle = '#00c853';
+    ctx.fillRect(pOff + 16, 16, 28, 28);
+    ctx.fillStyle = '#69f0ae';
+    ctx.fillRect(pOff + 22, 22, 16, 16);
+
+    // 2: Crypt Tombstone
+    const mOff = 2 * this.tileSize;
+    ctx.fillStyle = '#181124';
+    ctx.fillRect(mOff, 0, this.tileSize, this.tileSize);
+    ctx.fillStyle = '#311b92';
+    ctx.beginPath();
+    ctx.arc(mOff + 30, 24, 14, Math.PI, 0);
+    ctx.rect(mOff + 16, 24, 28, 26);
+    ctx.fill();
+    ctx.strokeStyle = '#7c4dff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#00e676';
+    ctx.fillRect(mOff + 28, 30, 4, 12);
+    ctx.fillRect(mOff + 24, 34, 12, 4);
+
+    // 3: Spectral Crypt Portal
+    const cOff = 3 * this.tileSize;
+    ctx.fillStyle = '#181124';
+    ctx.fillRect(cOff, 0, this.tileSize, this.tileSize);
+    ctx.beginPath();
+    ctx.arc(cOff + 30, 30, 18, 0, Math.PI * 2);
+    ctx.fillStyle = '#00e676';
+    ctx.fill();
+    ctx.strokeStyle = '#b9f6ca';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
 
   private drawPineTree(ctx: CanvasRenderingContext2D, centerX: number, bottomY: number, size: number) {
     ctx.fillStyle = '#4e342e';
@@ -455,6 +512,7 @@ export class SpriteManager {
     let atlas = this.map1Atlas;
     if (mapId === 'MAP_2') atlas = this.map2Atlas;
     if (mapId === 'MAP_3') atlas = this.map3Atlas;
+    if (mapId === 'MAP_4') atlas = this.map4Atlas;
 
     const atlasCtx = atlas.getContext('2d');
     if (!atlasCtx) return;

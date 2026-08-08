@@ -12,11 +12,15 @@ import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
 import { Rng } from './Rng';
 import { TalentManager } from './TalentManager';
-import { Tower2D } from './Tower';
+import { handleTowerDamageDealt, Tower2D } from './Tower';
+import type { ReplayEngine } from './ReplayEngine';
 
 export class TowerManager2D {
+  public mapManager: MapManager2D;
+  public selectedTower: Tower2D | null = null;
+  public selectedBuildType: TowerType = 'BASIC';
+  public nextTowerId: number = 1;
   private towers: Tower2D[] = [];
-  private mapManager: MapManager2D;
   private projectileManager: ProjectileManager2D;
   private gameState: GameState;
   private audioManager: AudioManager;
@@ -24,13 +28,10 @@ export class TowerManager2D {
   private talentManager?: TalentManager;
   private achievementManager?: AchievementManager;
   private analyticsManager?: AnalyticsManager;
+  private replayEngine?: ReplayEngine;
   private rng: Rng;
-  /** Contador de IDs: `tower-${Date.now()}` colidia ao erguer duas no mesmo ms. */
-  private nextTowerId = 1;
-  public selectedBuildType: TowerType = 'BASIC';
-  public selectedTower: Tower2D | null = null;
   public sproutTiles: { x: number; y: number }[] = [];
-
+  public darkAltarTiles: { x: number; y: number }[] = [];
   constructor(
     mapManager: MapManager2D,
     projectileManager: ProjectileManager2D,
@@ -57,6 +58,10 @@ export class TowerManager2D {
     this.particleManager = pm;
   }
 
+  public setReplayEngine(re: ReplayEngine) {
+    this.replayEngine = re;
+  }
+
   public getTowerAt(gridX: number, gridY: number): Tower2D | undefined {
     return this.towers.find(t => t.data.gridX === gridX && t.data.gridY === gridY);
   }
@@ -64,6 +69,10 @@ export class TowerManager2D {
   public isSproutTile(gridX: number, gridY: number): boolean {
     return this.sproutTiles.some(s => s.x === gridX && s.y === gridY);
   }
+  public isDarkAltarTile(gridX: number, gridY: number): boolean {
+    return this.darkAltarTiles.some(s => s.x === gridX && s.y === gridY);
+  }
+
 
   public getTowerCost(type: TowerType): number {
     switch (type) {
@@ -107,6 +116,20 @@ export class TowerManager2D {
       tower.data.onSproutTile = true;
       tower.data.range = Math.round(tower.data.range * 1.25);
     }
+    // Check Dark Altar Twist (+25% damage bonus)
+    const isDarkAltarTile = this.darkAltarTiles.some(s => s.x === gridX && s.y === gridY);
+    if (isDarkAltarTile) {
+      tower.data.onDarkAltarTile = true;
+      tower.data.damage = Math.round(tower.data.damage * 1.25);
+    }
+
+
+    // Check Power Surge Hazard (+25% attack speed & +10% damage bonus)
+    if (this.mapManager.isPowerSurgeTile(gridX, gridY)) {
+      tower.data.isPowerSurged = true;
+      tower.data.damage = Math.round(tower.data.damage * 1.1);
+      tower.data.fireRate = Math.max(1, Math.round(tower.data.fireRate * 0.83));
+    }
 
     // Apply Talent Damage Bonus if unlocked
     if (this.talentManager) {
@@ -115,6 +138,7 @@ export class TowerManager2D {
 
     this.towers.push(tower);
     this.selectedTower = tower;
+    this.replayEngine?.recordAction('BUILD_TOWER', { gridX, gridY, towerType: this.selectedBuildType });
     EventBus.getInstance().emit('tower:select', this.selectedTower);
     return true;
   }
@@ -140,6 +164,7 @@ export class TowerManager2D {
       }
       const upgraded = this.selectedTower.upgrade(specialization);
       if (upgraded) {
+        this.replayEngine?.recordAction('UPGRADE_TOWER', { gridX: this.selectedTower.data.gridX, gridY: this.selectedTower.data.gridY, specialization });
         EventBus.getInstance().emit('tower:select', this.selectedTower);
       }
       return upgraded;
@@ -151,6 +176,8 @@ export class TowerManager2D {
     if (!this.selectedTower) return false;
     const refund = this.selectedTower.getSellValue();
     this.gameState.addGold(refund);
+
+    this.replayEngine?.recordAction('SELL_TOWER', { gridX: this.selectedTower.data.gridX, gridY: this.selectedTower.data.gridY });
 
     const index = this.towers.indexOf(this.selectedTower);
     if (index !== -1) {
@@ -198,15 +225,43 @@ export class TowerManager2D {
 
   public update(enemies: Enemy2D[], fxManager?: FXManager) {
     for (const tower of this.towers) {
+      // Rastreamento contínuo de posição para o feixe do Prisma Solar a cada frame
+      if (tower.data.type === 'SOLAR_PRISM' && tower.data.laserTargetId) {
+        const currentTarget = enemies.find(e => e.data.id === tower.data.laserTargetId && !e.data.isDead);
+        if (currentTarget) {
+          let effRange = tower.data.range;
+          if (this.mapManager.hazardState?.isMistActive) {
+            effRange = Math.round(effRange * 0.8);
+          }
+          const dx = currentTarget.data.position.x - tower.data.position.x;
+          const dy = currentTarget.data.position.y - tower.data.position.y;
+          if (Math.hypot(dx, dy) <= effRange) {
+            tower.data.laserTargetPos = { ...currentTarget.data.position };
+          } else {
+            tower.data.laserTargetId = undefined;
+            tower.data.laserTargetPos = undefined;
+            tower.data.beamDuration = 0;
+          }
+        } else {
+          tower.data.laserTargetId = undefined;
+          tower.data.laserTargetPos = undefined;
+          tower.data.beamDuration = 0;
+        }
+      }
+
       const readyToShoot = tower.update();
       if (!readyToShoot) continue;
+      let effectiveRange = tower.data.range;
+      if (this.mapManager.hazardState?.isMistActive) {
+        effectiveRange = Math.round(effectiveRange * 0.8);
+      }
 
       // Filter in-range enemies
       const inRangeEnemies = enemies.filter(e => {
         if (e.data.isDead) return false;
         const dx = e.data.position.x - tower.data.position.x;
         const dy = e.data.position.y - tower.data.position.y;
-        return Math.hypot(dx, dy) <= tower.data.range;
+        return Math.hypot(dx, dy) <= effectiveRange;
       });
 
       if (inRangeEnemies.length === 0) {
@@ -227,17 +282,20 @@ export class TowerManager2D {
         const spec = tower.data.specialization;
         for (const enemy of inRangeEnemies) {
           const dmgDealt = enemy.takeDamage(tower.data.damage, true);
-          if (dmgDealt > 0 && this.analyticsManager) {
-            this.analyticsManager.recordDamage('FROST', dmgDealt);
+          if (dmgDealt > 0) {
+            if (this.analyticsManager) {
+              this.analyticsManager.recordDamage('FROST', dmgDealt);
+            }
+            handleTowerDamageDealt(tower, enemy, dmgDealt, this.gameState);
           }
-
+          const slowMult = this.mapManager.hazardState?.isMistActive ? 0.75 : 1.0;
           if (spec === 'DEEP_FREEZE') {
             // Pulso raro (fireRate triplicado) mas que trava tudo no lugar.
-            enemy.applyFreeze(60);
+            enemy.applyFreeze(Math.round(60 / slowMult));
           } else if (spec === 'PERMAFROST') {
-            enemy.applySlow(tower.data.slowFactor || 0.25, 240);
+            enemy.applySlow((tower.data.slowFactor || 0.25) * slowMult, 240);
           } else {
-            enemy.applySlow(tower.data.slowFactor || 0.5, 120);
+            enemy.applySlow((tower.data.slowFactor || 0.5) * slowMult, 120);
           }
         }
         tower.data.cooldownTimer = tower.data.fireRate;
@@ -263,10 +321,11 @@ export class TowerManager2D {
       }
 
       if (target) {
-        // 2. Solar Prism Laser Beam (Focus mechanic: +10% damage per sec)
+        // 2. Solar Prism Laser Beam (Focus mechanic: +25% damage per sec)
         if (tower.data.type === 'SOLAR_PRISM') {
+          const cd = tower.data.onSproutTile ? Math.floor(tower.data.fireRate / 2) : tower.data.fireRate;
           if (tower.data.laserTargetId === target.data.id) {
-            tower.data.beamDuration = (tower.data.beamDuration || 0) + 1;
+            tower.data.beamDuration = (tower.data.beamDuration || 0) + cd;
           } else {
             tower.data.laserTargetId = target.data.id;
             tower.data.beamDuration = 0;
@@ -275,31 +334,36 @@ export class TowerManager2D {
 
           // FOCUS_LENS: o foco sobe em metade do tempo
           const focusPeriod = tower.data.specialization === 'FOCUS_LENS' ? 30 : 60;
-          const focusBonus = Math.min(1.0, Math.floor((tower.data.beamDuration || 0) / focusPeriod) * 0.1);
+          const focusBonus = Math.min(1.5, Math.floor((tower.data.beamDuration || 0) / focusPeriod) * 0.25);
           const laserDmg = Math.round(tower.data.damage * (1 + focusBonus));
 
           const dmgDealt = target.takeDamage(laserDmg, false);
-          if (dmgDealt > 0 && this.analyticsManager) {
-            this.analyticsManager.recordDamage('SOLAR_PRISM', dmgDealt);
+          if (dmgDealt > 0) {
+            if (this.analyticsManager) {
+              this.analyticsManager.recordDamage('SOLAR_PRISM', dmgDealt);
+            }
+            handleTowerDamageDealt(tower, target, dmgDealt, this.gameState);
           }
 
-          // CHAIN_BEAM: o feixe salta para um segundo alvo por metade do dano
-          if (tower.data.specialization === 'CHAIN_BEAM') {
+          // CHAIN_BEAM ou PIERCING_CORE: o feixe salta para um segundo alvo por metade do dano
+          if (tower.data.specialization === 'CHAIN_BEAM' || tower.data.equippedModule === 'PIERCING_CORE') {
             const secondary = inRangeEnemies.find(e => e !== target && !e.data.isDead);
             if (secondary) {
               const chainDmg = Math.max(1, Math.round(laserDmg * 0.5));
               const chainDealt = secondary.takeDamage(chainDmg, false);
-              if (chainDealt > 0 && this.analyticsManager) {
-                this.analyticsManager.recordDamage('SOLAR_PRISM', chainDealt);
+              if (chainDealt > 0) {
+                if (this.analyticsManager) {
+                  this.analyticsManager.recordDamage('SOLAR_PRISM', chainDealt);
+                }
+                handleTowerDamageDealt(tower, secondary, chainDealt, this.gameState);
               }
             }
           }
-
           if (fxManager && Math.random() < 0.3) {
             fxManager.addDamageText(target.data.position.x, target.data.position.y, `-${dmgDealt}`, '#ffff8d');
           }
 
-          tower.data.cooldownTimer = Math.max(8, tower.data.onSproutTile ? 12 : 24);
+          tower.data.cooldownTimer = Math.max(1, cd);
           continue;
         }
 
@@ -328,7 +392,7 @@ export class TowerManager2D {
           if (spec === 'PIERCING') {
             isLightShot = false; // ignora o armorFactor do alvo
             color = isCrit ? '#80d8ff' : '#b3e5fc';
-          } else if (spec === 'MULTISHOT') {
+          } else if (spec === 'MULTISHOT' || tower.data.equippedModule === 'PIERCING_CORE') {
             const secondary = inRangeEnemies.find(e => e !== target && !e.data.isDead);
             if (secondary) targets.push(secondary);
           }
@@ -350,8 +414,11 @@ export class TowerManager2D {
           color = '#ff5722';
           speed = 6;
           radius = 7;
-          if (spec === 'SHRAPNEL') splashRadius = tower.data.splashRadius;
-          this.audioManager.playCannonShot();
+          if (spec === 'SHRAPNEL' || tower.data.equippedModule === 'PIERCING_CORE') {
+            const secondary = inRangeEnemies.find(e => e !== target && !e.data.isDead);
+            if (secondary && spec !== 'SHRAPNEL') targets.push(secondary);
+            if (spec === 'SHRAPNEL') splashRadius = tower.data.splashRadius;
+          }
         } else if (tower.data.type === 'ARTILLERY') {
           if (this.rng.chance(extraCritChance)) {
             damage *= 2;
@@ -380,7 +447,8 @@ export class TowerManager2D {
             undefined,
             isCrit,
             tower.data.type,
-            isLightShot
+            isLightShot,
+            tower
           );
         }
         tower.data.cooldownTimer = tower.data.onSproutTile ? Math.floor(tower.data.fireRate / 2) : tower.data.fireRate;
@@ -417,6 +485,39 @@ export class TowerManager2D {
         ctx.textAlign = 'center';
         ctx.fillStyle = '#c5e1a5';
         ctx.fillText('🌱', px + tileSize / 2, py + tileSize / 2 + 6);
+      }
+    }
+    ctx.restore();
+  }
+
+  /**
+   * Desenha os tiles Altar Obscuro no Grave Pass (MAP_4).
+   */
+  public renderDarkAltarTiles(ctx: CanvasRenderingContext2D, tileSize: number) {
+    if (this.darkAltarTiles.length === 0) return;
+
+    ctx.save();
+    for (const tile of this.darkAltarTiles) {
+      const px = tile.x * tileSize;
+      const py = tile.y * tileSize;
+      const occupied = this.getTowerAt(tile.x, tile.y) !== undefined;
+
+      ctx.globalAlpha = occupied ? 0.3 : 0.65;
+      ctx.fillStyle = 'rgba(142, 36, 170, 0.35)';
+      ctx.fillRect(px, py, tileSize, tileSize);
+
+      ctx.strokeStyle = '#ab47bc';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(px + 1.5, py + 1.5, tileSize - 3, tileSize - 3);
+      ctx.setLineDash([]);
+
+      if (!occupied) {
+        ctx.globalAlpha = 1;
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ce93d8';
+        ctx.fillText('💀', px + tileSize / 2, py + tileSize / 2 + 6);
       }
     }
     ctx.restore();

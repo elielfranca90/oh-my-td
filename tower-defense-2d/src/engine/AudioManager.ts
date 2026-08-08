@@ -1,5 +1,5 @@
 
-export type BGMTrack = 'MAP_1' | 'MAP_2' | 'MAP_3' | 'BOSS';
+export type BGMTrack = 'MAP_1' | 'MAP_2' | 'MAP_3' | 'MAP_4' | 'BOSS';
 
 export class AudioManager {
   private ctx: AudioContext | null = null;
@@ -19,6 +19,7 @@ export class AudioManager {
   private bgmStep = 0;
   public isBGMPlaying = false;
   private currentSpeed = 1;
+  public tensionLevel = 0.0;
   public currentTrack: BGMTrack = 'MAP_1';
 
   private readonly PREFS_KEY = 'td2d_audio_prefs_v1';
@@ -58,6 +59,18 @@ export class AudioManager {
     110.00, 110.00, 220.00, 110.00, 87.31, 87.31, 174.61, 87.31,
     103.83, 103.83, 207.65, 103.83, 98.00, 98.00, 196.00, 98.00,
   ];
+  // --- MAP 4 TRACK: GRAVE PASS (Dark Gothic G Minor / E Phrygian Crypt) ---
+  private readonly map4Melody: number[] = [
+    196.00, 233.08, 293.66, 392.00, 311.13, 293.66, 233.08, 196.00,
+    164.81, 196.00, 246.94, 329.63, 246.94, 196.00, 164.81, 196.00,
+    174.61, 220.00, 261.63, 349.23, 261.63, 220.00, 174.61, 220.00,
+    155.56, 196.00, 233.08, 311.13, 233.08, 196.00, 155.56, 196.00,
+  ];
+  private readonly map4Bass: number[] = [
+    98.00,  98.00, 196.00,  98.00, 82.41, 82.41, 164.81, 82.41,
+    87.31,  87.31, 174.61,  87.31, 77.78, 77.78, 155.56, 77.78,
+  ];
+
 
   // --- BOSS TRACK (D Minor / Tritone Dissonance) ---
   private readonly bossMelody: number[] = [
@@ -195,6 +208,11 @@ export class AudioManager {
     return this.isBgmMuted;
   }
 
+  public setTensionLevel(level: number) {
+    this.tensionLevel = Math.max(0, Math.min(1, level));
+  }
+
+
   // BGM Control Methods
   public startBGM(speedMultiplier = 1, track: BGMTrack = 'MAP_1') {
     this.currentSpeed = speedMultiplier;
@@ -246,6 +264,7 @@ export class AudioManager {
     let baseIntervalMs = 150;
     if (this.currentTrack === 'MAP_2') baseIntervalMs = 110;
     if (this.currentTrack === 'MAP_3') baseIntervalMs = 125;
+    if (this.currentTrack === 'MAP_4') baseIntervalMs = 135;
     if (this.currentTrack === 'BOSS') baseIntervalMs = 95;
 
     const intervalMs = Math.max(25, baseIntervalMs / this.currentSpeed);
@@ -279,6 +298,13 @@ export class AudioManager {
       bassType = 'square';
       melVol = 0.11;
       bassVol = 0.13;
+    } else if (this.currentTrack === 'MAP_4') {
+      melodyArray = this.map4Melody;
+      bassArray = this.map4Bass;
+      melType = 'sawtooth';
+      bassType = 'triangle';
+      melVol = 0.10;
+      bassVol = 0.12;
     } else if (this.currentTrack === 'BOSS') {
       melodyArray = this.bossMelody;
       bassArray = this.bossBass;
@@ -300,6 +326,19 @@ export class AudioManager {
     melOsc.frequency.setValueAtTime(melodyFreq, now);
 
     const melDur = 0.09;
+    // Tension Layer: when tensionLevel > 0.4, trigger high octave arpeggio note
+    if (this.tensionLevel > 0.4) {
+      const tensionOsc = this.ctx.createOscillator();
+      const tensionGain = this.ctx.createGain();
+      tensionOsc.type = 'sine';
+      tensionOsc.frequency.setValueAtTime(melodyFreq * 2, now);
+      tensionGain.gain.setValueAtTime(0.04 * this.tensionLevel, now);
+      tensionGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+      tensionOsc.connect(tensionGain);
+      tensionGain.connect(this.bgmGainNode);
+      tensionOsc.start(now);
+      tensionOsc.stop(now + 0.05);
+    }
     melGain.gain.setValueAtTime(melVol, now);
     melGain.gain.exponentialRampToValueAtTime(0.001, now + melDur);
 

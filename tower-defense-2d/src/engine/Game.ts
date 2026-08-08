@@ -20,6 +20,7 @@ import { TowerManager2D } from './TowerManager';
 import { WaveManager } from './WaveManager';
 import { ThreeRenderer } from './ThreeRenderer';
 import { SpriteManager } from './SpriteManager';
+import { ReplayEngine } from './ReplayEngine';
 export class Game2D {
   /**
    * Duração de um passo de simulação. A simulação SEMPRE avança em passos de
@@ -71,6 +72,8 @@ export class Game2D {
   private particleManager!: ParticleManager;
   public spellManager!: SpellManager;
   private uiManager!: UIManager;
+  public replayEngine!: ReplayEngine;
+  private wasWaveActive = false;
 
   public gameSpeedMultiplier = 1; // 1x, 2x, 4x
 
@@ -109,7 +112,7 @@ export class Game2D {
   private currentSavedEndlessMode = false;
 
   constructor() {
-    this.databaseManager = new DatabaseManager();
+    this.databaseManager = DatabaseManager.getInstance();
     const gameArea = document.getElementById('game-area');
     if (!gameArea) throw new Error('Game area container not found');
 
@@ -183,6 +186,8 @@ export class Game2D {
       this.achievementManager,
       this.rng
     );
+    this.replayEngine = new ReplayEngine(this.runSeed, this.currentSavedMapId, this.currentSavedChallengeMode);
+    this.towerManager.setReplayEngine(this.replayEngine);
     this.enemyManager = new EnemyManager2D(
       this.mapManager,
       this.gameState,
@@ -193,9 +198,15 @@ export class Game2D {
       this.rng
     );
 
-    // Overgrowth Sprout: sorteia os tiles bonificados desta partida.
-    this.towerManager.sproutTiles = this.mapManager.pickSproutTiles(4, this.rng);
+    // Overgrowth Sprout (Broto Selvagem): recurso exclusivo do Green Valley (MAP_1)
+    this.towerManager.sproutTiles = this.currentSavedMapId === 'MAP_1'
+      ? this.mapManager.pickSproutTiles(4, this.rng)
+      : [];
 
+    // Altar Obscuro (Dark Altar): recurso exclusivo do Grave Pass (MAP_4)
+    this.towerManager.darkAltarTiles = this.currentSavedMapId === 'MAP_4'
+      ? this.mapManager.pickDarkAltarTiles(3, this.rng)
+      : [];
     if (this.uiManager) {
       this.uiManager.destroy();
     }
@@ -315,13 +326,7 @@ export class Game2D {
     const syncCanvasWidth = () => {
       const rect = this.canvas.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
-      const canvasRatio = this.canvas.width / this.canvas.height;
-      const contentRatio = rect.width / rect.height;
-      let renderedWidth = rect.width;
-      if (contentRatio > canvasRatio) {
-        renderedWidth = rect.height * canvasRatio;
-      }
-      document.documentElement.style.setProperty('--canvas-width', `${Math.round(renderedWidth)}px`);
+      document.documentElement.style.setProperty('--canvas-width', `${Math.round(rect.width)}px`);
       document.documentElement.style.setProperty('--canvas-height', `${Math.round(rect.height)}px`);
     };
     syncCanvasWidth();
@@ -533,6 +538,8 @@ export class Game2D {
   public getTileTipLines(gridX: number, gridY: number): { text: string; color: string }[] {
     const linhas: { text: string; color: string }[] = [];
     const tower = this.towerManager.getTowerAt(gridX, gridY);
+    const isDarkAltar = this.towerManager.isDarkAltarTile(gridX, gridY);
+
     const isSprout = this.towerManager.isSproutTile(gridX, gridY);
 
     if (tower) {
@@ -553,6 +560,15 @@ export class Game2D {
       if (tower.data.onSproutTile) {
         linhas.push({ text: '🌱 Broto: +25% alcance · cadência 2x', color: '#aed581' });
       }
+      if (tower.data.onDarkAltarTile) {
+        linhas.push({ text: '💀 Altar Obscuro: +25% de dano necrótico', color: '#ce93d8' });
+      }
+      if (tower.data.isPowerSurged) {
+        linhas.push({ text: '⚡ Power Surge: +20% cadência · +10% dano', color: '#80deea' });
+      }
+      if (tower.data.overheatTimer && tower.data.overheatTimer > 0) {
+        linhas.push({ text: '🔥 Superaquecida por Lava! Ataques suspensos', color: '#ff8a80' });
+      }
       return linhas;
     }
 
@@ -561,11 +577,25 @@ export class Game2D {
       linhas.push({ text: 'Torre construída aqui recebe:', color: '#b0bec5' });
       linhas.push({ text: '+25% de alcance', color: '#aed581' });
       linhas.push({ text: 'Cadência de tiro dobrada', color: '#aed581' });
+    } else if (isDarkAltar) {
+      linhas.push({ text: '💀 Altar Obscuro', color: '#ce93d8' });
+      linhas.push({ text: 'Torre construída aqui recebe:', color: '#b0bec5' });
+      linhas.push({ text: '+25% de Dano Necrótico', color: '#ba68c8' });
     } else if (this.mapManager.isBuildable(gridX, gridY)) {
-      linhas.push({ text: 'Terreno livre', color: '#ffffff' });
+      if (this.mapManager.isPowerSurgeTile(gridX, gridY)) {
+        linhas.push({ text: '⚡ Conector Energizado', color: '#80deea' });
+        linhas.push({ text: 'Torre aqui ganha +20% cadência e +10% dano', color: '#80deea' });
+      } else {
+        linhas.push({ text: 'Terreno livre', color: '#ffffff' });
+      }
     } else {
-      linhas.push({ text: 'Não construível', color: '#ff8a80' });
-      linhas.push({ text: 'Caminho ou obstáculo', color: '#b0bec5' });
+      if (this.mapManager.isGeyserEruptingAt(gridX, gridY)) {
+        linhas.push({ text: '🌋 Fissura de Lava Ativa!', color: '#ff8a80' });
+        linhas.push({ text: 'Dano de fogo na rota · Superaquece torres ao lado', color: '#ff8a80' });
+      } else {
+        linhas.push({ text: 'Não construível', color: '#ff8a80' });
+        linhas.push({ text: 'Caminho ou obstáculo', color: '#b0bec5' });
+      }
       return linhas;
     }
 
@@ -663,14 +693,71 @@ export class Game2D {
    * Retorna `false` quando a partida terminou e o loop deve parar de avançar.
    */
   private stepSimulation(stepMs: number): boolean {
+    this.mapManager.updateHazards(stepMs / 16.66);
+
+    // Simulação do Hazard de Lava (MAP_2)
+    if (this.mapManager.hazardState?.type === 'LAVA_GEYSER') {
+      const tileSize = this.mapManager.tileSize;
+      for (const g of this.mapManager.hazardState.geysers) {
+        if (!g.isActive) continue;
+        const gWorldX = g.gridX * tileSize + tileSize / 2;
+        const gWorldY = g.gridY * tileSize + tileSize / 2;
+
+        for (const enemy of this.enemyManager.getEnemies()) {
+          if (enemy.data.isDead) continue;
+          const dx = Math.abs(enemy.data.position.x - gWorldX);
+          const dy = Math.abs(enemy.data.position.y - gWorldY);
+          if (dx <= tileSize / 2 && dy <= tileSize / 2) {
+            enemy.takeDamage(1, true);
+            this.particleManager.spawnEmber(enemy.data.position.x, enemy.data.position.y);
+          }
+        }
+
+        for (const tower of this.towerManager.getTowers()) {
+          const dx = Math.abs(tower.data.gridX - g.gridX);
+          const dy = Math.abs(tower.data.gridY - g.gridY);
+          if (dx <= 1 && dy <= 1 && !(dx === 0 && dy === 0)) {
+            tower.data.overheatTimer = 180;
+          }
+        }
+      }
+    }
+    // Simulação do Hazard do Cemitério Obscuro (MAP_4)
+    if (this.mapManager.hazardState?.type === 'GRAVEYARD_SOULS') {
+      const tileSize = this.mapManager.tileSize;
+      for (const g of this.mapManager.hazardState.geysers) {
+        if (!g.isActive) continue;
+        const gWorldX = g.gridX * tileSize + tileSize / 2;
+        const gWorldY = g.gridY * tileSize + tileSize / 2;
+
+        for (const enemy of this.enemyManager.getEnemies()) {
+          if (enemy.data.isDead) continue;
+          const dx = Math.abs(enemy.data.position.x - gWorldX);
+          const dy = Math.abs(enemy.data.position.y - gWorldY);
+          if (dx <= tileSize && dy <= tileSize) {
+            enemy.applySlow(0.7, 30);
+            this.particleManager.spawnEmber(enemy.data.position.x, enemy.data.position.y, 2, '#00e676');
+          }
+        }
+      }
+    }
+
+    this.replayEngine.advanceTick();
     this.waveManager.updateAutoCountdown(stepMs);
     this.enemyManager.update(stepMs, this.towerManager.getTowers());
     this.towerManager.update(this.enemyManager.getEnemies(), this.fxManager);
-    this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager);
+    this.projectileManager.update(this.enemyManager.getEnemies(), this.fxManager, this.analyticsManager, this.gameState);
     this.spellManager.update(stepMs);
     this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
 
-    // Check Endless Survivor Achievement
+    const isWaveActiveNow = this.waveManager.isWaveActive;
+    if (this.wasWaveActive && !isWaveActiveNow) {
+      const completedWave = this.waveManager.currentWaveIndex + 1;
+      if (completedWave === 5 || completedWave === 10 || completedWave === 15) {
+        this.uiManager.triggerDraftModal();
+      }
+    }
+    this.wasWaveActive = isWaveActiveNow;
     if (this.waveManager.isEndlessMode) {
       this.achievementManager.setProgress('ENDLESS_SURVIVOR', this.waveManager.currentWaveIndex + 1);
     }
@@ -721,6 +808,13 @@ export class Game2D {
       const targetTrack: BGMTrack = (hasBossOnScreen || (isBossWave && this.waveManager.isWaveActive)) ? 'BOSS' : mapTrack;
 
       this.audioManager.setTrack(targetTrack);
+
+      // Update BGM Tension Level & WebGL Vignette Shaders
+      const isCriticalHp = this.gameState.baseHp <= 3;
+      const enemyCount = enemies.filter(e => !e.data.isDead).length;
+      const tension = isCriticalHp ? 1.0 : (hasBossOnScreen ? 0.85 : (enemyCount > 20 ? 0.5 : 0.0));
+      this.audioManager.setTensionLevel(tension);
+      this.threeRenderer.setVignetteIntensity(isCriticalHp ? 0.7 : 0.0);
 
       // Manage BGM state & tempo
       if ((this.gameState.status === 'PLAYING' || this.gameState.status === 'PREPARATION') && !this.gameState.isPaused) {
@@ -795,7 +889,9 @@ export class Game2D {
       this.ctx.translate(shake.x, shake.y);
 
       this.mapManager.render(this.ctx);
+      this.mapManager.renderHazards(this.ctx);
       this.towerManager.renderSproutTiles(this.ctx, this.mapManager.tileSize);
+      this.towerManager.renderDarkAltarTiles(this.ctx, this.mapManager.tileSize);
       this.particleManager.render(this.ctx);
       this.renderGhostPlacement();
       this.towerManager.render(this.ctx, this.mousePos);
@@ -808,12 +904,28 @@ export class Game2D {
       this.renderPauseOverlay();
       // Depois do overlay de pause: inspecionar tile com o jogo pausado é útil.
       this.renderTileTooltip();
+      this.renderVignetteOverlay();
 
       this.ctx.restore();
-
       requestAnimationFrame(loop);
     };
 
     requestAnimationFrame(loop);
+  }
+  private renderVignetteOverlay() {
+    if (!this.threeRenderer || this.threeRenderer.vignetteIntensity <= 0) return;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const outerRadius = Math.max(w, h) / 1.2;
+
+    const gradient = this.ctx.createRadialGradient(cx, cy, outerRadius * 0.4, cx, cy, outerRadius);
+    gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    gradient.addColorStop(0.7, 'rgba(180, 0, 0, 0.25)');
+    gradient.addColorStop(1, 'rgba(230, 0, 0, 0.55)');
+
+    this.ctx.fillStyle = gradient;
+    this.ctx.fillRect(0, 0, w, h);
   }
 }
