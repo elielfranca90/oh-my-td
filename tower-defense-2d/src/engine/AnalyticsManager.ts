@@ -36,7 +36,8 @@ export class AnalyticsManager {
     try {
       const saved = localStorage.getItem(this.HIGH_SCORE_KEY);
       if (saved !== null) {
-        this.highScoreWave = parseInt(saved, 10) || 0;
+        const parsed = parseInt(saved, 10);
+        this.highScoreWave = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
       }
     } catch {
       // Ignore

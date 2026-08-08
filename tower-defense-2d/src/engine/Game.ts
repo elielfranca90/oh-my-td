@@ -139,7 +139,7 @@ export class Game2D {
 
   private initGame() {
     if (this.audioManager) {
-      this.audioManager.stopBGM();
+      this.audioManager.dispose();
     }
 
     // Uma semente por partida, compartilhada por todos os managers.
@@ -780,7 +780,7 @@ export class Game2D {
    */
   private stepPresentation(stepMs: number) {
     this.fxManager.update();
-    this.achievementManager.update();
+    this.achievementManager.update(stepMs);
     MegaBossSpriteRenderer.getInstance().update(stepMs);
   }
 

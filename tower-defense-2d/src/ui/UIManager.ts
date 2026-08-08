@@ -1391,20 +1391,39 @@ export class UIManager {
 
     summary.innerText = `Desbloqueadas ${unlockedCount}/${achievements.length} Badges`;
 
-    grid.innerHTML = achievements
-      .map(
-        (ach) => `
-      <div class="achievement-card ${ach.unlocked ? 'unlocked' : 'locked'}">
-        <div class="ach-icon">${ach.icon}</div>
-        <div class="ach-info">
-          <div class="ach-title">${ach.title}</div>
-          <div class="ach-desc">${ach.desc}</div>
-          <div class="ach-progress">${ach.unlocked ? '✅ Desbloqueado' : `${ach.progress}/${ach.maxProgress}`}</div>
-        </div>
-      </div>
-    `
-      )
-      .join('');
+    grid.innerHTML = '';
+    achievements.forEach((ach) => {
+      const card = document.createElement('div');
+      card.className = `achievement-card ${ach.unlocked ? 'unlocked' : 'locked'}`;
+
+      const icon = document.createElement('div');
+      icon.className = 'ach-icon';
+      icon.textContent = ach.icon;
+
+      const info = document.createElement('div');
+      info.className = 'ach-info';
+
+      const title = document.createElement('div');
+      title.className = 'ach-title';
+      title.textContent = ach.title;
+
+      const desc = document.createElement('div');
+      desc.className = 'ach-desc';
+      desc.textContent = ach.desc;
+
+      const progress = document.createElement('div');
+      progress.className = 'ach-progress';
+      progress.textContent = ach.unlocked ? '✅ Desbloqueado' : `${ach.progress}/${ach.maxProgress}`;
+
+      info.appendChild(title);
+      info.appendChild(desc);
+      info.appendChild(progress);
+
+      card.appendChild(icon);
+      card.appendChild(info);
+
+      grid.appendChild(card);
+    });
 
     this.achievementsOverlayEl.classList.remove('hidden');
   }

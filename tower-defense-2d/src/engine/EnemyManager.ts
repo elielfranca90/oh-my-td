@@ -1,6 +1,6 @@
 import { Tower2D } from './Tower';
 
-import type { EnemyType, Vector2D } from '../types';
+import type { EnemyType } from '../types';
 
 import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
@@ -74,7 +74,7 @@ export class EnemyManager2D {
 
         // Boss Death Reinforcements: Spawn 2 Runners!
         if (enemy.data.type === 'BOSS') {
-          this.spawnReinforcements(enemy.data.waypointIndex, enemy.data.position);
+          this.spawnReinforcements(enemy);
         }
 
         this.enemies.splice(i, 1);
@@ -123,21 +123,25 @@ export class EnemyManager2D {
     this.waveManager.onEnemyCleared(this.enemies.length);
   }
 
-  private spawnReinforcements(waypointIndex: number, position: Vector2D) {
+  private spawnReinforcements(boss: Enemy2D) {
+    const waypoints = this.mapManager.getWaypoints(boss.pathIndex);
+    const clampedIndex = Math.max(0, Math.min(waypoints.length - 1, boss.data.waypointIndex));
     for (let r = 0; r < 2; r++) {
-      const waypoints = this.mapManager.getWaypoints(0);
       const runner = new Enemy2D(
         waypoints,
         'RUNNER',
         `runner-boss-${this.nextEnemyId++}`,
         1.0,
-        0,
+        boss.pathIndex,
         1.0,
         1.0,
         this.rng
       );
-      runner.data.waypointIndex = waypointIndex;
-      runner.data.position = { x: position.x + (r * 12 - 6), y: position.y + (r * 12 - 6) };
+      runner.data.waypointIndex = clampedIndex;
+      runner.data.position = {
+        x: boss.data.position.x + (r * 12 - 6),
+        y: boss.data.position.y + (r * 12 - 6),
+      };
       this.enemies.push(runner);
     }
   }

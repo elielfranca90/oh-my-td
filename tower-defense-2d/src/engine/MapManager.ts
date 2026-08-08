@@ -1,6 +1,6 @@
 import type { BiomeHazardState, MapId, Vector2D } from '../types';
 import { Rng } from './Rng';
-
+import { SpriteManager } from './SpriteManager';
 export const TileType = {
   BUILDABLE: 0,
   PATH: 1,
@@ -18,7 +18,8 @@ export class MapManager2D {
   public currentMapId: MapId = 'MAP_1';
   private mapData: TileType[][] = [];
   public hazardState!: BiomeHazardState;
-
+  private spriteManager: SpriteManager = new SpriteManager();
+  private staticLayer: HTMLCanvasElement | null = null;
   constructor(mapId: MapId = 'MAP_1') {
     this.setMap(mapId);
   }
@@ -79,6 +80,7 @@ export class MapManager2D {
         };
         break;
     }
+    this.prerenderStaticLayer();
   }
   public getMapData(): TileType[][] {
     return this.mapData;
@@ -256,8 +258,47 @@ export class MapManager2D {
     ctx.restore();
   }
 
-  public render(_ctx: CanvasRenderingContext2D) {
-    // Terreno agora é renderizado via WebGL no ThreeRenderer.
+  private prerenderStaticLayer() {
+    if (!this.staticLayer) {
+      if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+        const canvas = document.createElement('canvas');
+        canvas.width = this.cols * this.tileSize;
+        canvas.height = this.rows * this.tileSize;
+        this.staticLayer = canvas;
+      }
+    }
+
+    if (!this.staticLayer) return;
+
+    const layerCtx = this.staticLayer.getContext('2d');
+    if (!layerCtx) {
+      this.staticLayer = null;
+      return;
+    }
+
+    layerCtx.clearRect(0, 0, this.staticLayer.width, this.staticLayer.height);
+    this.drawTiles(layerCtx);
+  }
+
+  private drawTiles(ctx: CanvasRenderingContext2D) {
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        const type = this.mapData[row][col];
+        this.spriteManager.drawTile(ctx, this.currentMapId, type, col * this.tileSize, row * this.tileSize);
+
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(col * this.tileSize, row * this.tileSize, this.tileSize, this.tileSize);
+      }
+    }
+  }
+
+  public render(ctx: CanvasRenderingContext2D) {
+    if (this.staticLayer) {
+      ctx.drawImage(this.staticLayer, 0, 0);
+      return;
+    }
+    this.drawTiles(ctx);
   }
 
   public isBuildable(gridX: number, gridY: number): boolean {

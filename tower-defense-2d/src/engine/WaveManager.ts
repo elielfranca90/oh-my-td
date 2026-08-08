@@ -469,7 +469,7 @@ export class WaveManager {
     if (this.isEndlessMode) return false;
 
     return (
-      this.currentWaveIndex === 9 &&
+      this.currentWaveIndex >= 9 &&
       this.spawnQueue.length === 0 &&
       remainingEnemiesCount === 0 &&
       !this.isWaveActive
