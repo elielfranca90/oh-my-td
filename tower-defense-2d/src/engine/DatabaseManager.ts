@@ -56,6 +56,15 @@ export interface PendingSyncQueue {
  * Implements a Local-First Outbox Pattern for background synchronization.
  */
 export class DatabaseManager {
+  private static instance: DatabaseManager | null = null;
+
+  public static getInstance(): DatabaseManager {
+    if (!DatabaseManager.instance) {
+      DatabaseManager.instance = new DatabaseManager();
+    }
+    return DatabaseManager.instance;
+  }
+
   public client: SupabaseClient | null = null;
   private userId: string | null = null;
   private readonly QUEUE_KEY = 'td2d_sync_queue_v1';
@@ -380,6 +389,20 @@ export class DatabaseManager {
     this.saveQueue(queue);
     this.flushSyncQueue();
   }
+  /**
+   * Retorna a seed determinística diária (Daily Seed) calculada para a data UTC atual.
+   */
+  public getDailySeed(): number {
+    const d = new Date();
+    const dateStr = `${d.getUTCFullYear()}${(d.getUTCMonth() + 1).toString().padStart(2, '0')}${d.getUTCDate().toString().padStart(2, '0')}`;
+    let seed = 0;
+    for (let i = 0; i < dateStr.length; i++) {
+      seed = (seed << 5) - seed + dateStr.charCodeAt(i);
+      seed |= 0;
+    }
+    return Math.abs(seed) || 20260802;
+  }
+
 
   /**
    * Fetches remote player state (stars & talents) from Supabase.

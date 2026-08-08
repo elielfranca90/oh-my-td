@@ -268,4 +268,33 @@ describe('Main HUD Buttons Integration Test', () => {
     expect(mockWaveManager.isAutoMode).toBe(false);
     expect(autoBtn?.classList.contains('active')).toBe(false);
   });
+  it('should highlight map-mechanics-btn until clicked and save status in localStorage', () => {
+    localStorage.removeItem('has_seen_map_mechanics');
+    createDummyUIManager();
+
+    const btn = document.getElementById('map-mechanics-btn') as HTMLButtonElement;
+    expect(btn).not.toBeNull();
+    expect(btn.classList.contains('mechanics-btn-highlight')).toBe(true);
+
+    btn.click();
+
+    expect(localStorage.getItem('has_seen_map_mechanics')).toBe('true');
+    expect(btn.classList.contains('mechanics-btn-highlight')).toBe(false);
+  });
+
+  it('should trigger draft modal without errors and populate player modules on selection', () => {
+    const ui = createDummyUIManager();
+    let selectedModule: string | null = null;
+    ui.triggerDraftModal((modId) => {
+      selectedModule = modId;
+    });
+
+    const modalBtn = document.querySelector('.draft-card-btn') as HTMLButtonElement;
+    expect(modalBtn).not.toBeNull();
+    const modId = modalBtn.getAttribute('data-id');
+
+    modalBtn.click();
+    expect(selectedModule).toBe(modId);
+    expect(ui.playerModules).toContain(modId);
+  });
 });

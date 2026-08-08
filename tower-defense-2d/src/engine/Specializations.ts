@@ -1,5 +1,4 @@
-import type { TowerSpecialization, TowerType } from '../types';
-
+import type { IRogueliteModule, RogueliteModuleId, TowerSpecialization, TowerType } from '../types';
 export interface SpecializationOption {
   id: TowerSpecialization;
   name: string;
@@ -105,4 +104,45 @@ export function getSpecializationOption(
 /** Impede aplicar, por exemplo, NAPALM numa torre FROST. */
 export function isValidSpecialization(type: TowerType, spec: TowerSpecialization): boolean {
   return SPECIALIZATIONS[type].some(option => option.id === spec);
+}
+
+export const ROGUELITE_MODULES: Record<RogueliteModuleId, IRogueliteModule> = {
+  MIDAS_TOUCH: {
+    id: 'MIDAS_TOUCH',
+    name: 'Módulo Midas',
+    description: 'Gera +2 de ouro a cada 5 abates efetuados por esta torre.',
+    icon: '💰',
+  },
+  PIERCING_CORE: {
+    id: 'PIERCING_CORE',
+    name: 'Núcleo Perfurante',
+    description: 'Projéteis da torre atravessam +1 inimigo adicional no caminho.',
+    icon: '🎯',
+  },
+  VOLTAIC_OVERCHARGE: {
+    id: 'VOLTAIC_OVERCHARGE',
+    name: 'Carga Voltaica',
+    description: 'Tiros em alvos lentos/congelados disparam faíscas elétricas (8 dano AoE).',
+    icon: '⚡',
+  },
+  VAMPIRIC_DRAIN: {
+    id: 'VAMPIRIC_DRAIN',
+    name: 'Dreno Vampírico',
+    description: '15% do dano causado regenera a Vida da Base (1 HP a cada 100 dano).',
+    icon: '🩸',
+  },
+  BOUNTY_HUNTER: {
+    id: 'BOUNTY_HUNTER',
+    name: 'Caçador de Recompensas',
+    description: '+20% de ouro adicional ganho ao derrotar Chefões e Tanches.',
+    icon: '🏴‍☠️',
+  },
+};
+
+export function getRogueliteModule(id: RogueliteModuleId): IRogueliteModule {
+  return ROGUELITE_MODULES[id];
+}
+
+export function getAllRogueliteModules(): IRogueliteModule[] {
+  return Object.values(ROGUELITE_MODULES);
 }

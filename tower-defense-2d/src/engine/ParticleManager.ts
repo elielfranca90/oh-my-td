@@ -118,6 +118,24 @@ export class ParticleManager {
       });
     }
   }
+  public spawnEmber(x: number, y: number, count = 3, customColor?: string) {
+    const colors = customColor ? [customColor] : ['#ff3d00', '#ff9100', '#ffea00'];
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 3 + 1;
+      this.embers.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.5,
+        size: Math.random() * 3 + 1,
+        alpha: 1.0,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: Math.floor(Math.random() * 10 + 10),
+      });
+    }
+  }
+
 
   /**
    * Pulso Glacial da torre FROST. O dano em área já era aplicado, mas sem

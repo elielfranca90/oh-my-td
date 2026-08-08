@@ -18,7 +18,7 @@ export interface ToastNotification {
   title: string;
   reward: number;
   icon: string;
-  life: number; // frames (~3 sec)
+  lifeMs: number;
 }
 
 export class AchievementManager {
@@ -133,14 +133,23 @@ export class AchievementManager {
   private loadAchievements() {
     try {
       const saved = localStorage.getItem(this.STORAGE_KEY);
-      if (saved !== null) {
-        const parsed: Record<string, { unlocked: boolean; progress: number }> = JSON.parse(saved);
-        for (const id of Object.keys(parsed)) {
-          if (this.achievements[id]) {
-            this.achievements[id].unlocked = parsed[id].unlocked || false;
-            this.achievements[id].progress = parsed[id].progress || 0;
-          }
-        }
+      if (saved === null) return;
+
+      const parsed: unknown = JSON.parse(saved);
+      if (typeof parsed !== 'object' || parsed === null) return;
+
+      for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
+        const ach = this.achievements[id];
+        if (!ach) continue;
+        if (typeof value !== 'object' || value === null) continue;
+
+        const entry = value as Record<string, unknown>;
+        const progress = entry.progress;
+        ach.unlocked = entry.unlocked === true;
+        ach.progress = typeof progress === 'number' && Number.isFinite(progress)
+          ? Math.max(0, Math.min(ach.maxProgress, Math.floor(progress)))
+          : 0;
+        if (ach.unlocked) ach.progress = ach.maxProgress;
       }
     } catch {
       // Fallback
@@ -263,15 +272,15 @@ export class AchievementManager {
       title: ach.title,
       reward: ach.rewardStars,
       icon: ach.icon,
-      life: 180, // 3s at 60fps
+      lifeMs: 3000,
     });
   }
 
-  public update() {
+  public update(deltaTimeMs = 16.66) {
     for (let i = this.activeToasts.length - 1; i >= 0; i--) {
       const toast = this.activeToasts[i];
-      toast.life--;
-      if (toast.life <= 0) {
+      toast.lifeMs -= deltaTimeMs;
+      if (toast.lifeMs <= 0) {
         this.activeToasts.splice(i, 1);
       }
     }

@@ -27,7 +27,7 @@ export class WelcomeScreen {
 
   constructor(onStart: (mode: 'CAMPAIGN' | 'TRADITIONAL') => void, db?: DatabaseManager) {
     this.onStartCallback = onStart;
-    this.db = db || new DatabaseManager();
+    this.db = db || DatabaseManager.getInstance();
     this.handleResizeBound = this.handleResize.bind(this);
     this.initUI();
     this.initThree();

@@ -32,7 +32,7 @@ npm run build
 * **🌟 Meta-Progressão & Badges:** Árvore de Talentos permanente salvando no LocalStorage e 11 Conquistas desbloqueáveis com notificações flutuantes.
 * **📊 Analytics Pós-Partida:** Painel de relatório exibindo a Torre MVP da partida, finanças, contagem de abates e recordes.
 * **📱 UX Mobile Responsivo & Press-and-Hold:** Suporte a `100dvh`, *Safe Area Insets*, abas mobile com auto-inspector, seletores rápidos na HUD, tooltips por toque longo (*press-and-hold*) e controle duplo de áudio BGM/SFX.
-* **🧪 Bateria de Testes Automatizados (Vitest):** 132 testes passando em 21 suítes cobrindo motor matemático, física, banco de dados, fluxo de ondas e UI.
+* **🧪 Bateria de Testes Automatizados (Vitest):** 163 testes passando em 27 suítes cobrindo motor matemático, física, banco de dados, fluxo de ondas, draft roguelite, UI e o novo Mapa 4 (Grave Pass).
 ---
 
 ## 👤 Autor & Contato

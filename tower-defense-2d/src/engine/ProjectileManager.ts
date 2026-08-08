@@ -3,6 +3,8 @@ import { AnalyticsManager } from './AnalyticsManager';
 import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
 import { Projectile2D } from './Projectile';
+import type { Tower2D } from './Tower';
+import type { GameState } from './GameState';
 
 export class ProjectileManager2D {
   private projectiles: Projectile2D[] = [];
@@ -18,7 +20,8 @@ export class ProjectileManager2D {
     slowFactor?: number,
     isCrit?: boolean,
     towerType?: TowerType,
-    isLightShot?: boolean
+    isLightShot?: boolean,
+    sourceTower?: Tower2D
   ) {
     this.projectiles.push(
       new Projectile2D(
@@ -32,14 +35,15 @@ export class ProjectileManager2D {
         slowFactor,
         isCrit,
         towerType,
-        isLightShot
+        isLightShot,
+        sourceTower
       )
     );
   }
 
-  public update(allEnemies: Enemy2D[], fxManager: FXManager, analyticsManager?: AnalyticsManager) {
+  public update(allEnemies: Enemy2D[], fxManager: FXManager, analyticsManager?: AnalyticsManager, gameState?: GameState) {
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
-      const hit = this.projectiles[i].update(allEnemies, fxManager, analyticsManager);
+      const hit = this.projectiles[i].update(allEnemies, fxManager, analyticsManager, gameState);
       if (hit) {
         this.projectiles.splice(i, 1);
       }

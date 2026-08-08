@@ -57,6 +57,39 @@ export type TowerSpecialization =
   | 'FOCUS_LENS'
   | 'CHAIN_BEAM';
 
+export type MapId = 'MAP_1' | 'MAP_2' | 'MAP_3' | 'MAP_4';
+
+export type RogueliteModuleId =
+  | 'MIDAS_TOUCH'
+  | 'PIERCING_CORE'
+  | 'VOLTAIC_OVERCHARGE'
+  | 'VAMPIRIC_DRAIN'
+  | 'BOUNTY_HUNTER';
+
+export interface IRogueliteModule {
+  id: RogueliteModuleId;
+  name: string;
+  description: string;
+  icon: string;
+}
+
+export type BiomeHazardType = 'NONE' | 'LAVA_GEYSER' | 'POWER_SURGE' | 'MIST' | 'GRAVEYARD_SOULS';
+
+export interface GeyserTile {
+  gridX: number;
+  gridY: number;
+  isActive: boolean;
+  timer: number;
+}
+
+export interface BiomeHazardState {
+  type: BiomeHazardType;
+  geysers: GeyserTile[];
+  powerSurgeTiles: { gridX: number; gridY: number }[];
+  isMistActive: boolean;
+  mistTimer: number;
+}
+
 export interface ITower2D {
   id: string;
   type: TowerType;
@@ -78,9 +111,14 @@ export interface ITower2D {
   laserTargetPos?: Vector2D;
   beamDuration?: number;
   onSproutTile?: boolean;
+  onDarkAltarTile?: boolean;
   hp: number;
   maxHp: number;
   isDestroyed?: boolean;
+  overheatTimer?: number;
+  isPowerSurged?: boolean;
+  equippedModule?: RogueliteModuleId;
+  kills: number;
 }
 
 export interface IProjectile2D {
@@ -120,6 +158,36 @@ export interface FirePatch {
   radius: number;
   duration: number;
   damage: number;
+}
+
+export type PlayerActionType =
+  | 'BUILD_TOWER'
+  | 'UPGRADE_TOWER'
+  | 'SELL_TOWER'
+  | 'REPAIR_TOWER'
+  | 'TARGET_TOWER'
+  | 'CAST_METEOR'
+  | 'CAST_FREEZE'
+  | 'EQUIP_MODULE'
+  | 'START_WAVE';
+
+export interface PlayerActionInput {
+  tick: number;
+  type: PlayerActionType;
+  gridX?: number;
+  gridY?: number;
+  towerType?: TowerType;
+  specialization?: TowerSpecialization;
+  moduleId?: RogueliteModuleId;
+}
+
+export interface MatchReplayData {
+  seed: number;
+  mapId: MapId;
+  challengeMode: ChallengeMode;
+  actions: PlayerActionInput[];
+  finalWave: number;
+  finalScore: number;
 }
 export type ChallengeMode = 'NORMAL' | 'HARDCORE' | 'MORTE_CERTA';
 

@@ -8,6 +8,12 @@ export class ThreeRenderer {
   private scene: THREE.Scene;
   private camera: THREE.OrthographicCamera;
   private mapGroup: THREE.Group;
+  public vignetteIntensity = 0.0;
+
+  public setVignetteIntensity(intensity: number) {
+    this.vignetteIntensity = Math.max(0, Math.min(1, intensity));
+  }
+
 
   private materials: THREE.MeshBasicMaterial[] = [];
   private textures: THREE.CanvasTexture[] = [];

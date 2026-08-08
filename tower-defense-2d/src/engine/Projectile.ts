@@ -2,7 +2,8 @@ import type { IEnemy2D, TowerType, Vector2D } from '../types';
 import { AnalyticsManager } from './AnalyticsManager';
 import { Enemy2D } from './Enemy';
 import { FXManager } from './FXManager';
-
+import { handleTowerDamageDealt, Tower2D } from './Tower';
+import type { GameState } from './GameState';
 export class Projectile2D {
   public position: Vector2D;
   public target: IEnemy2D;
@@ -19,6 +20,7 @@ export class Projectile2D {
    * projétil, acoplamento que quebraria ao dar cor própria a uma especialização.
    */
   public isLightShot: boolean;
+  public sourceTower?: Tower2D;
 
   constructor(
     startPos: Vector2D,
@@ -31,8 +33,10 @@ export class Projectile2D {
     slowFactor?: number,
     isCrit?: boolean,
     towerType?: TowerType,
-    isLightShot = false
+    isLightShot = false,
+    sourceTower?: Tower2D
   ) {
+    this.sourceTower = sourceTower;
     this.isLightShot = isLightShot;
     this.position = { ...startPos };
     this.target = target;
@@ -46,7 +50,7 @@ export class Projectile2D {
     this.towerType = towerType;
   }
 
-  public update(allEnemies: Enemy2D[], fxManager: FXManager, analyticsManager?: AnalyticsManager): boolean {
+  public update(allEnemies: Enemy2D[], fxManager: FXManager, analyticsManager?: AnalyticsManager, gameState?: GameState): boolean {
     if (this.target.isDead) return true;
 
     const dx = this.target.position.x - this.position.x;
@@ -73,6 +77,9 @@ export class Projectile2D {
               if (analyticsManager && this.towerType) {
                 analyticsManager.recordDamage(this.towerType, dmgDealt);
               }
+              if (this.sourceTower && gameState) {
+                handleTowerDamageDealt(this.sourceTower, enemy, dmgDealt, gameState);
+              }
             } else if (dmgDealt === -1) {
               fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, 'DODGED!', '#ff9800');
             }
@@ -90,6 +97,9 @@ export class Projectile2D {
           fxManager.addDamageText(this.target.position.x, this.target.position.y, txt, col);
           if (analyticsManager && this.towerType) {
             analyticsManager.recordDamage(this.towerType, dmgDealt);
+          }
+          if (this.sourceTower && gameState && targetEnemy) {
+            handleTowerDamageDealt(this.sourceTower, targetEnemy, dmgDealt, gameState);
           }
         }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Enemy2D } from '../src/engine/Enemy';
+import { Game2D } from '../src/engine/Game';
 import { MapManager2D, TileType } from '../src/engine/MapManager';
 import { WaveManager } from '../src/engine/WaveManager';
 import type { EnemyType, Vector2D } from '../src/types';
@@ -124,5 +125,43 @@ describe('Ativação de conteúdo: SHIELDED, regen do Moss Giant e Sprout', () =
         expect(map.isBuildable(tile.x, tile.y)).toBe(true);
       }
     }
+  });
+
+  it('deve ativar tiles Sprout no Game2D apenas no MAP_1 (Green Valley)', () => {
+    const fakeCtx = new Proxy(
+      {},
+      {
+        get: (_t, prop) => {
+          if (prop === 'canvas') return document.createElement('canvas');
+          if (prop === 'measureText') return () => ({ width: 10 });
+          if (prop === 'createLinearGradient' || prop === 'createRadialGradient') {
+            return () => ({ addColorStop: () => {} });
+          }
+          if (prop === 'getImageData') return () => ({ data: new Uint8ClampedArray(4) });
+          return () => {};
+        },
+        set: () => true,
+      }
+    );
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', { value: () => fakeCtx, writable: true, configurable: true });
+    document.body.innerHTML = '<div id="game-area"></div><div id="ui-container"></div>';
+
+    const game = new Game2D();
+
+    // Inicial por padrão em MAP_1
+    expect(game.currentMapId).toBe('MAP_1');
+    expect(game['towerManager'].sproutTiles.length).toBe(4);
+
+    // Troca para MAP_2 (Death Pass)
+    game.changeMap('MAP_2');
+    expect(game['towerManager'].sproutTiles.length).toBe(0);
+
+    // Troca para MAP_4 (Grave Pass)
+    game.changeMap('MAP_4');
+    expect(game['towerManager'].sproutTiles.length).toBe(0);
+
+    // Retorna para MAP_1 (Green Valley)
+    game.changeMap('MAP_1');
+    expect(game['towerManager'].sproutTiles.length).toBe(4);
   });
 });

@@ -1,5 +1,10 @@
+export type BGMTrack = 'MAP_1' | 'MAP_2' | 'MAP_3' | 'MAP_4' | 'BOSS';
 
-export type BGMTrack = 'MAP_1' | 'MAP_2' | 'MAP_3' | 'BOSS';
+/** Persisted volumes are untrusted input: only accept finite numbers inside [0, 1]. */
+function readVolume(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.max(0, Math.min(1, value));
+}
 
 export class AudioManager {
   private ctx: AudioContext | null = null;
@@ -19,7 +24,12 @@ export class AudioManager {
   private bgmStep = 0;
   public isBGMPlaying = false;
   private currentSpeed = 1;
+  public tensionLevel = 0.0;
   public currentTrack: BGMTrack = 'MAP_1';
+
+  /** True once the context is actually running (i.e. after a real user gesture). */
+  public isUnlocked = false;
+  private resumeRequested = false;
 
   private readonly PREFS_KEY = 'td2d_audio_prefs_v1';
 
@@ -59,6 +69,18 @@ export class AudioManager {
     103.83, 103.83, 207.65, 103.83, 98.00, 98.00, 196.00, 98.00,
   ];
 
+  // --- MAP 4 TRACK: GRAVEYARD SOULS (F Minor / G# Minor Gothic) ---
+  private readonly map4Melody: number[] = [
+    174.61, 207.65, 261.63, 349.23, 261.63, 207.65, 174.61, 261.63,
+    155.56, 196.00, 233.08, 311.13, 233.08, 196.00, 155.56, 233.08,
+    138.59, 174.61, 207.65, 277.18, 207.65, 174.61, 138.59, 207.65,
+    130.81, 164.81, 196.00, 261.63, 196.00, 164.81, 130.81, 196.00,
+  ];
+  private readonly map4Bass: number[] = [
+    87.31, 87.31, 174.61, 87.31, 77.78, 77.78, 155.56, 77.78,
+    69.30, 69.30, 138.59, 69.30, 65.41, 65.41, 130.81, 65.41,
+  ];
+
   // --- BOSS TRACK (D Minor / Tritone Dissonance) ---
   private readonly bossMelody: number[] = [
     293.66, 311.13, 293.66, 415.30, 293.66, 311.13, 587.33, 415.30,
@@ -78,13 +100,16 @@ export class AudioManager {
   private loadPrefs() {
     try {
       const saved = localStorage.getItem(this.PREFS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        this.sfxVolume = typeof parsed.sfxVolume === 'number' ? parsed.sfxVolume : 0.8;
-        this.bgmVolume = typeof parsed.bgmVolume === 'number' ? parsed.bgmVolume : 0.6;
-        this.isSfxMuted = Boolean(parsed.isSfxMuted);
-        this.isBgmMuted = Boolean(parsed.isBgmMuted);
-      }
+      if (!saved) return;
+
+      const parsed: unknown = JSON.parse(saved);
+      if (typeof parsed !== 'object' || parsed === null) return;
+      const raw = parsed as Record<string, unknown>;
+
+      this.sfxVolume = readVolume(raw.sfxVolume, 0.8);
+      this.bgmVolume = readVolume(raw.bgmVolume, 0.6);
+      this.isSfxMuted = raw.isSfxMuted === true;
+      this.isBgmMuted = raw.isBgmMuted === true;
     } catch {
       // Ignore
     }
@@ -103,26 +128,74 @@ export class AudioManager {
     }
   }
 
+  /** Creates the AudioContext + gain graph once. Shared by ensureContext/unlockAudio. */
+  private createContext(): boolean {
+    if (this.ctx) return true;
+
+    const win = window as Window & { webkitAudioContext?: typeof AudioContext };
+    const AudioCtx = window.AudioContext || win.webkitAudioContext;
+    if (!AudioCtx) return false;
+
+    this.ctx = new AudioCtx();
+    this.sfxGainNode = this.ctx.createGain();
+    this.bgmGainNode = this.ctx.createGain();
+    this.sfxGainNode.connect(this.ctx.destination);
+    this.bgmGainNode.connect(this.ctx.destination);
+    this.updateNodeVolumes();
+
+    return true;
+  }
+
+  /**
+   * Requests a resume at most once per pending attempt. It used to be fired on every
+   * frame before the first user gesture, producing ~60 rejected promises per second.
+   */
+  private requestResume() {
+    if (!this.ctx || this.resumeRequested) return;
+    this.resumeRequested = true;
+    this.ctx
+      .resume()
+      .then(() => {
+        this.resumeRequested = false;
+        if (this.ctx && this.ctx.state === 'running') this.isUnlocked = true;
+      })
+      .catch(() => {
+        this.resumeRequested = false;
+      });
+  }
+
   public ensureContext(): boolean {
-    if (!this.ctx) {
-      const win = window as Window & { webkitAudioContext?: typeof AudioContext };
-      const AudioCtx = window.AudioContext || win.webkitAudioContext;
-      if (!AudioCtx) return false;
-      this.ctx = new AudioCtx();
-
-      this.sfxGainNode = this.ctx.createGain();
-      this.bgmGainNode = this.ctx.createGain();
-      this.sfxGainNode.connect(this.ctx.destination);
-      this.bgmGainNode.connect(this.ctx.destination);
-
-      this.updateNodeVolumes();
-    }
+    if (!this.createContext() || !this.ctx) return false;
 
     if (this.ctx.state === 'suspended') {
+      this.requestResume();
       return false;
     }
 
-    return this.ctx.state === 'running';
+    const running = this.ctx.state === 'running';
+    if (running) this.isUnlocked = true;
+    return running;
+  }
+
+  public dispose() {
+    this.stopBGM();
+
+    const ctx = this.ctx;
+    this.ctx = null;
+    this.sfxGainNode = null;
+    this.bgmGainNode = null;
+    this.isUnlocked = false;
+    this.resumeRequested = false;
+
+    if (!ctx) return;
+    try {
+      if (ctx.state !== 'closed' && typeof ctx.close === 'function') {
+        const closing = ctx.close();
+        if (closing && typeof closing.catch === 'function') closing.catch(() => {});
+      }
+    } catch {
+      // Ignore: a context that refuses to close is still dropped from our graph.
+    }
   }
 
   private updateNodeVolumes() {
@@ -137,34 +210,18 @@ export class AudioManager {
   }
 
   public unlockAudio() {
-    if (!this.ctx) {
-      const win = window as Window & { webkitAudioContext?: typeof AudioContext };
-      const AudioCtx = window.AudioContext || win.webkitAudioContext;
-      if (!AudioCtx) return;
-      this.ctx = new AudioCtx();
-
-      this.sfxGainNode = this.ctx.createGain();
-      this.bgmGainNode = this.ctx.createGain();
-      this.sfxGainNode.connect(this.ctx.destination);
-      this.bgmGainNode.connect(this.ctx.destination);
-
-      this.updateNodeVolumes();
-    }
+    if (!this.createContext() || !this.ctx) return;
 
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume().then(() => {
-        this.stopBGM();
-        if (!this.isBgmMuted) {
-          this.startBGM(this.currentSpeed, this.currentTrack);
-        }
-      }).catch(() => {});
-    } else if (!this.isBGMPlaying && !this.isBgmMuted) {
-      this.startBGM(this.currentSpeed, this.currentTrack);
+      this.requestResume();
+      return;
     }
+
+    this.isUnlocked = this.ctx.state === 'running';
   }
 
   public setSfxVolume(vol: number) {
-    this.sfxVolume = Math.max(0, Math.min(1, vol));
+    this.sfxVolume = readVolume(vol, 0.8);
     this.updateNodeVolumes();
     this.savePrefs();
   }
@@ -177,9 +234,13 @@ export class AudioManager {
   }
 
   public setBgmVolume(vol: number) {
-    this.bgmVolume = Math.max(0, Math.min(1, vol));
+    this.bgmVolume = readVolume(vol, 0.6);
     this.updateNodeVolumes();
     this.savePrefs();
+  }
+
+  public setTensionLevel(level: number) {
+    this.tensionLevel = Math.max(0.0, Math.min(1.0, level));
   }
 
   public toggleBgmMute(): boolean {
@@ -189,7 +250,9 @@ export class AudioManager {
       this.stopBGM();
     } else {
       this.unlockAudio();
-      this.startBGM(this.currentSpeed, this.currentTrack);
+      if (this.isUnlocked) {
+        this.startBGM(this.currentSpeed, this.currentTrack);
+      }
     }
     this.savePrefs();
     return this.isBgmMuted;
@@ -246,6 +309,7 @@ export class AudioManager {
     let baseIntervalMs = 150;
     if (this.currentTrack === 'MAP_2') baseIntervalMs = 110;
     if (this.currentTrack === 'MAP_3') baseIntervalMs = 125;
+    if (this.currentTrack === 'MAP_4') baseIntervalMs = 140;
     if (this.currentTrack === 'BOSS') baseIntervalMs = 95;
 
     const intervalMs = Math.max(25, baseIntervalMs / this.currentSpeed);
@@ -279,6 +343,13 @@ export class AudioManager {
       bassType = 'square';
       melVol = 0.11;
       bassVol = 0.13;
+    } else if (this.currentTrack === 'MAP_4') {
+      melodyArray = this.map4Melody;
+      bassArray = this.map4Bass;
+      melType = 'sine';
+      bassType = 'triangle';
+      melVol = 0.12;
+      bassVol = 0.14;
     } else if (this.currentTrack === 'BOSS') {
       melodyArray = this.bossMelody;
       bassArray = this.bossBass;

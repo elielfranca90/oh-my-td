@@ -35,24 +35,33 @@ export class TalentManager {
     try {
       const savedStars = localStorage.getItem(this.STARS_KEY);
       if (savedStars !== null) {
-        this.stars = parseInt(savedStars, 10) || 0;
+        const stars = parseInt(savedStars, 10);
+        this.stars = Number.isFinite(stars) ? Math.max(0, stars) : 0;
       }
 
       const savedTalents = localStorage.getItem(this.TALENTS_KEY);
       if (savedTalents !== null) {
-        const parsed = JSON.parse(savedTalents);
-        this.talents = {
-          damageLvl: parsed.damageLvl || 0,
-          goldLvl: parsed.goldLvl || 0,
-          hpLvl: parsed.hpLvl || 0,
-          cdLvl: parsed.cdLvl || 0,
-          repairLvl: parsed.repairLvl || 0,
-          critLvl: parsed.critLvl || 0,
-        };
+        const parsed: unknown = JSON.parse(savedTalents);
+        if (typeof parsed === 'object' && parsed !== null) {
+          const raw = parsed as Record<string, unknown>;
+          this.talents = {
+            damageLvl: this.readLevel(raw.damageLvl, 'damageLvl'),
+            goldLvl: this.readLevel(raw.goldLvl, 'goldLvl'),
+            hpLvl: this.readLevel(raw.hpLvl, 'hpLvl'),
+            cdLvl: this.readLevel(raw.cdLvl, 'cdLvl'),
+            repairLvl: this.readLevel(raw.repairLvl, 'repairLvl'),
+            critLvl: this.readLevel(raw.critLvl, 'critLvl'),
+          };
+        }
       }
     } catch {
       // Fallback on defaults if localStorage fails
     }
+  }
+
+  private readLevel(value: unknown, type: keyof TalentData): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(this.getTalentMaxLvl(type), Math.floor(value)));
   }
 
   public setDatabaseManager(db: DatabaseManager) {
