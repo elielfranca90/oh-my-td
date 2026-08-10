@@ -27,9 +27,31 @@ export class SpellManager {
   public METEOR_MAX_COOLDOWN = 30000; // 30s base
   public FREEZE_MAX_COOLDOWN = 40000; // 40s base
 
-  // Dynamic Costs (Initial tripled)
-  public meteorCost = 150; // Initial 150g
-  public freezeCost = 120; // Initial 120g
+  /** Custo-base de cada magia — usado pelo decaimento do §5.4 (P1_BALANCE_SPEC.md). */
+  private static readonly METEOR_BASE_COST = 150;
+  private static readonly FREEZE_BASE_COST = 120;
+
+  /**
+   * Decaimento de custo por ondas sem uso (Entrega 5, §5.4). `costStep` é o
+   * expoente de `baseCost * 2^costStep` — a mesma progressão de dobrar por uso
+   * de sempre, só que agora reversível: cada 2 ondas completadas sem conjurar
+   * a magia devolve 1 passo, com teto em 6 (custo máximo 64x o base) para que
+   * o "sem garantia de teto" apontado pela auditoria não vire escalada sem fim.
+   * Estado independente por magia — Congelamento não compartilha step com Meteoro.
+   */
+  private meteorCostStep = 0;
+  private meteorWavesSinceLastCast = 0;
+  private freezeCostStep = 0;
+  private freezeWavesSinceLastCast = 0;
+
+  // Custo dinâmico: derivado do baseCost e do costStep (nunca escrito direto).
+  public get meteorCost(): number {
+    return SpellManager.METEOR_BASE_COST * Math.pow(2, this.meteorCostStep);
+  }
+
+  public get freezeCost(): number {
+    return SpellManager.FREEZE_BASE_COST * Math.pow(2, this.freezeCostStep);
+  }
 
   constructor(
     gameState: GameState,
@@ -96,8 +118,9 @@ export class SpellManager {
       }
     }
 
-    // Double the cost after usage
-    this.freezeCost *= 2;
+    // Avança 1 passo no decaimento (§5.4) — teto em 6 (custo máx. 64x o base).
+    this.freezeCostStep = Math.min(6, this.freezeCostStep + 1);
+    this.freezeWavesSinceLastCast = 0;
     EventBus.getInstance().emit('spell:cast', { spell: 'FREEZE', cost: this.freezeCost, cd: this.freezeCooldownMs });
     return true;
   }
@@ -123,12 +146,16 @@ export class SpellManager {
       this.fxManager.addDamageText(x, y - 20, '💥 METEOR IMPACT!', '#ff3d00');
 
       const radius = 90;
-      const damage = 90;
 
       for (const enemy of allEnemies) {
         if (enemy.data.isDead) continue;
         const dist = Math.hypot(enemy.data.position.x - x, enemy.data.position.y - y);
         if (dist <= radius) {
+          // Dano proporcional ao HP MÁXIMO do alvo (não o atual — ver §5.1: o
+          // Meteoro não deve variar se o alvo já estiver ferido, senão incentiva
+          // "guardar" a magia para finalizar em vez de abrir combate com ela).
+          // Calculado por inimigo, dentro do laço: cada alvo recebe seu próprio dano.
+          const damage = Math.round(90 + 0.12 * enemy.data.maxHp);
           // Magia em área: ignora armadura e não é esquivável.
           enemy.takeDamage(damage, 1, false);
           this.fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${damage}`, '#ff3d00');
@@ -139,9 +166,29 @@ export class SpellManager {
       }
     });
 
-    // Double the cost after usage
-    this.meteorCost *= 2;
+    // Avança 1 passo no decaimento (§5.4) — teto em 6 (custo máx. 64x o base).
+    this.meteorCostStep = Math.min(6, this.meteorCostStep + 1);
+    this.meteorWavesSinceLastCast = 0;
     return true;
+  }
+
+  /**
+   * Decaimento de custo por ondas sem uso (§5.4). `Game.ts` assina `wave:end`
+   * do EventBus (emitido por `WaveManager.onEnemyCleared()`) e chama este
+   * método uma vez por onda concluída — sem parâmetros porque cada magia só
+   * precisa contar "quantas ondas se passaram desde o último cast", não o
+   * número da onda em si.
+   */
+  public onWaveCompleted(): void {
+    this.meteorWavesSinceLastCast++;
+    if (this.meteorWavesSinceLastCast > 0 && this.meteorWavesSinceLastCast % 2 === 0) {
+      this.meteorCostStep = Math.max(0, this.meteorCostStep - 1);
+    }
+
+    this.freezeWavesSinceLastCast++;
+    if (this.freezeWavesSinceLastCast > 0 && this.freezeWavesSinceLastCast % 2 === 0) {
+      this.freezeCostStep = Math.max(0, this.freezeCostStep - 1);
+    }
   }
 
   public renderSpellTargeting(ctx: CanvasRenderingContext2D, mousePos: { x: number; y: number } | null) {

@@ -37,130 +37,222 @@ export interface WavePreview {
 }
 
 export class WaveManager {
+  /**
+   * Composições da campanha (Entrega 4 do P1_BALANCE_SPEC.md §4.4). Inimigos
+   * "grandes" (TANK/SHIELDED/MOSS_GIANT/BOSS) ficam nas mesmas quantidades de
+   * antes; o volume extra é RUNNER/STANDARD/SPORE_SPRINTER com delays mais
+   * curtos, para gerar sobreposição (>8 vivos ao mesmo tempo, ver o novo
+   * limiar de tensão em Game.ts) sem introduzir tipos novos por onda — a
+   * identidade de cada onda documentada em GAME_MECHANICS.md não muda.
+   */
   public waves: WaveConfig[] = [
-    // Wave 1
+    // Wave 1 (12 inimigos)
     {
       waveNumber: 1,
       enemies: [
-        { type: 'STANDARD', delay: 1000 },
-        { type: 'STANDARD', delay: 1200 },
-        { type: 'STANDARD', delay: 1200 },
-        { type: 'STANDARD', delay: 1200 },
-        { type: 'STANDARD', delay: 1200 },
-        { type: 'STANDARD', delay: 1200 },
+        { type: 'STANDARD', delay: 800 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'STANDARD', delay: 900 },
       ],
     },
-    // Wave 2
+    // Wave 2 (13 inimigos)
     {
       waveNumber: 2,
       enemies: [
-        { type: 'STANDARD', delay: 1000 },
-        { type: 'RUNNER', delay: 700 },
-        { type: 'RUNNER', delay: 700 },
-        { type: 'STANDARD', delay: 1000 },
-        { type: 'RUNNER', delay: 700 },
-        { type: 'RUNNER', delay: 700 },
-        { type: 'STANDARD', delay: 1000 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'RUNNER', delay: 650 },
+        { type: 'RUNNER', delay: 650 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'RUNNER', delay: 650 },
+        { type: 'RUNNER', delay: 650 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'RUNNER', delay: 650 },
+        { type: 'RUNNER', delay: 650 },
+        { type: 'STANDARD', delay: 900 },
+        { type: 'RUNNER', delay: 650 },
+        { type: 'RUNNER', delay: 650 },
+        { type: 'STANDARD', delay: 900 },
       ],
     },
-    // Wave 3
+    // Wave 3 (13 inimigos - introduz TANK/SPORE_SPRINTER)
     {
       waveNumber: 3,
       enemies: [
-        { type: 'STANDARD', delay: 900 },
-        { type: 'SPORE_SPRINTER', delay: 1000 },
-        { type: 'TANK', delay: 1800 },
-        { type: 'STANDARD', delay: 900 },
-        { type: 'SPORE_SPRINTER', delay: 1000 },
-        { type: 'TANK', delay: 1800 },
+        { type: 'STANDARD', delay: 800 },
+        { type: 'SPORE_SPRINTER', delay: 800 },
+        { type: 'TANK', delay: 1500 },
+        { type: 'STANDARD', delay: 800 },
+        { type: 'SPORE_SPRINTER', delay: 800 },
+        { type: 'TANK', delay: 1500 },
+        { type: 'STANDARD', delay: 800 },
+        { type: 'STANDARD', delay: 800 },
+        { type: 'STANDARD', delay: 800 },
+        { type: 'RUNNER', delay: 500 },
+        { type: 'RUNNER', delay: 500 },
+        { type: 'RUNNER', delay: 500 },
+        { type: 'RUNNER', delay: 500 },
       ],
     },
-    // Wave 4
+    // Wave 4 (13 inimigos - introduz MOSS_GIANT)
     {
       waveNumber: 4,
       enemies: [
-        { type: 'RUNNER', delay: 500 },
-        { type: 'SPORE_SPRINTER', delay: 600 },
-        { type: 'RUNNER', delay: 500 },
+        { type: 'RUNNER', delay: 450 },
+        { type: 'SPORE_SPRINTER', delay: 550 },
+        { type: 'RUNNER', delay: 450 },
         { type: 'TANK', delay: 1400 },
-        { type: 'MOSS_GIANT', delay: 2000 },
-        { type: 'RUNNER', delay: 500 },
+        { type: 'MOSS_GIANT', delay: 1800 },
+        { type: 'RUNNER', delay: 450 },
+        { type: 'RUNNER', delay: 450 },
+        { type: 'SPORE_SPRINTER', delay: 550 },
+        { type: 'RUNNER', delay: 450 },
+        { type: 'RUNNER', delay: 450 },
+        { type: 'STANDARD', delay: 700 },
+        { type: 'STANDARD', delay: 700 },
+        { type: 'STANDARD', delay: 700 },
       ],
     },
-    // Wave 5 - MID-GAME BOSS
+    // Wave 5 - MID-GAME BOSS (14 inimigos)
     {
       waveNumber: 5,
       enemies: [
-        { type: 'STANDARD', delay: 800 },
-        { type: 'TANK', delay: 1200 },
-        { type: 'TANK', delay: 1200 },
-        { type: 'BOSS', delay: 2500 },
+        { type: 'STANDARD', delay: 700 },
+        { type: 'TANK', delay: 1300 },
+        { type: 'TANK', delay: 1300 },
+        // BOSS solto (§4.4 dava 2200ms; validado com o harness — o timing
+        // original deixava o BOSS chegar colado nos dois TANK anteriores, sem
+        // "janela livre" para a build de referência concentrar fogo nele antes
+        // de virar a esquina; ver runBalanceSim seed 'trava' em balance.test.ts).
+        { type: 'BOSS', delay: 3200 },
         { type: 'RUNNER', delay: 600 },
         { type: 'RUNNER', delay: 600 },
+        { type: 'STANDARD', delay: 700 },
+        { type: 'STANDARD', delay: 700 },
+        { type: 'RUNNER', delay: 600 },
+        { type: 'RUNNER', delay: 600 },
+        { type: 'STANDARD', delay: 700 },
+        { type: 'STANDARD', delay: 700 },
+        { type: 'STANDARD', delay: 700 },
+        { type: 'STANDARD', delay: 700 },
       ],
     },
-    // Wave 6
+    // Wave 6 (14 inimigos - introduz SHIELDED)
     {
       waveNumber: 6,
       enemies: [
-        { type: 'MOSS_GIANT', delay: 1800 },
+        { type: 'MOSS_GIANT', delay: 1700 },
         { type: 'RUNNER', delay: 450 },
         // Estreia do SHIELDED: ensina escudo vs tiro leve antes das ondas finais
-        { type: 'SHIELDED', delay: 1100 },
-        { type: 'TANK', delay: 1200 },
-        { type: 'MOSS_GIANT', delay: 1800 },
+        { type: 'SHIELDED', delay: 1000 },
+        { type: 'TANK', delay: 1100 },
+        { type: 'MOSS_GIANT', delay: 1700 },
         { type: 'RUNNER', delay: 450 },
+        { type: 'STANDARD', delay: 650 },
+        { type: 'STANDARD', delay: 650 },
+        { type: 'RUNNER', delay: 450 },
+        { type: 'RUNNER', delay: 450 },
+        { type: 'STANDARD', delay: 650 },
+        { type: 'STANDARD', delay: 650 },
+        { type: 'STANDARD', delay: 650 },
+        { type: 'STANDARD', delay: 650 },
       ],
     },
-    // Wave 7 - SWARM
+    // Wave 7 - SWARM (16 inimigos)
     {
       waveNumber: 7,
       enemies: [
-        { type: 'STANDARD', delay: 400 },
-        { type: 'RUNNER', delay: 400 },
-        { type: 'SPORE_SPRINTER', delay: 400 },
-        { type: 'RUNNER', delay: 400 },
-        { type: 'STANDARD', delay: 400 },
-        { type: 'RUNNER', delay: 400 },
-        { type: 'SPORE_SPRINTER', delay: 400 },
-        { type: 'RUNNER', delay: 400 },
+        { type: 'STANDARD', delay: 350 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'SPORE_SPRINTER', delay: 350 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'STANDARD', delay: 350 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'SPORE_SPRINTER', delay: 350 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'STANDARD', delay: 350 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'SPORE_SPRINTER', delay: 350 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'STANDARD', delay: 350 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'SPORE_SPRINTER', delay: 350 },
+        { type: 'RUNNER', delay: 350 },
       ],
     },
-    // Wave 8 - BOSS + ESCORT
+    // Wave 8 - BOSS + ESCORT (16 inimigos)
     {
       waveNumber: 8,
       enemies: [
-        { type: 'TANK', delay: 1000 },
-        { type: 'MOSS_GIANT', delay: 1600 },
-        { type: 'BOSS', delay: 2000 },
+        { type: 'TANK', delay: 900 },
+        { type: 'MOSS_GIANT', delay: 1500 },
+        { type: 'BOSS', delay: 1900 },
         { type: 'RUNNER', delay: 400 },
-        { type: 'SHIELDED', delay: 1000 },
-        { type: 'TANK', delay: 1000 },
+        { type: 'SHIELDED', delay: 900 },
+        { type: 'TANK', delay: 900 },
+        { type: 'STANDARD', delay: 600 },
+        { type: 'STANDARD', delay: 600 },
+        { type: 'RUNNER', delay: 400 },
+        { type: 'RUNNER', delay: 400 },
+        { type: 'STANDARD', delay: 600 },
+        { type: 'STANDARD', delay: 600 },
+        { type: 'STANDARD', delay: 600 },
+        { type: 'STANDARD', delay: 600 },
+        { type: 'STANDARD', delay: 600 },
+        { type: 'STANDARD', delay: 600 },
       ],
     },
-    // Wave 9 - CHAOS
+    // Wave 9 - CHAOS (16 inimigos)
     {
       waveNumber: 9,
       enemies: [
-        { type: 'RUNNER', delay: 350 },
-        { type: 'SPORE_SPRINTER', delay: 350 },
-        { type: 'SHIELDED', delay: 950 },
-        { type: 'MOSS_GIANT', delay: 1600 },
-        { type: 'TANK', delay: 900 },
-        { type: 'RUNNER', delay: 350 },
+        { type: 'RUNNER', delay: 320 },
+        { type: 'SPORE_SPRINTER', delay: 320 },
+        { type: 'SHIELDED', delay: 850 },
+        { type: 'MOSS_GIANT', delay: 1500 },
+        { type: 'TANK', delay: 800 },
+        { type: 'RUNNER', delay: 320 },
+        { type: 'RUNNER', delay: 320 },
+        { type: 'SPORE_SPRINTER', delay: 320 },
+        { type: 'STANDARD', delay: 550 },
+        { type: 'STANDARD', delay: 550 },
+        { type: 'RUNNER', delay: 320 },
+        { type: 'RUNNER', delay: 320 },
+        { type: 'STANDARD', delay: 550 },
+        { type: 'STANDARD', delay: 550 },
+        { type: 'STANDARD', delay: 550 },
+        { type: 'STANDARD', delay: 550 },
       ],
     },
-    // Wave 10 - ULTIMATE BOSS WAVE
+    // Wave 10 - ULTIMATE BOSS WAVE (17 inimigos)
     {
       waveNumber: 10,
       enemies: [
-        { type: 'TANK', delay: 800 },
-        { type: 'MOSS_GIANT', delay: 1600 },
-        { type: 'BOSS', delay: 2000 },
-        { type: 'SHIELDED', delay: 1000 },
-        { type: 'BOSS', delay: 3000 },
-        { type: 'RUNNER', delay: 400 },
-        { type: 'TANK', delay: 800 },
+        { type: 'TANK', delay: 700 },
+        { type: 'MOSS_GIANT', delay: 1500 },
+        { type: 'BOSS', delay: 1900 },
+        { type: 'SHIELDED', delay: 900 },
+        { type: 'BOSS', delay: 1900 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'TANK', delay: 700 },
+        { type: 'STANDARD', delay: 550 },
+        { type: 'STANDARD', delay: 550 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'SHIELDED', delay: 900 },
+        { type: 'TANK', delay: 700 },
+        { type: 'STANDARD', delay: 550 },
+        { type: 'STANDARD', delay: 550 },
+        { type: 'RUNNER', delay: 350 },
+        { type: 'RUNNER', delay: 350 },
       ],
     },
   ];
@@ -418,17 +510,47 @@ export class WaveManager {
     };
   }
 
+  /**
+   * O contador de 5s agora decresce em Manual e em Auto (Entrega 3 do
+   * P1_BALANCE_SPEC.md §3.1) — é o que dá significado a "tempo poupado" para
+   * `getEarlyCallBonus()` em modo Manual. O auto-início continua restrito a
+   * `isAutoMode`: em Manual o contador só chega a zero e fica parado lá até o
+   * jogador apertar "Iniciar Onda" (bônus zerado a partir desse ponto).
+   */
   public updateAutoCountdown(deltaTimeMs: number) {
-    if (!this.isAutoMode || this.isWaveActive) return;
+    if (this.isWaveActive) return;
 
-    // Stop auto countdown if campaign is over and endless mode is off
+    // Stop countdown if campaign is over and endless mode is off
     if (this.currentWaveIndex >= 9 && !this.isEndlessMode && this.spawnQueue.length === 0) return;
 
-    this.autoCountdownMs -= deltaTimeMs;
-    if (this.autoCountdownMs <= 0) {
-      this.startNextWave();
-      this.autoCountdownMs = 5000;
+    if (this.autoCountdownMs > 0) {
+      this.autoCountdownMs -= deltaTimeMs;
     }
+
+    if (this.autoCountdownMs <= 0) {
+      this.autoCountdownMs = 0;
+      if (this.isAutoMode) {
+        this.startNextWave();
+        this.autoCountdownMs = 5000;
+      }
+    }
+  }
+
+  /**
+   * Bônus de ouro por chamar a próxima onda antes do contador zerar (Entrega 3,
+   * P1_BALANCE_SPEC.md §3.2). Getter puro: só lê estado deste próprio manager,
+   * nunca `GameState` — quem credita o ouro é o chamador (`Game.ts`), depois de
+   * confirmar que `startNextWave()` de fato iniciou a onda (ver §3.3: chamar
+   * ANTES de `startNextWave()`, porque depois `currentWaveIndex` já avançou e
+   * `autoCountdownMs` já foi resetado para 5000).
+   */
+  public getEarlyCallBonus(): number {
+    if (this.isWaveActive) return 0;
+
+    const secondsSaved = this.autoCountdownMs / 1000; // autoCountdownMs é ms reais
+    const nextWaveNum = this.currentWaveIndex + 2; // onda que está PRA COMEÇAR (1-based)
+    const perSecondRate = 2 + Math.floor(nextWaveNum / 5);
+    return Math.floor(Math.min(60, perSecondRate * secondsSaved));
   }
 
   public getNextEnemyToSpawn(deltaTimeMs: number): { type: EnemyType; hpMultiplier: number } | null {

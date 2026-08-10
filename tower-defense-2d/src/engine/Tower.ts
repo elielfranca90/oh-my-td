@@ -70,24 +70,37 @@ export class Tower2D {
     this.data.targeting = strategies[nextIndex];
   }
 
+  /**
+   * Custo do upgrade PARA o nível atual+1. Para level<=3, `Math.max(0, level-3)`
+   * zera o expoente e a fórmula fica bit-a-bit igual à de antes dos ranks
+   * infinitos (P1_BALANCE_SPEC §1.6) — zero regressão nos níveis 1-3.
+   */
   public getUpgradeCost(): number {
-    return Math.floor(this.data.cost * 0.8 * this.data.level);
+    const rank = Math.max(0, this.data.level - 3);
+    return Math.floor(this.data.cost * 0.8 * this.data.level * Math.pow(1.10, rank));
   }
 
   public getSellValue(): number {
     let totalInvested = this.data.cost;
     for (let l = 1; l < this.data.level; l++) {
-      totalInvested += Math.floor(this.data.cost * 0.8 * l);
+      // Mesma fórmula fechada de getUpgradeCost(), não uma variável acumulada
+      // por multiplicações sucessivas — evita reintroduzir aqui a mesma
+      // armadilha de arredondamento composto do §1.3.
+      const rank = Math.max(0, l - 3);
+      totalInvested += Math.floor(this.data.cost * 0.8 * l * Math.pow(1.10, rank));
     }
     return Math.floor(totalInvested * 0.7);
   }
 
   /**
    * Sobe um nível. O salto de 2 para 3 exige a escolha de uma especialização
-   * válida para o tipo — é onde a torre deixa de ser genérica.
+   * válida para o tipo — é onde a torre deixa de ser genérica. Ranks 4+ são
+   * genéricos e infinitos (P1_BALANCE_SPEC §1.2): o teto de retorno `false`
+   * por nível deixou de existir — só falha quando a especialização obrigatória
+   * do nível 2→3 está ausente/invalida.
    */
   public upgrade(specialization?: TowerSpecialization): boolean {
-    if (this.data.level >= 3 || this.data.isDestroyed) return false;
+    if (this.data.isDestroyed) return false;
 
     const isSpecializing = this.data.level === 2;
     if (isSpecializing) {
@@ -95,19 +108,57 @@ export class Tower2D {
       if (!isValidSpecialization(this.data.type, specialization)) return false;
     }
 
+    const isGenericGrowth = this.data.level < 3;
     this.data.level++;
-    this.data.damage = Math.floor(this.data.damage * 1.5);
-    this.data.range = Math.floor(this.data.range * 1.15);
-    this.data.maxHp = Math.floor(this.data.maxHp * 1.4);
-    this.data.hp = this.data.maxHp;
-    if (this.data.splashRadius) {
-      this.data.splashRadius = Math.floor(this.data.splashRadius * 1.1);
+
+    if (isGenericGrowth) {
+      // Níveis 1→2 e 2→3: fórmula genérica antiga, intocada.
+      this.data.damage = Math.floor(this.data.damage * 1.5);
+      this.data.range = Math.floor(this.data.range * 1.15);
+      this.data.maxHp = Math.floor(this.data.maxHp * 1.4);
+      this.data.hp = this.data.maxHp;
+      if (this.data.splashRadius) {
+        this.data.splashRadius = Math.floor(this.data.splashRadius * 1.1);
+      }
+
+      if (isSpecializing && specialization) {
+        this.data.specialization = specialization;
+        this.applySpecializationStats(specialization);
+      }
+
+      // Baseline de rank: capturado exatamente quando `level` chega a 3,
+      // DEPOIS de applySpecializationStats() rodar (senão SIEGE/NAPALM/
+      // MULTISHOT ficariam sem efeito nos ranks — P1_BALANCE_SPEC §1.4).
+      // Nunca mais reescrito depois disso.
+      if (this.data.level === 3) {
+        this.data.rankBaseline = {
+          damage: this.data.damage,
+          range: this.data.range,
+          maxHp: this.data.maxHp,
+          splashRadius: this.data.splashRadius,
+        };
+      }
+    } else {
+      // Rank N = level-3, sempre recalculado a partir do baseline fechado do
+      // nível 3 — NUNCA `floor()` sobre o valor já arredondado do rank
+      // anterior. Essa recorrência trava para sempre torres de dano baixo
+      // (BASIC nível 3 = 10: floor(10*1.08) = 10 para qualquer rank) — P1_BALANCE_SPEC §1.3.
+      const rank = this.data.level - 3;
+      const baseline = this.data.rankBaseline;
+      if (baseline) {
+        this.data.damage = Math.floor(baseline.damage * Math.pow(1.08, rank));
+        this.data.range = Math.floor(baseline.range * Math.pow(1.02, Math.min(rank, 25)));
+        this.data.maxHp = Math.floor(baseline.maxHp * Math.pow(1.05, rank));
+        this.data.hp = this.data.maxHp;
+        if (baseline.splashRadius !== undefined) {
+          this.data.splashRadius = Math.floor(baseline.splashRadius * Math.pow(1.01, Math.min(rank, 40)));
+        }
+      }
+      // fireRate fica de fora de propósito: a cadência já diferencia as
+      // especializações (DEEP_FREEZE triplica o intervalo, MULTISHOT mantém
+      // o normal) — ranks não podem vazar nesse eixo (§1.2).
     }
 
-    if (isSpecializing && specialization) {
-      this.data.specialization = specialization;
-      this.applySpecializationStats(specialization);
-    }
     return true;
   }
 
@@ -322,8 +373,11 @@ export class Tower2D {
       }
     }
 
-    // Level indicator dots
-    for (let i = 0; i < this.data.level; i++) {
+    // Level indicator dots. Acima do rank 3 (nível 4+) o laço de N pontos
+    // atravessaria o tile inteiro de 40px (23 pontos no rank 20) — trava em
+    // 3 pontos fixos e comunica o resto com um rótulo "×N" (P1_BALANCE_SPEC §1.8).
+    const dotCount = Math.min(this.data.level, 3);
+    for (let i = 0; i < dotCount; i++) {
       ctx.beginPath();
       ctx.arc(
         this.data.position.x - 8 + i * 8,
@@ -334,6 +388,13 @@ export class Tower2D {
       );
       ctx.fillStyle = '#ffeb3b';
       ctx.fill();
+    }
+    if (this.data.level > 3) {
+      ctx.fillStyle = '#ffeb3b';
+      ctx.font = '9px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(`×${this.data.level}`, this.data.position.x - 8 + 2 * 8 + 5, this.data.position.y + half - 5);
+      ctx.textAlign = 'center'; // devolve o padrão usado pelo resto do método
     }
 
     // Health Bar if damaged

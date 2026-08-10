@@ -6,7 +6,7 @@ Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower 
 
 ## 🌟 Visão Geral
 
-O projeto utiliza uma arquitetura híbrida de renderização (**WebGL via Three.js** para renderização de terrenos em sRGB e background 3D Diorama Low-Poly de Natureza na Tela Inicial + **HTML5 Canvas 2D** para entidades e projéteis em tempo real). A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 4 mapas com mecânicas e trilhas sonoras únicas, 2 Modos de Jogo (**Modo Campanha com 10 Ondas e Vitória** & **Modo Infinito com Seleção de Desafios**), especializações de torres no Nível 3, simulação determinística com sub-stepping em 2x/4x, autenticação anônima persistente e placar global na nuvem via **Supabase**, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida e suporte a controles sensíveis ao toque.
+O projeto utiliza uma arquitetura híbrida de renderização (**WebGL via Three.js** para renderização de terrenos em sRGB e background 3D Diorama Low-Poly de Natureza na Tela Inicial + **HTML5 Canvas 2D** para entidades e projéteis em tempo real). A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 4 mapas com mecânicas e trilhas sonoras únicas, 2 Modos de Jogo (**Modo Campanha com 10 Ondas densas (144 inimigos) e Vitória** & **Modo Infinito com Seleção de Desafios**), especializações de torres no Nível 3 seguidas de **ranks genéricos infinitos**, chamada antecipada de onda com bônus de ouro, magias com dano escalável contra o HP do alvo, simulação determinística com sub-stepping em 2x/4x, autenticação anônima persistente e placar global na nuvem via **Supabase**, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida e suporte a controles sensíveis ao toque.
 ---
 
 ## 🚀 Como Executar o Projeto
@@ -45,7 +45,7 @@ npm run build
 | **Map 4: Grave Pass** | Solo Obscuro, Tombstones e Névoa Espectral | G Menor Góico / E Frígio (135ms) | Erupção de Almas (`GRAVEYARD_SOULS` Slow AoE) |
 ---
 
-## 🏰 5 Tipos de Torres & Especializações (Nível 3)
+## 🏰 5 Tipos de Torres, Especializações (Nível 3) & Ranks Infinitos
 
 | Torre | Custo | Alcance | Dano | Especialização & Efeito Primário | Caminhos de Especialização (Lvl 3) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -54,6 +54,8 @@ npm run build
 | **Solar Prism** | 🪙 100g | 140px | 6 | ☀️ **Lente Prismática:** +10%/s de foco no alvo | *Melter Beam* (Dano acumulativo rápido) / *Refractor* (Multi-laser) |
 | **Cannon** | 🪙 105g | 120px | 14 | 💥 **Executor:** 2x dano em Tanks, Bosses e Black Mega Boss acima 50% HP, perfurando sempre 50% da armadura do alvo | *Cluster Bomb* (Sub-explosões AoE) / *Bunker Buster* (Perfura armaduras) |
 | **Artillery** | 🪙 110g | 170px | 25 | 🔥 **Zona de Napalm:** Poça DoT no solo por 2.5s | *Inferno Mortar* (Chagas de fogo persistentes) / *Nuke Cannon* (Impacto devastador) |
+
+O Nível 3 continua sendo o único ponto de escolha de especialização, mas deixou de ser o teto de progressão: a partir do Nível 4 a torre sobe em **ranks genéricos infinitos** (dano e HP máximo crescem compostos sem limite; alcance e raio de área crescem compostos até um teto nos ranks 25/40) com custo de upgrade que também cresce composto por rank. Detalhes e fórmulas em [`docs/GAME_MECHANICS.md`](./docs/GAME_MECHANICS.md).
 ---
 
 ## 👾 8 Tipos de Inimigos
@@ -70,9 +72,9 @@ npm run build
 
 ## ⚡ Poderes Supremos (*Ultimate Spells*)
 
-* ☄️ **Meteor Strike (150g • 30s CD):** Animação de queda do meteoro, onda de choque, partículas de brasa e cratera no solo.
-* ❄️ **Global Freeze (120g • 40s CD):** Vinheta de gelo ciano e congelamento geral de todos os inimigos por 3,5s.
-* **Escalonamento Progressivo:** O custo em ouro dobra a cada uso durante a partida.
+* ☄️ **Meteor Strike (150g base • 30s CD):** Animação de queda do meteoro, onda de choque, partículas de brasa e cratera no solo. Dano **escala com o alvo**: `90 + 12% do HP máximo`, por inimigo no raio de impacto — continua relevante contra chefes em qualquer onda do Modo Infinito.
+* ❄️ **Global Freeze (120g base • 40s CD):** Vinheta de gelo ciano e congelamento geral de todos os inimigos por 3,5s.
+* **Escalonamento Dinâmico de Custo:** o custo em ouro dobra a cada conjuração na mesma partida, mas agora **decai 1 passo a cada 2 ondas sem usar aquela magia**, com teto absoluto em 64× o custo base — sem isso, quem usava a magia uma vez pagava cada vez mais pelo resto da run mesmo parando de usá-la.
 
 ---
 
@@ -92,7 +94,8 @@ npm run build
 * **Controles Independentes de Áudio:** Sliders individuais para volume da Música (`🎵 BGM`) e dos Efeitos Sonoros (`🔊 SFX`) com salvamento automático.
 * **Atalhos de Teclado & Retorno Tátil:** Seleção de torre (`1`-`5`), magias (`Q`/`W`), início de onda (`Enter`) e upgrade/venda/alcance (`U`/`S`/`R`) no desktop; vibração em construir, upgrade, dano na base e chefe no mobile, com interruptor nas Configurações.
 * **Alvos de Toque em 44px+ & Barra no Polegar:** Piso de toque de 44px (52px no botão de onda) e barra de construção fixa acima dos controles de tempo em retrato/mobile.
-* **Bateria de Testes Vitest:** 220 testes unitários e de integração divididos em 32 suítes cobrindo motores matemáticos, wave scaling, física de sub-stepping, banco de dados, draft roguelite e o Mapa 4 (Grave Pass).
+* **Chamada Antecipada de Onda:** o botão "Iniciar Onda" (e o botão de Auto no mobile) concede um bônus de ouro proporcional ao tempo poupado do contador de 5s entre ondas, em Manual e em Auto, com teto de 60g por chamada.
+* **Bateria de Testes Vitest:** testes unitários e de integração cobrindo motores matemáticos, wave scaling, física de sub-stepping, banco de dados, draft roguelite e o Mapa 4 (Grave Pass).
 ---
 
 ## 📚 Documentação Técnica

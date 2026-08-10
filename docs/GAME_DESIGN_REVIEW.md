@@ -201,6 +201,17 @@ Do ponto de vista de retenção o problema não é "o jogo fica difícil" — é
 
 **Correção (a mais valiosa do relatório):** níveis infinitos após o 3. Cada rank dá +8% de dano e +2% de alcance, com custo crescente. Não muda regra nenhuma, reaproveita a UI de upgrade existente, e devolve ao jogador uma decisão e um número subindo em toda onda até o fim da run.
 
+**Medição controlada (pós-P1, `qa-engineer`):** a estimativa "onda 28-32" acima é aritmética de papel — nunca foi medida, e assumia ~20 torres maximizadas. Depois da implementação do P1 (níveis infinitos de torre, entrega 1 do `docs/P1_BALANCE_SPEC.md`), o `qa-engineer` rodou uma comparação A/B controlada com o harness `tests/helpers/balanceSim.ts` estendido com `autoUpgradeGold` (estratégia "mais barato primeiro"): as mesmas 6 seeds de `balance.test.ts`, `maxStepsPerWave` elevado para 40000, cada seed rodada 2× em cada lado — um worktree do `main` pré-P1 contra a branch do P1, ambos 100% reprodutíveis.
+
+A defesa usada na medição é a `FULL_DEFENSE_BUILD` (8 torres), não as ~20 torres maximizadas que a estimativa de papel supunha — **os dois números não são comparáveis em valor absoluto** (onda 14 medida aqui não é a mesma régua que onda 28-32 estimada acima, que assume mais que o dobro de torres). O que é comparável, porque usa o mesmo método antes e depois, é o **delta**:
+
+| Cenário | `main` (pré-P1) | Branch (P1) | Delta |
+| :-- | :-- | :-- | :-- |
+| Endless, economia realista (`startingGold: 4000`), média de 6 seeds | onda 14,0 | onda 17,0 | **+21%** |
+| Endless, ouro alto (`startingGold: 50.000.000`, isola o teto de poder da economia) | onda 14 (todas as seeds) | onda 39 (todas as seeds) | **+179%** |
+
+Leitura: com economia realista o ganho é modesto (+21%) porque a run ainda está limitada por ouro, não só por dano — a entrega 2 (curva de ouro do endless) e a entrega 1 (ranks) competem pelo mesmo ouro. Isolando a economia (ouro quase infinito), o teto de poder isolado sobe **quase 3×** (onda 14 → 39), o que confirma que os ranks infinitos de fato empurram o "muro aritmético" descrito nesta seção — só que a partir de uma base de 8 torres, não de 20. Não foi medido em que onda a parede apareceria com uma defesa de ~20 torres maximizadas; a estimativa original desta seção para esse cenário específico permanece não verificada.
+
 ---
 
 ### B3. 🟠 As magias supremas se autodestroem
@@ -450,29 +461,34 @@ Há `orientationchange` apenas para recalcular tamanho (`Game.ts:337`). Um canva
 
 # PARTE F — Plano de execução sugerido
 
-### P0 — Consertar o que está quebrado *(~1 sprint curta)*
-1. `VOLTAIC_OVERCHARGE`: implementar ou remover do pool **(A1)**
-2. Esquiva não anula dano em área **(A3)**
-3. Armadura passa a valer para todas as torres **(A2)**
-4. SFX do Canhão **(A4)**
-5. Gatilhos do draft na campanha **(A5)**
-6. HARDCORE ganha seus modificadores **(A6)**
-7. Executor inclui o `BLACK_MEGA_BOSS` **(A7)**
-8. Raio do pulso da Frost sob névoa **(A8)**
-9. Sincronizar `README.md` com o código **(A11)**
+### P0 — Consertar o que está quebrado ✅ Concluído — commit `3c718bd` ("fix: corrige pipeline de armadura, som do Canhao e gatilhos do draft roguelite")
+1. ✅ `VOLTAIC_OVERCHARGE` implementado **(A1)** — `handleTowerDamageDealt()` (`Tower.ts`) dispara a faísca de 8 dano em raio 40px contra alvos com `slowTimer > 0 || freezeTimer > 0`; dano em área (`armorPenetration: 1`, não esquivável), sem cascata.
+2. ✅ Esquiva não anula mais dano em área **(A3)** — `Enemy2D.takeDamage(amount, armorPenetration, isAvoidable)` ganhou o parâmetro `isAvoidable`; todo dano de área/DoT/hazard passa `false`.
+3. ✅ Armadura passa a valer para todas as torres **(A2)** — a flag booleana `isLightShot` foi substituída por `armorPenetration` (0..1) explícito por origem de dano; ver §2.1.1 do `GAME_MECHANICS.md`.
+4. ✅ SFX do Canhão **(A4)** — `TowerManager.ts` chama `audioManager.playCannonShot()` no bloco de disparo do Canhão.
+5. ✅ Gatilhos do draft na campanha **(A5)** — movidos de 5/10/15 para **3, 6 e 9**; a checagem de vitória roda antes da checagem de draft no mesmo passo, então a onda 10 nunca abre os dois modais.
+6. ✅ HARDCORE ganha seus modificadores **(A6)** — `EnemyManager.spawnEnemy()`: `speedMultiplier 1.25×` e `Tower.getRepairCost()` com `repairCostMultiplier 1.5×`; a variável duplicada (`isFast`/`isTurbo` ambas checando `MORTE_CERTA`) foi removida.
+7. ✅ Executor inclui o `BLACK_MEGA_BOSS` **(A7)** — `isExecutionTarget` em `TowerManager.ts` agora testa `TANK`, `BOSS` e `BLACK_MEGA_BOSS` (decisão deliberada: `MOSS_GIANT` continua fora, ver `GAME_MECHANICS.md` §2.2).
+8. ✅ Raio do pulso da Frost sob névoa **(A8)** — a partícula do pulso passou a desenhar com o mesmo `effectiveRange` (reduzido 20% sob névoa) usado para escolher alvos; o feedback visual deixou de mentir sobre quem seria atingido.
+9. ✅ Sincronizar `README.md` com o código **(A11, parcial)** — os dois READMEs foram resincronizados no passe de armadura/hardcore de 2026-08 (10 ondas, 9 badges, Canhão 105g/14, Prisma Solar 100g/6) e novamente nesta rodada P1, com os números das cinco entregas novas (níveis infinitos, magias escaláveis, densidade de onda). **Sobra conhecida, não fechada por este item:** `Math.random()` ainda em `TowerManager.ts` (~409, ~602) e em `ParticleManager`/`FXManager` — caminho cosmético (não fura o determinismo da simulação), registrado como pendência em `BACKLOG.MD`; a linha 409 especificamente decide *se* o número de dano do Prisma Solar aparece, o que é o mesmo problema de feedback inconsistente do item D3 (também não fechado).
 
-### P1 — Devolver decisões ao jogador *(o que mais alonga a sessão)*
-10. **Chamada antecipada de onda com bônus** **(C1)**
-11. **Níveis infinitos de torre** **(B2/C2)**
-12. Recalibrar a economia do endless (`^0.75`) **(B1)**
-13. Magias com dano escalável ou recurso próprio **(B3)**
-14. Ondas mais densas + gatilho de tensão em 8 inimigos **(C5)**
+### P1 — Devolver decisões ao jogador ✅ Concluído — branch `feature/p1-player-decisions-2026-08`, spec em `docs/P1_BALANCE_SPEC.md`
+10. ✅ **Chamada antecipada de onda com bônus** **(C1)** — `WaveManager.getEarlyCallBonus()`; o contador de 5s agora decresce em Manual **e** Auto (antes só em Auto), com bônus de `2 + floor(próximaOnda/5)` ouro por segundo poupado, teto absoluto de 60g. **Discordância registrada com a proposta original:** sem o multiplicador ×2 "onda anterior ainda em tela" — estruturalmente impossível sem permitir ondas sobrepostas (ver `GAME_MECHANICS.md` §7.4 e a pendência C1 mais abaixo).
+11. ✅ **Níveis infinitos de torre** **(B2/C2)** — nível 3 continua sendo o teto de especialização; ranks 4+ (genéricos, infinitos) crescem em forma fechada sobre um baseline capturado no nível 3 (dano/HP sem teto, alcance/splash com teto nos ranks 25/40; `fireRate` intocado). Custo de upgrade cresce `×1.10^rank` composto. Ver `GAME_MECHANICS.md` §2.2.1.
+12. ✅ Recalibrar a economia do endless **(B1)** — expoente efetivo `0,75` só a partir da onda 11 (via `hpMultiplier^0.35` multiplicando o `0.4` já cravado em `Enemy.ts`, sem duplicar a fórmula de HP), com corte suave (`0,85 → 0,45` linear até a onda 60) substituindo o corte fixo de 25%. A campanha (ondas 1-10) usa um corte **próprio**, recalibrado pela entrega 4 (`0,60` a partir da onda 2) para compensar a densidade de onda maior — ver item 14.
+13. ✅ Magias com dano escalável **(B3, opção 1)** — Meteoro passou de 90 fixo para `90 + 12% do HP máximo do alvo` (calculado por alvo, sempre em área/não esquivável). Ambas as magias ganharam decaimento de custo (`-1 passo a cada 2 ondas sem uso`, teto em 64× o custo base). **Pendência registrada, não entregue nesta rodada:** ver "Fúria" (opção 2) na lista de pendências abaixo.
+14. ✅ Ondas mais densas + gatilho de tensão em 8 inimigos **(C5)** — as 10 ondas da campanha subiram de 64 para **144** inimigos no total (contagem somada do array `WaveManager.waves`), com os inimigos "grandes" em quantidade igual e o volume extra em RUNNER/STANDARD/SPORE_SPRINTER com delays mais curtos; `enemyCount > 20` virou `enemyCount > 8` como gatilho de tensão de áudio/vinheta.
 
-### P2 — Retenção entre sessões
+**Pendências conscientemente adiadas do P1** (não fechadas — registradas aqui para não serem confundidas com "feito" nem apagadas):
+- **Magias com recurso próprio ("Fúria", B3 opção 2):** adiada para o P2 por decisão do diretor. É um sistema novo (barra de recurso na HUD, carga por abate, interação com `MORTE_CERTA` desabilitando magias) e pertence ao pacote de retenção, onde a HUD será tocada de qualquer forma. O P1 entregou só a opção 1 (dano proporcional, item 13 acima).
+- **Multiplicador ×2 de bônus "com a onda anterior ainda na tela" (C1):** rejeitado nesta rodada, não só adiado — é estruturalmente impossível sem permitir ondas sobrepostas. `isWaveActive` só vira `false` quando `remainingEnemiesCount === 0` (`WaveManager.onEnemyCleared()`), ou seja, no exato instante em que `startNextWave()` volta a estar disponível **não há, por definição, nenhum inimigo da onda anterior em tela**. Implementar o ×2 literal exigiria trocar `spawnQueue` de fila única para múltipla e permitir duas ondas simultâneas — mudança de arquitetura maior que um getter puro, candidata a rodada própria com spec de risco dedicada (não faz parte do P2 como está especificado hoje).
+
+### P2 — Retenção entre sessões — pendente, próximo pacote
 15. Onboarding de 40 segundos **(D1)**
 16. Objetivos de run + Desafio Diário na UI **(C3)**
 17. Desbloqueios e prestígio na meta-progressão **(C4)**
 18. "Última Chance" na derrota **(C6)**
+18b. *(Adicionado pelo P1, ver pendência acima — não renumerado para não colidir com os itens 19-24 do P3 abaixo)* Magias com recurso próprio ("Fúria") — opção 2 do antigo item B3, para empacotar junto da HUD de retenção.
 
 ### P3 — Polimento de UX ✅ Concluído — branch `fix/p3-ux-polish-2026-08` (ainda a ser commitado nesta branch)
 19. ✅ Escala de tipografia no canvas **(E1)** — *tratar como P1 se mobile for público principal*. `Game2D.uiScale` aplicado ao tooltip de tile, toast de conquista, texto de dano/"DODGED!" e barra de vida/escudo do inimigo.
@@ -494,3 +510,7 @@ Há `orientationchange` apenas para recalcular tamanho (`Game.ts:337`). Um canva
 Todas as afirmações acima foram verificadas no código-fonte, não nos documentos — em vários pontos os dois discordam, e onde discordam o código venceu. O `docs/GAME_MECHANICS.md` está fiel ao código na maioria absoluta dos casos (as exceções estão em A6, A10 e A11); os dois `README.md` estão defasados em números.
 
 Não foram medidas sessões reais de jogo. As estimativas de duração de run e de parede do endless são derivadas das fórmulas de HP, cadência e dano, e devem ser confirmadas com o harness headless que já existe em `tests/helpers/balanceSim.ts` — ele é a ferramenta certa para validar as recalibragens propostas em B1 e B2 antes de aplicá-las.
+
+**Atualização (pós-P1):** essa recomendação foi cumprida para B1/B2 neste ciclo. O `qa-engineer` estendeu `tests/helpers/balanceSim.ts` com `autoUpgradeGold` (estratégia "mais barato primeiro", necessária porque ranks infinitos de torre — entrega 1 do P1 — não existiam quando o harness foi escrito) e rodou uma medição A/B controlada: mesmas 6 seeds de `balance.test.ts`, `maxStepsPerWave` elevado para 40000, 2 rodadas por seed por lado, comparando um worktree do `main` pré-P1 contra a branch do P1. Os números estão em B2 (endless, delta de +21% com economia realista e +179% isolando o teto de poder) e em `docs/P1_BALANCE_SPEC.md` §2.3 (razão ouro/HP medida nas ondas 20 e 30, batendo com a previsão da spec). A campanha completa (10 ondas) também foi medida com a `MAP1_REFERENCE_BUILD`: 0/6 seeds sobrevivem tanto no `main` quanto na branch — não é regressão do P1, é dívida pré-existente nunca antes verificada (detalhe e evidência em `BACKLOG.MD`).
+
+O que a medição **não** cobre ainda: a estimativa de parede do endless com ~20 torres maximizadas (o cenário original desta seção B2) só foi medida com a `FULL_DEFENSE_BUILD` de 8 torres — os valores não são diretamente comparáveis, só o delta antes/depois no mesmo método é. Ver a nota em B2.

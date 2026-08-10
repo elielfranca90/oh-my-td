@@ -110,6 +110,19 @@ export class Game2D implements IGame2D {
   private simAccumulatorMs = 0;
   /** Idem para FX/toasts, mas sem escala de velocidade (duram o mesmo em 1x e 4x). */
   private fxAccumulatorMs = 0;
+  /**
+   * Espelho de `WaveManager.getEarlyCallBonus()`, recalculado a cada passo fixo
+   * de simulação (ver `stepSimulation`). O botão "Iniciar Onda" é clicado dentro
+   * do `UIManager` e chama `waveManager.startNextWave()` diretamente — não passa
+   * por este arquivo —, então não há como ler o getter "antes" do clique de
+   * forma síncrona sem tocar em `UIManager.ts` (fora do escopo desta rodada).
+   * Mantendo o valor sempre atualizado ("antes" no sentido de "o mais recente
+   * possível antes de qualquer clique"), o listener de `wave:start` abaixo
+   * consegue creditar o ouro certo assim que a onda de fato começa, com atraso
+   * de no máximo um passo fixo (~16,7ms) — imperceptível frente ao segundo
+   * inteiro que a fórmula do bônus já arredonda em `Math.floor`.
+   */
+  private cachedEarlyCallBonus = 0;
 
   // --- Press-and-hold ---
   private longPressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -265,6 +278,7 @@ export class Game2D implements IGame2D {
     // Managers foram recriados: descarta tempo acumulado da partida anterior.
     this.simAccumulatorMs = 0;
     this.fxAccumulatorMs = 0;
+    this.cachedEarlyCallBonus = 0;
     this.tooltipGrid = null;
     this.longPressFired = false;
 
@@ -520,6 +534,19 @@ export class Game2D implements IGame2D {
       if (this.gameState.status === 'PREPARATION') {
         this.gameState.setStatus('PLAYING');
       }
+      // Chamada antecipada de onda (P1_BALANCE_SPEC.md §3.3): o evento só
+      // dispara quando `startNextWave()` de fato retornou `true`, então o
+      // bônus cacheado (última leitura de `getEarlyCallBonus()` antes deste
+      // clique) é sempre relativo a uma onda que começou — nunca a um clique
+      // que falhou (onda já ativa, duplo clique etc.).
+      if (this.cachedEarlyCallBonus > 0) {
+        this.gameState.addGold(this.cachedEarlyCallBonus);
+        this.cachedEarlyCallBonus = 0;
+      }
+    });
+    EventBus.getInstance().on('wave:end', () => {
+      // Decaimento de custo das magias por ondas sem uso (P1_BALANCE_SPEC.md §5.4).
+      this.spellManager.onWaveCompleted();
     });
 
 
@@ -1035,6 +1062,10 @@ export class Game2D implements IGame2D {
     }
 
     this.replayEngine.advanceTick();
+    // Lido ANTES de updateAutoCountdown decrementar o contador deste passo —
+    // é o snapshot que o listener de 'wave:start' vai usar para creditar o
+    // bônus da chamada antecipada (ver `cachedEarlyCallBonus` acima).
+    this.cachedEarlyCallBonus = this.waveManager.getEarlyCallBonus();
     this.waveManager.updateAutoCountdown(stepMs);
     this.enemyManager.update(stepMs, this.towerManager.getTowers());
     this.towerManager.update(this.enemyManager.getEnemies(), this.fxManager);
@@ -1119,7 +1150,10 @@ export class Game2D implements IGame2D {
       // Update BGM Tension Level & WebGL Vignette Shaders
       const isCriticalHp = this.gameState.baseHp <= 3;
       const enemyCount = enemies.filter(e => !e.data.isDead).length;
-      const tension = isCriticalHp ? 1.0 : (hasBossOnScreen ? 0.85 : (enemyCount > 20 ? 0.5 : 0.0));
+      // Limiar recalibrado pela Entrega 4 (P1_BALANCE_SPEC.md §4.1): a densidade
+      // nova de onda (§4.4) cruza 8 inimigos simultâneos com folga a partir da
+      // onda 3; o limiar antigo (20) quase nunca disparava com a onda antiga.
+      const tension = isCriticalHp ? 1.0 : (hasBossOnScreen ? 0.85 : (enemyCount > 8 ? 0.5 : 0.0));
       this.audioManager.setTensionLevel(tension);
       this.threeRenderer.setVignetteIntensity(isCriticalHp ? 0.7 : 0.0);
 

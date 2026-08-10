@@ -175,10 +175,7 @@ export class EnemyManager2D {
     const speedMultiplier =
       challengeMode === 'MORTE_CERTA' ? 1.4 : challengeMode === 'HARDCORE' ? 1.25 : 1.0;
     const currentWaveNum = this.waveManager.currentWaveIndex + 1;
-    let goldMultiplier = challengeMode === 'MORTE_CERTA' ? 1.5 : 1.0;
-    if (currentWaveNum >= 4) {
-      goldMultiplier *= 0.75;
-    }
+    const goldMultiplier = this.computeGoldMultiplier(currentWaveNum, hpMultiplier);
 
     const enemy = new Enemy2D(
       waypoints,
@@ -195,5 +192,34 @@ export class EnemyManager2D {
 
   public getEnemies(): Enemy2D[] {
     return this.enemies;
+  }
+
+  /**
+   * Curva de ouro por abate (P1_BALANCE_SPEC.md §2 e §4). `hpMultiplier` é o mesmo
+   * valor que `spawnEnemy` já recebe do WaveManager — nenhum dado novo é encanado
+   * aqui, e `Enemy.ts` continua com o expoente 0.4 intocado: toda a compensação de
+   * curva vive neste multiplicador.
+   *
+   * Campanha (onda <= 10): corte fixo, recalibrado pela Entrega 4 (era `onda>=4 * 0.75`;
+   * virou `onda>=2 * 0.60`) porque a densidade de inimigos por onda (§4.4) mais que
+   * dobrou e precisa de um corte mais cedo/mais profundo para não inflar a renda total.
+   *
+   * Endless (onda > 10): substitui o corte fixo de 25% por uma compensação de expoente
+   * (`hpMultiplier^0.35`, que soma ao 0.4 já aplicado em Enemy.ts e produz um expoente
+   * efetivo de 0.75) mais um corte suave que decai linearmente até um piso de 0.45 —
+   * a razão "ouro por HP" continua caindo (mantém o dreno de ouro que justifica os
+   * ranks de torre), só para de ser uma queda de precipício (§2.2/§2.3).
+   */
+  private computeGoldMultiplier(waveNum: number, hpMultiplier: number): number {
+    const morteCertaBonus = this.gameState.challengeMode === 'MORTE_CERTA' ? 1.5 : 1.0;
+
+    if (waveNum <= 10) {
+      const campaignCut = waveNum >= 2 ? 0.6 : 1.0;
+      return morteCertaBonus * campaignCut;
+    }
+
+    const exponentCompensation = Math.pow(hpMultiplier, 0.35);
+    const smoothCut = Math.max(0.45, 0.85 - 0.008 * (waveNum - 10));
+    return morteCertaBonus * exponentCompensation * smoothCut;
   }
 }
