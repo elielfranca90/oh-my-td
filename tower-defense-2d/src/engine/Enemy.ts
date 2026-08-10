@@ -80,17 +80,27 @@ export class Enemy2D {
     }
   }
 
-  public takeDamage(amount: number, isLightShot = false): number {
-    // 1. Check Dodge (Runner)
-    if (this.data.dodgeChance > 0 && this.rng.chance(this.data.dodgeChance)) {
+  /**
+   * @param armorPenetration 0..1 — quanto da armadura o disparo ignora. `0` (padrão)
+   *   é o caso comum: a armadura vale inteira. `1` é bypass total (ex.: PIERCING).
+   *   Fórmula: efetivo = armorFactor + (1 - armorFactor) * penetração — com
+   *   penetração 0 o efetivo é o próprio armorFactor; com 1, vira 1 (sem redução).
+   *   Antes só tiros "isLightShot" sofriam armadura, o que a apagava para
+   *   Canhão/Artilharia/Prisma Solar; agora ela vale sempre e cada torre decide
+   *   quanto perfura.
+   * @param isAvoidable false pula o teste de esquiva do Runner. Dano em área,
+   *   DoT e hazards ambientais atingem todo mundo no raio — deixá-los esquivar
+   *   é ilegível (o jogador vê "DODGED!" dentro de uma explosão).
+   */
+  public takeDamage(amount: number, armorPenetration = 0, isAvoidable = true): number {
+    // 1. Check Dodge (Runner) — só quando o dano é evitável.
+    if (isAvoidable && this.data.dodgeChance > 0 && this.rng.chance(this.data.dodgeChance)) {
       return -1; // Dodged!
     }
 
-    // 2. Apply Armor Factor for light shots (Tank / Moss Giant)
-    let actualDamage = amount;
-    if (isLightShot && this.data.armorFactor < 1.0) {
-      actualDamage = Math.max(1, Math.round(amount * this.data.armorFactor));
-    }
+    // 2. Apply Armor Factor, atenuado pela penetração do disparo.
+    const effectiveArmor = this.data.armorFactor + (1 - this.data.armorFactor) * armorPenetration;
+    const actualDamage = Math.max(1, Math.round(amount * effectiveArmor));
 
     // 3. Shield absorption (Shielded Speeder)
     if (this.data.shieldHp > 0) {

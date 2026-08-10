@@ -18,14 +18,24 @@ describe('Enemy2D Unit & Mechanics Tests', () => {
     expect(standardScaled.data.goldReward).toBeGreaterThan(standardBase.data.goldReward);
   });
 
-  it('should absorb light shot damage for Tank armor', () => {
+  it('should apply armor factor when the shot has no penetration', () => {
     const tank = new Enemy2D(mockWaypoints, 'TANK', '1', 1.0);
     const initialHp = tank.data.hp; // 35
 
-    // Tank has armorFactor 0.6 (absorbs 40%)
-    const dmgDealt = tank.takeDamage(10, true); // Light shot 10 dmg
+    // Tank has armorFactor 0.6 (absorbs 40%). armorPenetration=0 -> armadura vale inteira.
+    const dmgDealt = tank.takeDamage(10, 0);
     expect(dmgDealt).toBe(6); // 10 * 0.6 = 6
     expect(tank.data.hp).toBe(initialHp - 6);
+  });
+
+  it('should ignore armor factor when the shot fully penetrates', () => {
+    const tank = new Enemy2D(mockWaypoints, 'TANK', '1', 1.0);
+    const initialHp = tank.data.hp; // 35
+
+    // armorPenetration=1 -> efetivo=1.0, sem redução (ex.: PIERCING).
+    const dmgDealt = tank.takeDamage(10, 1);
+    expect(dmgDealt).toBe(10);
+    expect(tank.data.hp).toBe(initialHp - 10);
   });
 
   it('should absorb damage in energy shield before HP for Shielded enemy', () => {
@@ -33,13 +43,13 @@ describe('Enemy2D Unit & Mechanics Tests', () => {
     const initialShield = shielded.data.shieldHp; // 22
     const initialHp = shielded.data.hp; // 14
 
-    // Hit with 10 dmg -> absorbed by shield
-    shielded.takeDamage(10, false);
+    // Hit with 10 dmg (armorPenetration=1: bypass total, para isolar a mecânica de escudo) -> absorbed by shield
+    shielded.takeDamage(10, 1);
     expect(shielded.data.shieldHp).toBe(initialShield - 10);
     expect(shielded.data.hp).toBe(initialHp);
 
     // Hit with 20 dmg -> breaks shield (12 left) and damages HP by 8
-    shielded.takeDamage(20, false);
+    shielded.takeDamage(20, 1);
     expect(shielded.data.shieldHp).toBe(0);
     expect(shielded.data.hp).toBe(initialHp - 8);
   });

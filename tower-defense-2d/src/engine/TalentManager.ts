@@ -1,13 +1,6 @@
 import type { DatabaseManager } from './DatabaseManager';
-
-export interface TalentData {
-  damageLvl: number;
-  goldLvl: number;
-  hpLvl: number;
-  cdLvl: number;
-  repairLvl: number;
-  critLvl: number;
-}
+import type { TalentData } from '../types';
+export type { TalentData };
 
 export class TalentManager {
   public stars = 0;

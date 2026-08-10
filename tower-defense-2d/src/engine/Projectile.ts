@@ -16,10 +16,11 @@ export class Projectile2D {
   public isCrit?: boolean;
   public towerType?: TowerType;
   /**
-   * Se o disparo sofre o armorFactor do alvo. Antes era inferido da cor do
-   * projétil, acoplamento que quebraria ao dar cor própria a uma especialização.
+   * 0..1 — quanto da armadura do alvo este disparo ignora (repassado a
+   * `Enemy2D.takeDamage`). Antes era um booleano `isLightShot` inferido da cor
+   * do projétil, acoplamento que quebraria ao dar cor própria a uma especialização.
    */
-  public isLightShot: boolean;
+  public armorPenetration: number;
   public sourceTower?: Tower2D;
 
   constructor(
@@ -33,11 +34,11 @@ export class Projectile2D {
     slowFactor?: number,
     isCrit?: boolean,
     towerType?: TowerType,
-    isLightShot = false,
+    armorPenetration = 0,
     sourceTower?: Tower2D
   ) {
     this.sourceTower = sourceTower;
-    this.isLightShot = isLightShot;
+    this.armorPenetration = armorPenetration;
     this.position = { ...startPos };
     this.target = target;
     this.damage = damage;
@@ -59,7 +60,6 @@ export class Projectile2D {
 
     if (distance < this.speed) {
       const targetEnemy = allEnemies.find(e => e.data === this.target);
-      const isLightShot = this.isLightShot;
 
       // 1. AoE Splash Damage (Artillery)
       if (this.splashRadius && this.splashRadius > 0) {
@@ -71,14 +71,24 @@ export class Projectile2D {
             enemy.data.position.y - this.position.y
           );
           if (distToImpact <= this.splashRadius) {
-            const dmgDealt = enemy.takeDamage(this.damage, false);
+            // Alvo primário do projétil é um tiro mirado: sofre a penetração
+            // própria do disparo (this.armorPenetration) e pode esquivar. Só ele
+            // é identificado por referência (`this.target`) porque é o único
+            // enemy.data que o projétil perseguia antes de explodir.
+            // Vítimas secundárias do respingo (todo o resto no raio) são dano em
+            // área: ignoram armadura (1) e nunca esquivam (false) — decisão de
+            // design para o estilhaço, não um efeito colateral do impacto direto.
+            const isPrimaryTarget = enemy.data === this.target;
+            const dmgDealt = isPrimaryTarget
+              ? enemy.takeDamage(this.damage, this.armorPenetration, true)
+              : enemy.takeDamage(this.damage, 1, false);
             if (dmgDealt > 0) {
               fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${dmgDealt}`, '#ff5252');
               if (analyticsManager && this.towerType) {
                 analyticsManager.recordDamage(this.towerType, dmgDealt);
               }
               if (this.sourceTower && gameState) {
-                handleTowerDamageDealt(this.sourceTower, enemy, dmgDealt, gameState);
+                handleTowerDamageDealt(this.sourceTower, enemy, dmgDealt, gameState, allEnemies);
               }
             } else if (dmgDealt === -1) {
               fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, 'DODGED!', '#ff9800');
@@ -87,7 +97,7 @@ export class Projectile2D {
         }
       } else if (targetEnemy) {
         // Single Target Hit with Armor & Dodge calculation
-        const dmgDealt = targetEnemy.takeDamage(this.damage, isLightShot);
+        const dmgDealt = targetEnemy.takeDamage(this.damage, this.armorPenetration);
 
         if (dmgDealt === -1) {
           fxManager.addDamageText(this.target.position.x, this.target.position.y, 'DODGED!', '#ff9800');
@@ -99,7 +109,7 @@ export class Projectile2D {
             analyticsManager.recordDamage(this.towerType, dmgDealt);
           }
           if (this.sourceTower && gameState && targetEnemy) {
-            handleTowerDamageDealt(this.sourceTower, targetEnemy, dmgDealt, gameState);
+            handleTowerDamageDealt(this.sourceTower, targetEnemy, dmgDealt, gameState, allEnemies);
           }
         }
 

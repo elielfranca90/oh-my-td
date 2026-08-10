@@ -1,5 +1,5 @@
 import type { ChallengeMode } from '../types';
-import { UIManager } from '../ui/UIManager';
+import { UIManager, type IGame2D } from '../ui/UIManager';
 import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
 import { DatabaseManager } from './DatabaseManager';
@@ -16,12 +16,14 @@ import { Rng } from './Rng';
 import { SpellManager } from './SpellManager';
 import { getSpecializationOption } from './Specializations';
 import { TalentManager } from './TalentManager';
+import { Tower2D } from './Tower';
 import { TowerManager2D } from './TowerManager';
 import { WaveManager } from './WaveManager';
 import { ThreeRenderer } from './ThreeRenderer';
 import { SpriteManager } from './SpriteManager';
 import { ReplayEngine } from './ReplayEngine';
-export class Game2D {
+import { initMobileDetection } from '../helpers/device';
+export class Game2D implements IGame2D {
   /**
    * Duração de um passo de simulação. A simulação SEMPRE avança em passos de
    * 1/60s, independente do refresh rate do monitor.
@@ -85,7 +87,8 @@ export class Game2D {
    */
   public runSeed = 0;
   private rng!: Rng;
-
+  public isMobile: boolean;
+  private mobileSelectedGrid: { x: number; y: number } | null = null;
   private mousePos: { x: number; y: number } | null = null;
   private hoveredGrid: { x: number; y: number } | null = null;
   private lastTime = 0;
@@ -112,13 +115,13 @@ export class Game2D {
   private currentSavedEndlessMode = false;
 
   constructor() {
+    this.isMobile = initMobileDetection();
     this.databaseManager = DatabaseManager.getInstance();
     const gameArea = document.getElementById('game-area');
     if (!gameArea) throw new Error('Game area container not found');
 
     this.threeRenderer = new ThreeRenderer(840, 600);
     gameArea.appendChild(this.threeRenderer.canvas);
-
     this.canvas = document.createElement('canvas');
     this.canvas.width = 840;
     this.canvas.height = 600;
@@ -401,10 +404,17 @@ export class Game2D {
     this.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
       if (this.gameState.status !== 'PLAYING' && this.gameState.status !== 'PREPARATION') return;
       cancelLongPress();
-      this.tooltipGrid = null;
       this.longPressFired = false;
 
       const { x, y } = this.getCanvasMousePosition(e);
+      const currentGridX = Math.floor(x / this.mapManager.tileSize);
+      const currentGridY = Math.floor(y / this.mapManager.tileSize);
+
+      // Dismiss tooltip if pointer down on a different tile
+      if (this.tooltipGrid && (this.tooltipGrid.x !== currentGridX || this.tooltipGrid.y !== currentGridY)) {
+        this.tooltipGrid = null;
+      }
+
       this.pressOrigin = { x, y };
 
       this.longPressTimer = setTimeout(() => {
@@ -424,15 +434,15 @@ export class Game2D {
       const moved = Math.hypot(x - this.pressOrigin.x, y - this.pressOrigin.y);
       if (moved > Game2D.LONG_PRESS_MOVE_TOLERANCE) cancelLongPress();
     });
-
     const endPress = () => {
       cancelLongPress();
-      this.tooltipGrid = null;
+      if (!this.isMobile) {
+        this.tooltipGrid = null;
+      }
     };
     this.canvas.addEventListener('pointerup', endPress);
     this.canvas.addEventListener('pointercancel', endPress);
     this.canvas.addEventListener('pointerleave', endPress);
-
     // Long-press no toque abriria o menu de contexto / lupa do sistema.
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
@@ -472,7 +482,28 @@ export class Game2D {
       // Handle Tower Placement / Selection
       const gridX = Math.floor(x / this.mapManager.tileSize);
       const gridY = Math.floor(y / this.mapManager.tileSize);
-      this.towerManager.placeTower(gridX, gridY);
+
+      if (this.isMobile) {
+        const existingTower = this.towerManager.getTowerAt(gridX, gridY);
+        if (existingTower) {
+          this.mobileSelectedGrid = null;
+          this.hoveredGrid = null;
+          this.towerManager.placeTower(gridX, gridY);
+          return;
+        }
+
+        const isSameTile = this.mobileSelectedGrid && this.mobileSelectedGrid.x === gridX && this.mobileSelectedGrid.y === gridY;
+        if (isSameTile) {
+          this.mobileSelectedGrid = null;
+          this.hoveredGrid = null;
+          this.towerManager.placeTower(gridX, gridY);
+        } else {
+          this.mobileSelectedGrid = { x: gridX, y: gridY };
+          this.hoveredGrid = { x: gridX, y: gridY };
+        }
+      } else {
+        this.towerManager.placeTower(gridX, gridY);
+      }
     };
 
     this.canvas.addEventListener('click', handleTap);
@@ -483,9 +514,10 @@ export class Game2D {
   }
 
   private renderGhostPlacement() {
-    if (!this.hoveredGrid || (this.gameState.status !== 'PLAYING' && this.gameState.status !== 'PREPARATION') || this.gameState.isPaused || this.spellManager.activeSpell !== null) return;
+    const gridToDraw = this.hoveredGrid || (this.isMobile ? this.mobileSelectedGrid : null);
+    if (!gridToDraw || (this.gameState.status !== 'PLAYING' && this.gameState.status !== 'PREPARATION') || this.gameState.isPaused || this.spellManager.activeSpell !== null) return;
 
-    const { x, y } = this.hoveredGrid;
+    const { x, y } = gridToDraw;
     const existing = this.towerManager.getTowerAt(x, y);
     if (existing) return;
 
@@ -496,13 +528,33 @@ export class Game2D {
     const size = this.mapManager.tileSize;
     const isValid = isBuildable && canAfford;
 
+    // Range visualizer for ghost placement
+    const config = Tower2D.getTowerConfig(this.towerManager.selectedBuildType);
+    let range = config.range;
+    const isSproutTile = this.towerManager.sproutTiles.some(s => s.x === x && s.y === y);
+    if (isSproutTile) {
+      range = Math.round(range * 1.25);
+    }
+    const centerX = (x + 0.5) * size;
+    const centerY = (y + 0.5) * size;
+
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.arc(centerX, centerY, range, 0, Math.PI * 2);
+    this.ctx.fillStyle = isValid ? 'rgba(76, 175, 80, 0.08)' : 'rgba(244, 67, 54, 0.08)';
+    this.ctx.fill();
+    this.ctx.strokeStyle = isValid ? 'rgba(76, 175, 80, 0.5)' : 'rgba(244, 67, 54, 0.5)';
+    this.ctx.lineWidth = 1.5;
+    this.ctx.stroke();
+
+    // Tile preview box
     this.ctx.fillStyle = isValid ? 'rgba(76, 175, 80, 0.4)' : 'rgba(244, 67, 54, 0.4)';
     this.ctx.fillRect(x * size, y * size, size, size);
     this.ctx.strokeStyle = isValid ? '#4caf50' : '#f44336';
     this.ctx.lineWidth = 2;
     this.ctx.strokeRect(x * size, y * size, size, size);
+    this.ctx.restore();
   }
-
   private renderAchievementToasts() {
     for (let i = 0; i < this.achievementManager.activeToasts.length; i++) {
       const toast = this.achievementManager.activeToasts[i];
@@ -708,7 +760,8 @@ export class Game2D {
           const dx = Math.abs(enemy.data.position.x - gWorldX);
           const dy = Math.abs(enemy.data.position.y - gWorldY);
           if (dx <= tileSize / 2 && dy <= tileSize / 2) {
-            enemy.takeDamage(1, true);
+            // Dano ambiental do gêiser: ignora armadura e não é esquivável.
+            enemy.takeDamage(1, 1, false);
             this.particleManager.spawnEmber(enemy.data.position.x, enemy.data.position.y);
           }
         }
@@ -751,23 +804,38 @@ export class Game2D {
     this.particleManager.update(this.enemyManager.getEnemies(), this.fxManager);
 
     const isWaveActiveNow = this.waveManager.isWaveActive;
-    if (this.wasWaveActive && !isWaveActiveNow) {
-      const completedWave = this.waveManager.currentWaveIndex + 1;
-      if (completedWave === 5 || completedWave === 10 || completedWave === 15) {
-        this.uiManager.triggerDraftModal();
-      }
-    }
+    // Onda que terminou exatamente neste passo (null se nenhuma acabou agora).
+    // Capturado antes de decidir vitória/draft, para os dois lerem o mesmo valor.
+    const completedWave = this.wasWaveActive && !isWaveActiveNow
+      ? this.waveManager.currentWaveIndex + 1
+      : null;
     this.wasWaveActive = isWaveActiveNow;
+
     if (this.waveManager.isEndlessMode) {
       this.achievementManager.setProgress('ENDLESS_SURVIVOR', this.waveManager.currentWaveIndex + 1);
     }
 
     if (this.gameState.status !== 'PLAYING' && this.gameState.status !== 'PREPARATION') return false;
 
-    // Check Victory
+    // Check Victory — checado ANTES do Draft Roguelite de propósito: os dois
+    // podiam disparar no mesmo passo quando a campanha (10 ondas) terminava,
+    // fazendo o modal de vitória competir com o de draft pela tela. Retornar
+    // aqui primeiro suprime o draft implicitamente em qualquer run que já acabou.
     if (this.waveManager.isLastWaveCompleted(this.enemyManager.getEnemies().length)) {
       this.gameState.setStatus('VICTORY');
       return false;
+    }
+
+    // Draft Roguelite: na campanha (10 ondas) dispara nas ondas 3/6/9 — a 10ª
+    // nunca chega aqui porque a vitória já retornou acima. No endless, sem
+    // linha de chegada, mantém o ritmo original de 5 em 5 (5/10/15/20...).
+    if (completedWave !== null) {
+      const isDraftWave = this.waveManager.isEndlessMode
+        ? completedWave % 5 === 0
+        : completedWave === 3 || completedWave === 6 || completedWave === 9;
+      if (isDraftWave) {
+        this.uiManager.triggerDraftModal();
+      }
     }
 
     return true;

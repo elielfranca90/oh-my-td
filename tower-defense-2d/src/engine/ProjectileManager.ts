@@ -20,7 +20,7 @@ export class ProjectileManager2D {
     slowFactor?: number,
     isCrit?: boolean,
     towerType?: TowerType,
-    isLightShot?: boolean,
+    armorPenetration?: number,
     sourceTower?: Tower2D
   ) {
     this.projectiles.push(
@@ -35,7 +35,7 @@ export class ProjectileManager2D {
         slowFactor,
         isCrit,
         towerType,
-        isLightShot,
+        armorPenetration,
         sourceTower
       )
     );

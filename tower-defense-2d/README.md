@@ -24,15 +24,26 @@ npm run build
 
 ## 🛠️ Recursos Implementados
 
-* **🎮 Tela Inicial 3D Synthwave & Modos de Jogo:** Interface de entrada retro 3D (Three.js) com suporte ao Modo Campanha (20 Ondas + Boss Final com Modal de Vitória) e Modo Infinito com Seleção de Desafios (`NORMAL`, `HARDCORE`, `MORTE_CERTA`).
+* **🎮 Tela Inicial 3D Synthwave & Modos de Jogo:** Interface de entrada retro 3D (Three.js) com suporte ao Modo Campanha (10 Ondas + Boss Final com Modal de Vitória) e Modo Infinito com Seleção de Desafios (`NORMAL`, `HARDCORE`, `MORTE_CERTA`).
 * **🏰 5 Torres Especializadas & Upgrades Ramificados (Lvl 3):** Basic, Frost, Solar Prism, Cannon e Artillery com escolha de caminhos de especialização no Nível 3.
 * **👾 8 Tipos de Inimigos:** Standard, Runner (Esquiva), Tank (Armadura), Shielded (Escudo de Energia), Spore Sprinter (Velocidade), Moss Giant (Regeneração), BOSS (Reinforcements) e `BLACK_MEGA_BOSS` com renderizador customizado.
 * **☁️ Perfil do Jogador & Leaderboard Supabase:** Autenticação anônima persistente com sincronização cloud de conquistas e placar de líderes global online.
 * **⚡ Motor Determinístico & Sub-stepping:** Timestep fixo ($1/60$s) e sub-stepping para movimentação e física sem falhas em acelerações de 2x e 4x.
-* **🌟 Meta-Progressão & Badges:** Árvore de Talentos permanente salvando no LocalStorage e 11 Conquistas desbloqueáveis com notificações flutuantes.
+* **🌟 Meta-Progressão & Badges:** Árvore de Talentos permanente salvando no LocalStorage e 9 Conquistas desbloqueáveis com notificações flutuantes.
 * **📊 Analytics Pós-Partida:** Painel de relatório exibindo a Torre MVP da partida, finanças, contagem de abates e recordes.
 * **📱 UX Mobile Responsivo & Press-and-Hold:** Suporte a `100dvh`, *Safe Area Insets*, abas mobile com auto-inspector, seletores rápidos na HUD, tooltips por toque longo (*press-and-hold*) e controle duplo de áudio BGM/SFX.
-* **🧪 Bateria de Testes Automatizados (Vitest):** 163 testes passando em 27 suítes cobrindo motor matemático, física, banco de dados, fluxo de ondas, draft roguelite, UI e o novo Mapa 4 (Grave Pass).
+* **🧪 Bateria de Testes Automatizados (Vitest):** 220 testes passando em 32 suítes cobrindo motor matemático, física, banco de dados, fluxo de ondas, draft roguelite, UI e Mapa 4 (Grave Pass).
+* **⚡ Vite HMR Estabilizado:** Grafo de dependências totalmente livre de ciclos circulares (`madge`), eliminando falhas de recarga e erros de export em tempo de desenvolvimento.
+
+---
+
+## 📚 Documentação Técnica
+
+Consulte a documentação completa em [`/docs`](../docs):
+* 🎮 [**GAME_MECHANICS.md**](../docs/GAME_MECHANICS.md): Guia exaustivo de todas as mecânicas do jogo (torres, especializações, inimigos, biomas, climas, magias, talentos, ondas e fórmulas).
+* 📐 [**ARCHITECTURE_CANVAS.md**](../docs/ARCHITECTURE_CANVAS.md): Arquitetura do motor Canvas 2D, loop de renderização e sintetização de áudio.
+* 📝 [**PRD.md**](../docs/PRD.md): Documento de Requisitos do Produto e User Stories.
+* 🛠️ [**TECH_SPEC.md**](../docs/TECH_SPEC.md): Especificação Técnica e Contrato de Testes.
 ---
 
 ## 👤 Autor & Contato

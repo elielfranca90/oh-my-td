@@ -5,6 +5,7 @@ import { EventBus } from './EventBus';
 import type { Enemy2D } from './Enemy';
 import type { GameState } from './GameState';
 import type {
+  ChallengeMode,
   ITower2D,
   RogueliteModuleId,
   TargetingStrategy,
@@ -23,7 +24,7 @@ export class Tower2D {
       y: gridY * tileSize + tileSize / 2,
     };
 
-    const config = this.getTowerConfig(type);
+    const config = Tower2D.getTowerConfig(type);
 
     this.data = {
       id,
@@ -47,7 +48,7 @@ export class Tower2D {
     };
   }
 
-  private getTowerConfig(type: TowerType) {
+  public static getTowerConfig(type: TowerType) {
     switch (type) {
       case 'CANNON':
         return { cost: 105, range: 120, damage: 14, fireRate: 90 };
@@ -153,7 +154,13 @@ export class Tower2D {
     return this.data.isDestroyed;
   }
 
-  public getRepairCost(talentManager?: TalentManager): number {
+  /**
+   * @param challengeMode Custo de reparo sobe com a dificuldade escolhida —
+   *   HARDCORE cobra 1.5x, MORTE_CERTA 2x — aplicado sobre o custo base, ANTES
+   *   do desconto do talento Engineering (senão o desconto anularia o modificador
+   *   de dificuldade em vez de descontar sobre ele).
+   */
+  public getRepairCost(talentManager?: TalentManager, challengeMode: ChallengeMode = 'NORMAL'): number {
     let cost = 0;
     if (this.data.isDestroyed) {
       // 30% cheaper than new tower cost
@@ -162,6 +169,9 @@ export class Tower2D {
       const missingHpRatio = (this.data.maxHp - this.data.hp) / this.data.maxHp;
       cost = Math.max(5, Math.ceil(this.data.cost * 0.7 * missingHpRatio));
     }
+    const repairCostMultiplier =
+      challengeMode === 'MORTE_CERTA' ? 2.0 : challengeMode === 'HARDCORE' ? 1.5 : 1.0;
+    cost = Math.ceil(cost * repairCostMultiplier);
     if (talentManager) {
       const discount = talentManager.getRepairDiscount();
       cost = Math.max(1, Math.floor(cost * (1 - discount)));
@@ -338,9 +348,38 @@ export function handleTowerDamageDealt(
   tower: Tower2D,
   enemy: Enemy2D,
   damageDealt: number,
-  gameState: GameState
+  gameState: GameState,
+  nearbyEnemies?: Enemy2D[]
 ) {
   if (!tower) return;
+
+  // Voltaic Overcharge: um tiro que acerta um alvo já lento/congelado descarrega
+  // uma faísca elétrica nos vizinhos (8 dano AoE, raio 40px). É dano em área:
+  // ignora armadura (armorPenetration=1) e não é esquivável (isAvoidable=false),
+  // igual a todo outro dano em área do projeto. `nearbyEnemies` é opcional porque
+  // nem toda chamada (ex.: testes antigos) tem a lista de inimigos à mão — sem
+  // ela a faísca simplesmente não dispara, nunca quebra a chamada.
+  //
+  // CUIDADO: a faísca aplica dano via `takeDamage` direto, SEM voltar a chamar
+  // `handleTowerDamageDealt` para os alvos atingidos. Se voltasse, um vizinho
+  // também lento/congelado disparava outra faísca, que podia disparar outra, e
+  // a "explosão elétrica" varreria o mapa inteiro num único frame.
+  if (
+    tower.data.equippedModule === 'VOLTAIC_OVERCHARGE' &&
+    nearbyEnemies &&
+    (enemy.data.slowTimer > 0 || enemy.data.freezeTimer > 0)
+  ) {
+    const SPARK_DAMAGE = 8;
+    const SPARK_RADIUS_SQ = 40 * 40; // comparação ao quadrado: caminho quente, sem Math.hypot
+    for (const other of nearbyEnemies) {
+      if (other === enemy || other.data.isDead) continue;
+      const dx = other.data.position.x - enemy.data.position.x;
+      const dy = other.data.position.y - enemy.data.position.y;
+      if (dx * dx + dy * dy <= SPARK_RADIUS_SQ) {
+        other.takeDamage(SPARK_DAMAGE, 1, false);
+      }
+    }
+  }
 
   // Track Vampiric Drain
   if (tower.data.equippedModule === 'VAMPIRIC_DRAIN' && damageDealt > 0) {

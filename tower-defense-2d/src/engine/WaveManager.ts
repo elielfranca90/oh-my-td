@@ -244,6 +244,10 @@ export class WaveManager {
     'BLACK_MEGA_BOSS',
   ];
 
+  /** A campanha tem exatamente 10 ondas fixas (`GameState.maxWaves`); só existe
+   * aqui como constante nomeada para não repetir o literal `10` em cada emissão. */
+  private static readonly CAMPAIGN_MAX_WAVES = 10;
+
   public currentWaveIndex = -1;
   public isWaveActive = false;
 
@@ -278,6 +282,16 @@ export class WaveManager {
   }
 
   /**
+   * `max` do payload de `wave:change`. Campanha tem teto real (10); endless não
+   * tem linha de chegada, então `Infinity` é o valor honesto — o consumidor
+   * (`UIManager.onWaveChanged`) já ramifica por `isEndless` e ignora `max` nesse
+   * caso, mas emitir o literal `10` fixo fazia a onda 27 do infinito ler "27/10".
+   */
+  private getWaveChangeMax(): number {
+    return this.isEndlessMode ? Infinity : WaveManager.CAMPAIGN_MAX_WAVES;
+  }
+
+  /**
    * Garante que a config da onda `index` exista, gerando as ondas endless que
    * faltarem. Deixar a geração aqui (em vez de dentro do startNextWave) permite
    * ao preview mostrar exatamente a onda que vai ser jogada, sem sortear duas
@@ -306,7 +320,7 @@ export class WaveManager {
     this.isWaveActive = true;
     this.timer = 0;
     EventBus.getInstance().emit('wave:start', { currentWave: this.currentWaveIndex + 1, isEndless: this.isEndlessMode });
-    EventBus.getInstance().emit('wave:change', { current: this.currentWaveIndex + 1, max: 10, isEndless: this.isEndlessMode });
+    EventBus.getInstance().emit('wave:change', { current: this.currentWaveIndex + 1, max: this.getWaveChangeMax(), isEndless: this.isEndlessMode });
     return true;
   }
 
@@ -458,7 +472,7 @@ export class WaveManager {
       this.isWaveActive = false;
       this.autoCountdownMs = 5000;
       EventBus.getInstance().emit('wave:end', { currentWave: this.currentWaveIndex + 1, isEndless: this.isEndlessMode });
-      EventBus.getInstance().emit('wave:change', { current: this.currentWaveIndex + 1, max: 10, isEndless: this.isEndlessMode });
+      EventBus.getInstance().emit('wave:change', { current: this.currentWaveIndex + 1, max: this.getWaveChangeMax(), isEndless: this.isEndlessMode });
       return true;
     }
     return false;

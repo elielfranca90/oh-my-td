@@ -1,8 +1,10 @@
 import { inject } from '@vercel/analytics';
 import { Game2D } from './engine/Game';
 import { WelcomeScreen } from './ui/WelcomeScreen';
+import { initMobileDetection } from './helpers/device';
 
-// Initialize Vercel Web Analytics
+// Initialize mobile detection & Vercel Web Analytics
+initMobileDetection();
 inject();
 
 new WelcomeScreen((mode) => {

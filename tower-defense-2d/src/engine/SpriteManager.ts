@@ -1,4 +1,4 @@
-import type { MapId, TileType } from './MapManager';
+import type { MapId, TileType } from '../types';
 
 export class SpriteManager {
   private static instance: SpriteManager;

@@ -1,14 +1,7 @@
-import type { BiomeHazardState, MapId, Vector2D } from '../types';
+import { TileType, type BiomeHazardState, type MapId, type Vector2D } from '../types';
 import { Rng } from './Rng';
 import { SpriteManager } from './SpriteManager';
-export const TileType = {
-  BUILDABLE: 0,
-  PATH: 1,
-  OBSTACLE_MOUNTAIN: 2,
-  OBSTACLE_FOREST: 3,
-} as const;
-export type TileType = typeof TileType[keyof typeof TileType];
-export type { MapId };
+export { TileType, type MapId };
 
 export class MapManager2D {
   public readonly cols = 14;

@@ -129,6 +129,17 @@ export class AchievementManager {
 
   public activeToasts: ToastNotification[] = [];
 
+  /**
+   * Fonte de verdade para o total de conquistas existentes. Qualquer UI que
+   * precise exibir "X/Y Badges" deve ler daqui em vez de fixar Y como
+   * literal — do contrário o número dessincroniza sempre que uma conquista
+   * for adicionada ou removida deste mapa (já aconteceu: literal "7" ficou
+   * parado enquanto o jogo cresceu para 9 conquistas).
+   */
+  public get totalCount(): number {
+    return Object.keys(this.achievements).length;
+  }
+
 
   private loadAchievements() {
     try {
