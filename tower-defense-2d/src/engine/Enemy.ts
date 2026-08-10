@@ -205,7 +205,15 @@ export class Enemy2D {
     return false;
   }
 
-  public render(ctx: CanvasRenderingContext2D) {
+  /**
+   * @param uiScale Ver Game2D.uiScale — o canvas interno é fixo em 840×600 e é
+   *   escalado por CSS; num telefone (~0.43x) a barra de vida de 4px encolhe
+   *   para ~1.7px reais, ilegível. `uiScale` (>=1, calculado a partir da
+   *   largura CSS real do canvas) amplia altura/deslocamento da barra e a
+   *   fonte do "+" de regeneração na mesma proporção, mantendo o tamanho
+   *   aparente em tela constante independente do aparelho.
+   */
+  public render(ctx: CanvasRenderingContext2D, uiScale = 1) {
     if (this.data.isDead) return;
 
     // Regeneração junto à mata (Moss Giant): anel verde pulsante
@@ -218,7 +226,7 @@ export class Enemy2D {
       ctx.stroke();
 
       ctx.fillStyle = '#aed581';
-      ctx.font = 'bold 11px Arial';
+      ctx.font = `bold ${Math.round(11 * uiScale)}px Arial`;
       ctx.textAlign = 'center';
       ctx.fillText('+', this.data.position.x + this.data.radius + 6, this.data.position.y - this.data.radius);
     }
@@ -286,11 +294,13 @@ export class Enemy2D {
       }
     }
 
-    // HP Bar & Shield Bar
+    // HP Bar & Shield Bar — altura e deslocamento escalados por uiScale (E1):
+    // 4px de altura no canvas virava ~1.7px reais num telefone de 360px.
     const barWidth = this.data.radius * 2.2;
-    const barHeight = this.data.type === 'BOSS' ? 6 : 4;
+    const barHeight = (this.data.type === 'BOSS' ? 6 : 4) * uiScale;
+    const barGap = (this.data.type === 'BOSS' ? 10 : 8) * uiScale;
     const barX = this.data.position.x - barWidth / 2;
-    const barY = this.data.position.y - this.data.radius - (this.data.type === 'BOSS' ? 10 : 8);
+    const barY = this.data.position.y - this.data.radius - barGap;
 
     ctx.fillStyle = '#222222';
     ctx.fillRect(barX, barY, barWidth, barHeight);
@@ -303,7 +313,7 @@ export class Enemy2D {
     if (this.data.maxShieldHp > 0 && this.data.shieldHp > 0) {
       const shieldRatio = Math.max(0, this.data.shieldHp / this.data.maxShieldHp);
       ctx.fillStyle = '#29b6f6';
-      ctx.fillRect(barX, barY - 3, barWidth * shieldRatio, 2);
+      ctx.fillRect(barX, barY - 3 * uiScale, barWidth * shieldRatio, 2 * uiScale);
     }
   }
 }

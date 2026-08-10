@@ -474,13 +474,18 @@ Há `orientationchange` apenas para recalcular tamanho (`Game.ts:337`). Um canva
 17. Desbloqueios e prestígio na meta-progressão **(C4)**
 18. "Última Chance" na derrota **(C6)**
 
-### P3 — Polimento de UX
-19. Escala de tipografia no canvas **(E1)** — *tratar como P1 se mobile for público principal*
-20. Alvos de toque em 44px+ e barra de construção inferior **(E2, E3)**
-21. Háptico **(E4)** e dica do gesto de construir **(E5)**
-22. Atalhos de teclado, incluindo `Esc` **(D2)**
-23. Confirmação de venda **(D4)** e alternância de alcances **(D5)**
-24. Otimização do laço de mira **(E8)**
+### P3 — Polimento de UX ✅ Concluído — branch `fix/p3-ux-polish-2026-08` (ainda a ser commitado nesta branch)
+19. ✅ Escala de tipografia no canvas **(E1)** — *tratar como P1 se mobile for público principal*. `Game2D.uiScale` aplicado ao tooltip de tile, toast de conquista, texto de dano/"DODGED!" e barra de vida/escudo do inimigo.
+20. ✅ Alvos de toque em 44px+ e barra de construção inferior **(E2, E3)**. Piso geral subiu para 44px (52px no botão de onda); corrigido também um segundo seletor (`.speed-btn, .auto-toggle-btn`) que baixava esse piso para 28px em telas ≤480px — mesma classe de regressão do E2, seletor diferente. Em retrato/mobile, `#action-toolbar` agora fica fixo acima de `.time-controls`.
+21. ✅ Háptico **(E4)** e dica do gesto de construir **(E5)**. Novo `src/helpers/haptics.ts` (construir, upgrade, dano na base, spawn de chefe, ação sem ouro), com toggle nas Configurações e respeito a `prefers-reduced-motion`. Balão DOM "Toque de novo para construir · Xg" com botão ✖.
+22. ✅ Atalhos de teclado, incluindo `Esc` **(D2)**. `1`-`5` seleciona torre, `Q`/`W` arma Meteoro/conjura Congelamento, `Enter` inicia onda, `Esc` desarma magia → cancela seleção de tile mobile → desseleciona torre (nessa ordem — corrige o travamento real de não poder desarmar o Meteoro pelo teclado), `U`/`S` upgrade/vende, `R` alterna todos os alcances, `Shift`+`1`/`2`/`3` troca velocidade.
+23. ✅ Confirmação de venda **(D4)** e alternância de alcances **(D5)**. Vender exige duas etapas (arma/confirma, janela de 3s) pelo botão e pelo atalho `S`; botão 🎯 (e atalho `R`) alterna o alcance de todas as torres simultaneamente.
+24. ✅ Otimização do laço de mira **(E8)** — *parcial*. Comparação por distância ao quadrado (sem `Math.hypot`) e buffer de array reutilizado por instância eliminam 100% das alocações e a raiz quadrada do laço torre×inimigo mais quente do jogo. A grade espacial (spatial hash) mencionada no diagnóstico original **não** foi implementada nesta rodada — fica para depois se o profiling em dispositivo real ainda apontar este laço como quente.
+
+**Fora do escopo desta rodada** (sub-itens de D5/C5/E5 registrados como pendência, não como feito):
+- Telegrafia da onda no portal de spawn e realce do trecho de caminho no hover (sub-itens mencionados em D5/C5).
+- Persistência de preferências de velocidade/modo automático entre runs.
+- Drag-and-drop de carta para tile em tablets (alternativa ao gesto de duplo toque mencionada em E5).
 
 ---
 

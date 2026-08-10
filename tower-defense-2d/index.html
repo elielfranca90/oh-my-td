@@ -698,6 +698,59 @@
       .btn.success { background: #4caf50; color: #ffffff; border-color: #81c784; }
       .btn.danger { background: #f44336; color: #ffffff; border-color: #e57373; }
 
+      /* Confirmação de venda (D4): 1º clique/tecla arma este estado por
+         alguns segundos; um 2º clique/tecla dentro da janela vende de fato. */
+      .btn.danger.confirm-pending {
+        background: #ff6d00;
+        border-color: #ffab40;
+        color: #000000;
+        animation: sell-confirm-pulse 0.9s infinite ease-in-out;
+      }
+
+      @keyframes sell-confirm-pulse {
+        0%, 100% { box-shadow: 0 0 0 rgba(255, 109, 0, 0.6); }
+        50% { box-shadow: 0 0 12px rgba(255, 109, 0, 0.9); }
+      }
+
+      /* Toggle switch (Modo Infinito, Háptico) — os inputs já usavam estas
+         classes, mas a folha de estilo nunca definiu a aparência: o
+         checkbox renderizava nu. */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 22px;
+        flex-shrink: 0;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .switch .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: rgba(255, 255, 255, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        transition: background-color 160ms ease;
+      }
+      .switch .slider::before {
+        position: absolute;
+        content: '';
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: #ffffff;
+        transition: transform 160ms ease;
+      }
+      .switch .slider.round { border-radius: 999px; }
+      .switch .slider.round::before { border-radius: 50%; }
+      .switch input:checked + .slider { background-color: #29b6f6; border-color: #81d4fa; }
+      .switch input:checked + .slider::before { transform: translateX(18px); }
+      .switch input:focus-visible + .slider { outline: 2px solid #40c4ff; outline-offset: 2px; }
+
       .close-icon-btn {
         background: transparent;
         border: none;
@@ -1030,26 +1083,31 @@
     gap: 6px;
   }
 
+  /*
+   * Piso geral de alvo de toque em 44px (Apple HIG) — subiu de 38px (E2 do
+   * GAME_DESIGN_REVIEW.md). tests/mobile_ui_ux.test.ts trava a regressão
+   * garantindo que este valor nunca volte a cair abaixo de 38px.
+   */
   .toolbar-card, .btn, .toolbar-chip, .speed-btn {
-    min-height: 38px;
+    min-height: 44px;
     padding: 4px 8px;
   }
 
   /*
    * "Iniciar Onda" é o botão mais pressionado da sessão inteira (uma vez
    * por onda, do início ao fim da run) — não pode ser o menor alvo de
-   * toque da tela. Piso de 48px em TODOS os breakpoints (Apple HIG pede
-   * 44px, Material 48dp; usamos o maior dos dois porque este é também o
-   * elemento que deve se destacar visualmente na barra de tempo).
+   * toque da tela. Piso de 52px em TODOS os breakpoints (acima do mínimo
+   * de 44px/48dp de Apple HIG/Material, porque este é também o elemento
+   * que deve se destacar visualmente na barra de tempo).
    * Regressão histórica: esta regra chegou a cair para 32px/28px numa
    * revisão de CSS; ver docs/GAME_DESIGN_REVIEW.md (E2) e
-   * tests/mobile_ui_ux.test.ts para o guard-rail automatizado.
+   * tests/mobile_ui_ux.test.ts para o guard-rail automatizado (exige >=48px).
    */
   .start-wave-main-btn {
     padding: 6px 14px;
     font-size: 0.82rem;
     font-weight: 800;
-    min-height: 48px;
+    min-height: 52px;
   }
 
   .inspector-toolbar-row {
@@ -1144,13 +1202,20 @@
     gap: 2px;
     padding: 2px 4px;
   }
+  /*
+   * Este seletor mais específico chegou a sobrepor o piso de 44px do grupo
+   * `.toolbar-card, .btn, .toolbar-chip, .speed-btn` (mesma especificidade,
+   * cascata decide por ordem — este bloco vem depois) caindo para 28px, a
+   * mesma classe de regressão do E2 só que num seletor diferente. Piso de
+   * 44px mantido aqui também; só o padding encolhe para caber em ~360px.
+   */
   .speed-btn, .auto-toggle-btn {
     padding: 3px 5px;
     font-size: 0.75rem;
-    min-height: 28px;
+    min-height: 44px;
   }
   /*
-   * Mesmo piso de 48px do breakpoint anterior — em telas de ~360px de
+   * Mesmo piso de 52px do breakpoint anterior — em telas de ~360px de
    * largura o botão de onda NÃO pode encolher para caber ao lado dos
    * controles de velocidade (.time-controls usa flex-wrap: nowrap). Se a
    * largura apertar, o ajuste é no padding lateral deste botão (abaixo,
@@ -1160,7 +1225,7 @@
     padding: 6px 8px;
     font-size: 0.76rem;
     font-weight: 800;
-    min-height: 48px;
+    min-height: 52px;
   }
   .active-mode-badge {
     padding: 3px 6px;
@@ -1189,6 +1254,83 @@
     justify-content: flex-start;
   }
 }
+
+/*
+ * E3 (GAME_DESIGN_REVIEW.md): em retrato/mobile a barra de seleção de torres
+ * (#action-toolbar) vivia no topo — a zona mais difícil de alcançar com uma
+ * mão — enquanto a base, a zona natural do polegar, carregava só velocidade
+ * e onda. Construir é a ação mais repetida do jogo; aqui ela desce para uma
+ * barra fixa acima dos controles de tempo, e a HUD de recursos (ouro/HP/onda,
+ * só leitura) permanece no topo sem nenhuma mudança.
+ *
+ * `position: fixed` tira o toolbar do fluxo de `#layout-part-2`, que passa a
+ * reservar altura só para `.hud-stats-bar` — o `#game-area` (flex: 1) ganha
+ * de volta o espaço que o toolbar ocupava no topo.
+ *
+ * O deslocamento vertical (78px) é uma folga fixa acima de `.time-controls`
+ * calculada a partir da altura real da barra de velocidade/onda nestes
+ * breakpoints (botão de onda 52px + padding do contêiner ~60px + os 8px de
+ * `.time-controls{bottom:}` + uma margem de segurança de ~10px) — não
+ * depende de nenhum valor medido em JS, então é seguro mesmo se
+ * `.time-controls` ainda não tiver sido pintado no primeiro frame.
+ */
+@media (max-width: 768px) and (orientation: portrait) {
+  #action-toolbar {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    width: min(calc(100% - 20px), var(--canvas-width, 840px));
+    z-index: 30;
+    max-height: 42vh;
+    overflow-y: auto;
+    margin-top: 0;
+  }
+}
+
+/*
+ * E5 (GAME_DESIGN_REVIEW.md): no mobile o 1º toque só seleciona o tile e
+ * mostra o ghost de construção — nada na tela dizia isso. Este hint é DOM
+ * (não canvas) pelo mesmo motivo do tip de tile em E1: texto desenhado no
+ * espaço interno 840×600 do canvas fica ilegível em telas pequenas, e aqui
+ * ainda precisamos de um botão ✖ clicável de verdade. Posição/visibilidade
+ * são controladas via JS em Game.updateBuildHint(); aqui só a aparência.
+ */
+.build-hint {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 10px));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(12, 16, 20, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  padding: 6px 8px 6px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffe082;
+  white-space: nowrap;
+  z-index: 15;
+  pointer-events: auto;
+}
+
+.build-hint.hidden { display: none !important; }
+
+.build-hint.build-hint-invalid { color: #ff8a80; border-color: rgba(255, 82, 82, 0.5); }
+
+.build-hint-cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  color: #ffffff;
+  min-width: 36px;
+  min-height: 36px;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.build-hint-cancel-btn:active { transform: scale(0.92); }
 
 /* Welcome Screen Synthwave / Retro Styles */
 #welcome-screen-overlay {

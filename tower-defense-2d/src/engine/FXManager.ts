@@ -48,9 +48,13 @@ export class FXManager {
     };
   }
 
-  public render(ctx: CanvasRenderingContext2D) {
+  /**
+   * @param uiScale Ver Game2D.uiScale — sem isto, o texto de dano/"DODGED!"
+   *   (~13px no canvas) encolhe a ~5px reais num telefone (E1).
+   */
+  public render(ctx: CanvasRenderingContext2D, uiScale = 1) {
     ctx.save();
-    ctx.font = 'bold 13px Arial';
+    ctx.font = `bold ${Math.round(13 * uiScale)}px Arial`;
     ctx.textAlign = 'center';
 
     for (const ft of this.floatingTexts) {

@@ -7,6 +7,7 @@ import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
 import { GameState } from './GameState';
+import { HAPTIC_PATTERNS, vibrate } from '../helpers/haptics';
 import { MapManager2D } from './MapManager';
 import { Rng } from './Rng';
 import { WaveManager } from './WaveManager';
@@ -146,15 +147,17 @@ export class EnemyManager2D {
     }
   }
 
-  public render(ctx: CanvasRenderingContext2D) {
+  /** @param uiScale Ver Game2D.uiScale — amplia fonte/espessura da barra de vida em telas pequenas (E1). */
+  public render(ctx: CanvasRenderingContext2D, uiScale = 1) {
     for (const enemy of this.enemies) {
-      enemy.render(ctx);
+      enemy.render(ctx, uiScale);
     }
   }
 
   private spawnEnemy(type: EnemyType, hpMultiplier = 1.0) {
     if (type === 'BOSS' || type === 'BLACK_MEGA_BOSS') {
       this.audioManager.playBossAlert();
+      vibrate(HAPTIC_PATTERNS.BOSS_INCOMING);
     }
 
     // Determine path index (0 = Left, 1 = Right for Map 2 Dual Spawn)
