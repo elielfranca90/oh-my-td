@@ -2,6 +2,7 @@ import type { TowerSpecialization, TowerType } from '../types';
 import { isValidSpecialization } from './Specializations';
 import { AchievementManager } from './AchievementManager';
 import { EventBus } from './EventBus';
+import { HAPTIC_PATTERNS, vibrate } from '../helpers/haptics';
 import { AnalyticsManager } from './AnalyticsManager';
 import { AudioManager } from './AudioManager';
 import { Enemy2D } from './Enemy';
@@ -30,8 +31,20 @@ export class TowerManager2D {
   private analyticsManager?: AnalyticsManager;
   private replayEngine?: ReplayEngine;
   private rng: Rng;
+  // Buffer reutilizado pelo laço de aquisição de alvo em update(): evita alocar
+  // um array novo por torre por quadro (30 torres x 40 inimigos x 60fps ~ 72k
+  // arrays/s antes). Escopo de instância, não de tower, porque cada torre usa
+  // o buffer e descarta o conteúdo antes da próxima (nunca guardado além do
+  // corpo do laço), então uma única lista pode ser limpa e repreenchida.
+  private inRangeEnemiesBuffer: Enemy2D[] = [];
   public sproutTiles: { x: number; y: number }[] = [];
   public darkAltarTiles: { x: number; y: number }[] = [];
+  /**
+   * Leitura de campo (D5): quando ligado, desenha o alcance de TODAS as
+   * torres, não só da selecionada/sob o mouse. Sem isto, planejar cobertura
+   * exige selecionar torre por torre ou passar o mouse em cada uma.
+   */
+  public showAllRanges = false;
   constructor(
     mapManager: MapManager2D,
     projectileManager: ProjectileManager2D,
@@ -140,6 +153,7 @@ export class TowerManager2D {
     this.selectedTower = tower;
     this.replayEngine?.recordAction('BUILD_TOWER', { gridX, gridY, towerType: this.selectedBuildType });
     EventBus.getInstance().emit('tower:select', this.selectedTower);
+    vibrate(HAPTIC_PATTERNS.TOWER_BUILT);
     return true;
   }
 
@@ -166,6 +180,7 @@ export class TowerManager2D {
       if (upgraded) {
         this.replayEngine?.recordAction('UPGRADE_TOWER', { gridX: this.selectedTower.data.gridX, gridY: this.selectedTower.data.gridY, specialization });
         EventBus.getInstance().emit('tower:select', this.selectedTower);
+        vibrate(HAPTIC_PATTERNS.TOWER_UPGRADED);
       }
       return upgraded;
     }
@@ -223,6 +238,17 @@ export class TowerManager2D {
     EventBus.getInstance().emit('tower:buildType', this.selectedBuildType);
   }
 
+  /**
+   * Alterna a exibição do alcance de todas as torres simultaneamente (D5).
+   * Emite um evento para a HUD sincronizar o botão mesmo quando o atalho de
+   * teclado (não o clique) foi a origem da mudança.
+   */
+  public toggleShowAllRanges(): boolean {
+    this.showAllRanges = !this.showAllRanges;
+    EventBus.getInstance().emit('ranges:toggle', this.showAllRanges);
+    return this.showAllRanges;
+  }
+
   public update(enemies: Enemy2D[], fxManager?: FXManager) {
     for (const tower of this.towers) {
       // Rastreamento contínuo de posição para o feixe do Prisma Solar a cada frame
@@ -256,13 +282,25 @@ export class TowerManager2D {
         effectiveRange = Math.round(effectiveRange * 0.8);
       }
 
-      // Filter in-range enemies
-      const inRangeEnemies = enemies.filter(e => {
-        if (e.data.isDead) return false;
+      // Filter in-range enemies. Comparamos o quadrado da distância em vez de
+      // Math.hypot: para "distância <= alcance" com ambos os lados >= 0, elevar
+      // ao quadrado preserva a comparação e elimina a raiz do laço mais quente
+      // do jogo (torres x inimigos, por quadro, multiplicado pelos sub-passos
+      // em 2x/4x). Escrevemos no buffer de instância em vez de `.filter(...)`
+      // para não alocar um array novo por torre por quadro; a ordem de
+      // inserção é a mesma de `enemies`, preservando os empates de FIRST/LAST/
+      // STRONGEST/WEAKEST e a ordem do `.find()` de alvo secundário abaixo.
+      const effectiveRangeSq = effectiveRange * effectiveRange;
+      this.inRangeEnemiesBuffer.length = 0;
+      for (const e of enemies) {
+        if (e.data.isDead) continue;
         const dx = e.data.position.x - tower.data.position.x;
         const dy = e.data.position.y - tower.data.position.y;
-        return Math.hypot(dx, dy) <= effectiveRange;
-      });
+        if (dx * dx + dy * dy <= effectiveRangeSq) {
+          this.inRangeEnemiesBuffer.push(e);
+        }
+      }
+      const inRangeEnemies = this.inRangeEnemiesBuffer;
 
       if (inRangeEnemies.length === 0) {
         tower.data.laserTargetId = undefined;
@@ -576,7 +614,7 @@ export class TowerManager2D {
         isHovered = Math.hypot(dx, dy) < this.mapManager.tileSize / 2;
       }
       const isSelected = this.selectedTower === tower;
-      tower.render(ctx, isSelected, isHovered);
+      tower.render(ctx, isSelected, isHovered, this.showAllRanges);
     }
   }
 }

@@ -4,6 +4,7 @@ import { AudioManager } from '../engine/AudioManager';
 import { EventBus } from '../engine/EventBus';
 import type { DatabaseManager } from '../engine/DatabaseManager';
 import { GameState } from '../engine/GameState';
+import { isHapticsEnabled, setHapticsEnabled } from '../helpers/haptics';
 import type { MapId } from '../engine/MapManager';
 import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
 import { getAllRogueliteModules, getRogueliteModule, getSpecializationOption, getSpecializations } from '../engine/Specializations';
@@ -75,6 +76,12 @@ export class UIManager {
   private waveIndEl: HTMLElement | null = null;
   private waveIndLabelEl: HTMLElement | null = null;
   private lastWaveIndHidden: boolean | null = null;
+
+  // --- Confirmação de venda (D4) ---
+  /** Id da torre "armada" para venda; um 2º clique/tecla dentro da janela confirma. */
+  private sellConfirmTowerId: string | null = null;
+  private sellConfirmTimer: ReturnType<typeof setTimeout> | null = null;
+  private static readonly SELL_CONFIRM_WINDOW_MS = 3000;
 
 
   constructor(
@@ -172,6 +179,9 @@ export class UIManager {
         </div>
         <button id="hud-endless-btn" class="hud-btn endless-btn" title="Alternar Modo Infinito">
           ♾️
+        </button>
+        <button id="hud-ranges-btn" class="hud-btn ranges-btn" title="Mostrar alcance de todas as torres (R)" aria-label="Alternar alcance de todas as torres">
+          🎯
         </button>
         <button id="hud-pause-btn" class="hud-btn pause-btn" title="Pausar / Retomar Jogo">
           ⏸️
@@ -313,6 +323,18 @@ export class UIManager {
                   <span>Modo Infinito:</span>
                   <label class="switch">
                     <input type="checkbox" id="settings-endless-toggle" />
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Haptic Feedback (E4) -->
+              <div class="settings-section">
+                <h3>📳 Retorno Tátil</h3>
+                <div class="setting-item">
+                  <span>Vibração (construir, upgrade, dano, chefe):</span>
+                  <label class="switch">
+                    <input type="checkbox" id="settings-haptics-toggle" />
                     <span class="slider round"></span>
                   </label>
                 </div>
@@ -602,6 +624,7 @@ export class UIManager {
       bus.on('status:change', () => this.updateEndGameModal()),
       bus.on('pause:change', (isPaused: boolean) => this.onPauseChanged(isPaused)),
       bus.on('challenge:change', (mode: ChallengeMode) => this.onChallengeChanged(mode)),
+      bus.on('ranges:toggle', (isShowingAll: boolean) => this.onRangesToggled(isShowingAll)),
     ];
 
     // Initial populate
@@ -613,6 +636,7 @@ export class UIManager {
 
   public destroy() {
     this.cleanupEvents();
+    this.clearSellConfirm();
   }
 
   private cleanupEvents() {
@@ -851,6 +875,24 @@ export class UIManager {
       });
     }
 
+    // Interruptor de háptico (E4): a checagem de prefers-reduced-motion já
+    // acontece dentro de vibrate() em todo chamador; este switch é só a
+    // preferência manual do jogador, persistida em localStorage.
+    const hapticsToggle = document.getElementById('settings-haptics-toggle') as HTMLInputElement;
+    if (hapticsToggle) {
+      hapticsToggle.checked = isHapticsEnabled();
+      this.addDomListener(hapticsToggle, 'change', (e) => {
+        setHapticsEnabled((e.target as HTMLInputElement).checked);
+      });
+    }
+
+    // Leitura de campo (D5): alterna o alcance de todas as torres. O evento
+    // 'ranges:toggle' mantém este botão sincronizado quando o atalho de
+    // teclado (R), não o clique, foi a origem da mudança.
+    this.addDomListener('hud-ranges-btn', 'click', () => {
+      this.towerManager.toggleShowAllRanges();
+    });
+
     this.addDomListener('settings-bgm-mute-btn', 'click', () => {
       this.audioManager.toggleBgmMute();
       this.syncSettingsControls();
@@ -952,7 +994,7 @@ export class UIManager {
     });
 
     this.addDomListener('btn-inspect-sell', 'click', () => {
-      this.towerManager.sellSelectedTower();
+      this.requestSellSelectedTower();
     });
 
     this.addDomListener('restart-btn', 'click', () => {
@@ -1047,6 +1089,7 @@ export class UIManager {
       this.renderInspector(tower);
       this.switchContextState('INSPECTOR');
     } else {
+      this.clearSellConfirm();
       this.switchContextState('STORE');
     }
   }
@@ -1064,6 +1107,17 @@ export class UIManager {
     const freezeChip = document.getElementById('chip-freeze');
     if (meteorChip) meteorChip.classList.toggle('active', spell === 'METEOR');
     if (freezeChip) freezeChip.classList.toggle('active', spell === 'FREEZE');
+  }
+
+  /** D5: sincroniza o botão 🎯 com o estado real (o atalho "R" também dispara). */
+  private onRangesToggled(isShowingAll: boolean) {
+    const rangesBtn = document.getElementById('hud-ranges-btn');
+    if (rangesBtn) {
+      rangesBtn.classList.toggle('active', isShowingAll);
+      rangesBtn.title = isShowingAll
+        ? 'Ocultar alcance de todas as torres (R)'
+        : 'Mostrar alcance de todas as torres (R)';
+    }
   }
 
   private onPauseChanged(isPaused: boolean) {
@@ -1112,11 +1166,65 @@ export class UIManager {
     this.towerManager.setSelectedBuildType(type);
   }
 
-  private setGameSpeed(speed: number) {
+  /** Público: também chamado pelo atalho de teclado Shift+1/2/3 (D2), fora do clique nos botões. */
+  public setGameSpeed(speed: number) {
     this.game.gameSpeedMultiplier = speed;
     document.getElementById('btn-speed-1x')?.classList.toggle('active', speed === 1);
     document.getElementById('btn-speed-2x')?.classList.toggle('active', speed === 2);
     document.getElementById('btn-speed-4x')?.classList.toggle('active', speed === 4);
+  }
+
+  /**
+   * Confirmação de venda (D4): o botão/atalho não vende de primeira — arma um
+   * estado de "confirmar?" por alguns segundos. Um 2º clique/tecla dentro da
+   * janela vende de fato; passado o tempo, ou ao selecionar outra torre, a
+   * armação expira e volta ao rótulo normal. Evita apagar sem querer uma
+   * torre nível 3 com upgrades caros, sem precisar de um modal separado.
+   */
+  public requestSellSelectedTower() {
+    const tower = this.towerManager.selectedTower;
+    if (!tower) return;
+
+    if (this.sellConfirmTowerId === tower.data.id) {
+      // 2ª confirmação dentro da janela: vende de fato.
+      if (this.sellConfirmTimer !== null) {
+        clearTimeout(this.sellConfirmTimer);
+        this.sellConfirmTimer = null;
+      }
+      this.sellConfirmTowerId = null;
+      this.towerManager.sellSelectedTower();
+      return;
+    }
+
+    this.sellConfirmTowerId = tower.data.id;
+    this.updateSellButtonLabel(tower);
+    if (this.sellConfirmTimer !== null) clearTimeout(this.sellConfirmTimer);
+    this.sellConfirmTimer = setTimeout(() => {
+      this.sellConfirmTimer = null;
+      this.sellConfirmTowerId = null;
+      // A torre pode ter sido vendida/desselecionada durante a espera.
+      if (this.towerManager.selectedTower) {
+        this.updateSellButtonLabel(this.towerManager.selectedTower);
+      }
+    }, UIManager.SELL_CONFIRM_WINDOW_MS);
+  }
+
+  /** Descarta uma armação de venda pendente (ex.: trocou a torre selecionada). */
+  private clearSellConfirm() {
+    if (this.sellConfirmTimer !== null) {
+      clearTimeout(this.sellConfirmTimer);
+      this.sellConfirmTimer = null;
+    }
+    this.sellConfirmTowerId = null;
+  }
+
+  private updateSellButtonLabel(tower: Tower2D) {
+    const sellBtn = document.getElementById('btn-inspect-sell') as HTMLButtonElement | null;
+    if (!sellBtn) return;
+    const isArmed = this.sellConfirmTowerId === tower.data.id;
+    sellBtn.classList.toggle('confirm-pending', isArmed);
+    sellBtn.innerText = isArmed ? `⚠️ Confirmar venda? +${tower.getSellValue()}g` : `💰 ${tower.getSellValue()}g`;
+    sellBtn.title = isArmed ? 'Toque novamente para confirmar a venda' : 'Vender torre';
   }
 
   private updateTowerAffordability() {
@@ -1163,6 +1271,12 @@ export class UIManager {
   }
 
   private renderInspector(tower: Tower2D) {
+    // Trocou de torre (ou reselecionou depois de um upgrade/reparo): uma
+    // armação de venda pendente de OUTRA torre não deve continuar valendo.
+    if (this.sellConfirmTowerId !== null && this.sellConfirmTowerId !== tower.data.id) {
+      this.clearSellConfirm();
+    }
+
     const title = document.getElementById('inspector-title');
     if (title) {
       const spec = tower.data.specialization
@@ -1284,10 +1398,7 @@ export class UIManager {
       }
     }
 
-    const sellBtn = document.getElementById('btn-inspect-sell');
-    if (sellBtn) {
-      sellBtn.innerText = `💰 ${tower.getSellValue()}g`;
-    }
+    this.updateSellButtonLabel(tower);
   }
 
   private syncSettingsControls() {

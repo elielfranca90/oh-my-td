@@ -327,3 +327,61 @@ As Estrelas (★) obtidas em partidas e conquistas podem ser investidas na árvo
 - **Double-Tap to Build:** O 1º toque em um tile exibe a prévia/range da torre e o 2º toque confirma a construção.
 - **Press-and-Hold Tooltips:** Pressionar e segurar por mais de 420ms abre dicas contextuais informando o status, hazard ou tipo de solo de qualquer célula do mapa.
 - **Relatório de Analytics Pós-Jogo:** Apresenta a Torre MVP (maior contagem de abates), total de ouro coletado, inimigos derrotados e recorde pessoal.
+
+### 9.1 Atalhos e Acessibilidade
+
+Os atalhos de teclado abaixo (`Game.ts` → listener global de `keydown`) só disparam com `GameState.status` em `PLAYING` ou `PREPARATION`, e são suprimidos automaticamente enquanto qualquer modal estiver aberto (`.modal-overlay:not(.hidden)`) ou o foco estiver num campo de texto/select — digitar `S` no nome de um perfil não vende uma torre.
+
+| Tecla | Ação |
+| :--- | :--- |
+| `Space` / `P` | Pausa/retoma o jogo (atalho pré-existente; não passa pelas mesmas checagens de status/modal dos demais) |
+| `1`–`5` | Seleciona a torre a construir, na ordem da barra de construção: Basic, Frost, Solar Prism, Cannon, Artillery |
+| `Q` | Arma o Meteoro (a mira segue o mouse/toque no canvas; um clique/toque detona) |
+| `W` | Conjura o Congelamento Global imediatamente, sem etapa de mira |
+| `Enter` | Inicia a próxima onda (`WaveManager.startNextWave()`) |
+| `Esc` | Desarma a magia ativa; se não houver magia armada, cancela a seleção de tile pendente no mobile; se nenhuma das duas se aplicar, desseleciona a torre do Inspector — nessa ordem. Sem este atalho não havia como desarmar o Meteoro pelo teclado. |
+| `U` | Upgrade da torre selecionada |
+| `S` | Vende a torre selecionada, passando pela confirmação em duas etapas (ver §9.3) |
+| `R` | Alterna a exibição do alcance de todas as torres simultaneamente (ver §9.4) |
+| `Shift`+`1`/`2`/`3` | Troca a velocidade do jogo para 1x/2x/4x |
+
+### 9.2 Retorno Tátil (Háptico)
+
+`src/helpers/haptics.ts` centraliza chamadas a `navigator.vibrate()` — em desktop, onde a API não existe, a função é um no-op silencioso, então o resto do código pode chamá-la sem checar `isMobile`. Padrão por evento:
+
+| Evento | Padrão de vibração (ms) |
+| :--- | :--- |
+| Construir torre | `10` |
+| Upgrade de torre | `[10, 40, 10]` |
+| Dano na base | `[60, 30, 60]` |
+| Spawn de chefe (`BOSS` / `BLACK_MEGA_BOSS`) | `[100, 50, 100]` |
+| Ação inválida por ouro insuficiente | `[30, 20, 30]` |
+
+O gatilho de "ouro insuficiente" vive no único ponto de falha de `GameState.spendGold()`, então cobre construção, upgrade, reparo e magias sem precisar de uma chamada em cada chamador.
+
+Duas camadas de opt-out, nenhuma controlada por quem chama `vibrate()`:
+- **`prefers-reduced-motion: reduce`** do sistema operacional desativa toda vibração — tratado como "menos movimento" incluindo háptico, não só animação visual.
+- **Interruptor manual em Configurações → 📳 Retorno Tátil**, persistido em `localStorage` (chave `haptics_enabled`), ligado por padrão.
+
+### 9.3 Confirmação de Venda (duas etapas)
+
+O botão "💰 Vender" do Inspector e o atalho `S` não vendem de primeira: o primeiro acionamento arma um estado de confirmação por **3 segundos** (`UIManager.SELL_CONFIRM_WINDOW_MS`) — o rótulo do botão muda para "⚠️ Confirmar venda? +Xg" e pulsa em laranja. Um segundo acionamento dentro da janela vende de fato. Se a janela expirar, ou outra torre for selecionada nesse intervalo, a armação é descartada e o botão volta ao rótulo normal.
+
+### 9.4 Alcance de Todas as Torres
+
+O botão 🎯 na barra da HUD (e o atalho `R`) alternam `TowerManager2D.showAllRanges`. Com o alcance ligado, **todas** as torres desenham seu círculo de alcance simultaneamente — mesmo estilo azul translúcido do hover, para não ser confundido com o amarelo de uma torre de fato selecionada —, não só a torre selecionada ou sob o mouse. O evento `ranges:toggle` mantém o botão sincronizado quando o atalho de teclado, e não o clique, foi a origem da mudança.
+
+### 9.5 Escala de Tipografia no Canvas (`uiScale`)
+
+O canvas interno é fixo em 840×600px e escalado por CSS até o tamanho da tela; num telefone de ~360px de largura CSS isso é um fator de ~0.43×, então texto desenhado a 11-14px no espaço interno do canvas chegava a ~5-6px reais. `Game2D.uiScale` — recalculado sempre que `syncCanvasWidth()` roda (resize, orientationchange, `ResizeObserver`) — é `clamp(1, 3, 840 / larguraRenderizadaCSS)`: nunca encolhe abaixo de 1× em telas grandes, só amplia em telas pequenas. Aplicado a:
+- Tooltip de tile (press-and-hold)
+- Toast de conquista desbloqueada
+- Texto de dano flutuante e "DODGED!" (`FXManager`)
+- Barra de vida/escudo e o "+" de regeneração do inimigo (`Enemy.render()`)
+
+### 9.6 Alvos de Toque & Barra de Construção Mobile
+
+- Piso geral de alvo de toque: **44px** (`min-height` de `.toolbar-card`, `.btn`, `.toolbar-chip`, `.speed-btn`), seguindo o mínimo do Apple HIG. O botão "Iniciar Onda" — o mais pressionado da sessão, uma vez por onda — tem piso próprio de **52px** em todos os breakpoints.
+- Em retrato/mobile (`max-width: 768px and orientation: portrait`), a barra de seleção de torres/magias (`#action-toolbar`) fica fixa acima de `.time-controls` — a zona do polegar —, e a barra de stats (ouro/HP/onda, só leitura) permanece no topo.
+- Dica de gesto: ao selecionar um tile vazio para construir no mobile, um balão DOM "Toque de novo para construir · Xg" (com botão ✖ para cancelar) aparece sobre o tile; o texto muda para "Ouro insuficiente · Xg" ou "Terreno não construível" quando aplicável. É DOM, não canvas, pelo mesmo motivo do §9.5 — e porque precisa de um botão ✖ clicável de verdade.
+- `tests/mobile_ui_ux.test.ts` trava a regressão desses pisos (guard-rail em `>= 38px`/`>= 48px`, abaixo dos valores atuais de propósito, para pegar quedas futuras sem exigir o número exato).

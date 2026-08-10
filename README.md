@@ -90,6 +90,8 @@ npm run build
 * **Motor Físico com Timestep Fixo & Sub-stepping:** Simulação 100% determinística sem travamento ou perda de tiros em velocidades 2x e 4x.
 * **Estabilidade Vite HMR & Grafo Limpo:** Grafo de módulos 100% livre de dependências circulares (verificado via `madge`), garantindo recargas ultrarrápidas no servidor de desenvolvimento sem erros de avaliação de imports.
 * **Controles Independentes de Áudio:** Sliders individuais para volume da Música (`🎵 BGM`) e dos Efeitos Sonoros (`🔊 SFX`) com salvamento automático.
+* **Atalhos de Teclado & Retorno Tátil:** Seleção de torre (`1`-`5`), magias (`Q`/`W`), início de onda (`Enter`) e upgrade/venda/alcance (`U`/`S`/`R`) no desktop; vibração em construir, upgrade, dano na base e chefe no mobile, com interruptor nas Configurações.
+* **Alvos de Toque em 44px+ & Barra no Polegar:** Piso de toque de 44px (52px no botão de onda) e barra de construção fixa acima dos controles de tempo em retrato/mobile.
 * **Bateria de Testes Vitest:** 220 testes unitários e de integração divididos em 32 suítes cobrindo motores matemáticos, wave scaling, física de sub-stepping, banco de dados, draft roguelite e o Mapa 4 (Grave Pass).
 ---
 

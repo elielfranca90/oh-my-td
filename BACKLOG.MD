@@ -25,6 +25,17 @@
 - [x] **Isolamento de Brotos Selvagens (*Overgrowth Sprout*) por Bioma**: Restrição da geração de tiles *Sprout* exclusivamente ao mapa **Green Valley (`MAP_1`)** em `Game.ts`, garantindo que mapas de lava, cibernéticos ou góticos não contenham brotos de vegetação incoerentes com seus biomas.
 - [x] **Mecânica de Terreno no Cemitério Obscuro (*Altar Obscuro / Dark Altar*)**: Sorteio de 3 tiles góticos especiais (`darkAltarTiles`) exclusivamente no **Grave Pass (`MAP_4`)**, concedendo **+25% de Dano Necrótico** para torres construídas neles e destacando um marcador de aura roxa espiritual (`#ab47bc`).
 
+## 🟢 Concluído (Sprint Polimento de UX Mobile — P3 da auditoria)
+
+- [x] **Escala de Tipografia no Canvas (`uiScale`)**: Fator de escala aplicado a tooltip de tile, toast de conquista, texto de dano/"DODGED!" e barra de vida/escudo do inimigo, corrigindo texto ilegível (~5px reais) em telefones pequenos.
+- [x] **Alvos de Toque em 44px+ e Barra de Construção no Polegar**: Piso geral de toque subiu para 44px (52px no botão "Iniciar Onda"); corrigida uma segunda regressão de CSS que baixava o piso para 28px em telas ≤480px. Em retrato/mobile, a barra de torres/magias passa a ficar fixa acima dos controles de tempo.
+- [x] **Retorno Tátil (Háptico)**: Novo `src/helpers/haptics.ts` dispara vibração em construir torre, upgrade, dano na base, spawn de chefe e ação sem ouro; respeita `prefers-reduced-motion` e tem interruptor nas Configurações.
+- [x] **Dica de Gesto de Construção Mobile**: Balão "Toque de novo para construir · Xg" com botão ✖ ao selecionar um tile vazio no mobile.
+- [x] **Atalhos de Teclado**: `1`-`5` seleciona torre, `Q`/`W` arma Meteoro/conjura Congelamento, `Enter` inicia onda, `Esc` desarma magia → cancela seleção mobile → desseleciona torre (corrige o travamento de não poder desarmar o Meteoro pelo teclado), `U`/`S` upgrade/vende, `R` alterna todos os alcances, `Shift`+`1`/`2`/`3` troca velocidade.
+- [x] **Confirmação de Venda em Duas Etapas**: Vender torre exige um segundo clique/tecla `S` dentro de uma janela de 3s, pelo botão e pelo atalho.
+- [x] **Alternância de Alcance de Todas as Torres**: Botão 🎯 (e atalho `R`) desenha o alcance de todas as torres simultaneamente para planejar cobertura.
+- [x] **Otimização do Laço de Mira das Torres**: Comparação por distância ao quadrado (sem `Math.hypot`) e buffer reutilizado por instância eliminam alocações e a raiz quadrada do laço torre×inimigo por quadro; grade espacial (spatial hash) segue pendente para uma rodada futura.
+
 ## 🟢 Concluído (Sprint Biomas Fantasia)
 
 - [x] **Mapa 4 (Grave Pass / Cemitério Obscuro)**: Adição do quarto mapa com rota em espiral gótica, bioma de névoa e perigo ambiental `GRAVEYARD_SOULS` (erupções de almas com desaceleração em área), atlas procedural em tons de roxo/esmeralda e trilha sonora BGM dedicada em Sol Menor.

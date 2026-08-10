@@ -204,11 +204,17 @@ export class Tower2D {
     return true;
   }
 
-  public render(ctx: CanvasRenderingContext2D, isSelected = false, isHovered = false) {
+  /**
+   * @param showAllRanges Leitura de campo (D5): desenha o alcance mesmo sem
+   *   seleção/hover, para planejar cobertura com todas as torres de uma vez.
+   *   Usa o mesmo estilo do hover (azul, não o amarelo de seleção) para não
+   *   confundir com a torre realmente selecionada.
+   */
+  public render(ctx: CanvasRenderingContext2D, isSelected = false, isHovered = false, showAllRanges = false) {
     const half = this.size / 2;
 
-    // Range visualizer on select or hover
-    if (isSelected || isHovered) {
+    // Range visualizer on select, hover, or "show all ranges" toggle
+    if (isSelected || isHovered || showAllRanges) {
       ctx.beginPath();
       ctx.arc(this.data.position.x, this.data.position.y, this.data.range, 0, Math.PI * 2);
       ctx.fillStyle = isSelected ? 'rgba(255, 235, 59, 0.03)' : 'rgba(33, 150, 243, 0.03)';

@@ -1,4 +1,4 @@
-import type { ChallengeMode } from '../types';
+import type { ChallengeMode, TowerType } from '../types';
 import { UIManager, type IGame2D } from '../ui/UIManager';
 import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
@@ -92,6 +92,20 @@ export class Game2D implements IGame2D {
   private mousePos: { x: number; y: number } | null = null;
   private hoveredGrid: { x: number; y: number } | null = null;
   private lastTime = 0;
+  /**
+   * Fator de escala aplicado a fontes/espessuras de barra desenhadas no
+   * canvas (tip de tile, texto de dano, toast de conquista, barra de vida).
+   * O canvas interno é fixo em 840×600; num telefone de ~360px CSS o fator
+   * de escala do CSS é ~0.43, então um "11px" desenhado no espaço interno
+   * viraria ~5px reais. `uiScale = 840 / larguraRenderizadaCSS`, sempre >=1
+   * (nunca encolhe abaixo do tamanho atual em telas grandes — só amplia em
+   * telas pequenas). Recalculado em `syncCanvasWidth()`. Ver GAME_DESIGN_REVIEW.md (E1).
+   */
+  private uiScale = 1;
+  /** `#game-area`: pai do canvas, usado para posicionar o hint de construção mobile (E5) sobre o tile certo. */
+  private gameAreaEl!: HTMLElement;
+  /** Hint DOM "toque de novo para construir · Xg" + botão ✖, mostrado sobre o ghost no mobile (E5). */
+  private buildHintEl!: HTMLElement;
   /** Tempo real acumulado ainda não consumido pela simulação (escalado pela velocidade). */
   private simAccumulatorMs = 0;
   /** Idem para FX/toasts, mas sem escala de velocidade (duram o mesmo em 1x e 4x). */
@@ -119,6 +133,7 @@ export class Game2D implements IGame2D {
     this.databaseManager = DatabaseManager.getInstance();
     const gameArea = document.getElementById('game-area');
     if (!gameArea) throw new Error('Game area container not found');
+    this.gameAreaEl = gameArea;
 
     this.threeRenderer = new ThreeRenderer(840, 600);
     gameArea.appendChild(this.threeRenderer.canvas);
@@ -136,8 +151,40 @@ export class Game2D implements IGame2D {
     if (!context) throw new Error('Could not get 2D context');
     this.ctx = context;
 
+    this.buildHintEl = this.createBuildHintElement();
+    gameArea.appendChild(this.buildHintEl);
+
     this.initGame();
     this.setupListeners();
+  }
+
+  /**
+   * Hint DOM (não canvas) para o gesto de construir no mobile (E5): o
+   * primeiro toque só seleciona o tile e mostra o ghost — nada na tela dizia
+   * isso antes. É DOM, não canvas, pelo mesmo motivo do tip de tile (E1):
+   * texto desenhado no espaço interno 840×600 fica ilegível em telas
+   * pequenas, e aqui ainda precisamos de um botão ✖ clicável de verdade.
+   */
+  private createBuildHintElement(): HTMLElement {
+    const el = document.createElement('div');
+    el.id = 'build-hint';
+    el.className = 'build-hint hidden pointer-events-auto';
+    el.innerHTML = `
+      <span id="build-hint-label"></span>
+      <button id="build-hint-cancel" type="button" class="build-hint-cancel-btn" aria-label="Cancelar seleção da torre">✖</button>
+    `;
+    const cancelBtn = el.querySelector('#build-hint-cancel');
+    cancelBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.cancelMobileTileSelection();
+    });
+    return el;
+  }
+
+  /** Cancela a seleção de tile pendente no mobile (2º toque construiria). Usado pelo botão ✖ e pelo Esc. */
+  private cancelMobileTileSelection() {
+    this.mobileSelectedGrid = null;
+    this.hoveredGrid = null;
   }
 
   private initGame() {
@@ -312,6 +359,45 @@ export class Game2D implements IGame2D {
     return { x, y };
   }
 
+  /**
+   * Tamanho, em pixels CSS, da imagem 840×600 de fato desenhada dentro da
+   * caixa do canvas — considera o letterboxing do `object-fit: contain`
+   * (a caixa do elemento pode ser maior que a imagem quando a proporção da
+   * tela não bate 14:10). Mesma matemática de `getCanvasMousePosition`,
+   * reaproveitada aqui só para calcular `uiScale` (E1).
+   */
+  private computeCanvasRenderedSize(): { width: number; height: number } {
+    const rect = this.canvas.getBoundingClientRect();
+    const borderLeft = this.canvas.clientLeft || 0;
+    const borderTop = this.canvas.clientTop || 0;
+    const contentWidth = rect.width - borderLeft * 2;
+    const contentHeight = rect.height - borderTop * 2;
+
+    const canvasRatio = this.canvas.width / this.canvas.height;
+    const contentRatio = contentWidth / (contentHeight || 1);
+
+    let renderedWidth = contentWidth;
+    let renderedHeight = contentHeight;
+    if (contentRatio > canvasRatio) {
+      renderedWidth = contentHeight * canvasRatio;
+    } else {
+      renderedHeight = contentWidth / (canvasRatio || 1);
+    }
+    return { width: renderedWidth, height: renderedHeight };
+  }
+
+  /**
+   * Recalcula `uiScale` a partir da largura CSS real do canvas. Chamado
+   * sempre que `syncCanvasWidth()` roda (resize/orientationchange/
+   * ResizeObserver), então some assim que o layout muda de novo.
+   */
+  private updateUiScale() {
+    const { width } = this.computeCanvasRenderedSize();
+    if (width > 0) {
+      this.uiScale = Math.max(1, Math.min(3, 840 / width));
+    }
+  }
+
   private setupListeners() {
     // Global User Interaction Listener to Unlock Web Audio API in Browsers
     const unlockAudio = () => {
@@ -331,6 +417,7 @@ export class Game2D implements IGame2D {
       if (rect.width <= 0 || rect.height <= 0) return;
       document.documentElement.style.setProperty('--canvas-width', `${Math.round(rect.width)}px`);
       document.documentElement.style.setProperty('--canvas-height', `${Math.round(rect.height)}px`);
+      this.updateUiScale();
     };
     syncCanvasWidth();
     window.addEventListener('resize', syncCanvasWidth);
@@ -340,11 +427,93 @@ export class Game2D implements IGame2D {
       ro.observe(this.canvas);
     }
 
-    // Keyboard Hotkeys
+    // Keyboard Hotkeys (D2): 1-5 seleciona torre, Q/W arma Meteoro/Congelamento,
+    // Enter inicia a próxima onda, Esc cancela magia armada/desseleciona torre,
+    // U/S upgrade/vende a torre selecionada, R alterna todos os alcances,
+    // Shift+1/2/3 troca a velocidade do jogo.
+    const digitToTower: Record<string, TowerType> = {
+      Digit1: 'BASIC',
+      Digit2: 'FROST',
+      Digit3: 'SOLAR_PRISM',
+      Digit4: 'CANNON',
+      Digit5: 'ARTILLERY',
+    };
+
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.code === 'KeyP') {
         e.preventDefault();
         this.gameState.togglePause();
+        return;
+      }
+
+      // Suprimido com um modal aberto (configurações, talentos, placar,
+      // perfil, draft roguelite...) ou com o foco num campo de texto/select —
+      // digitar "S" no nome de perfil não deveria vender uma torre.
+      const target = e.target as HTMLElement | null;
+      const isTypingTarget = !!target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
+      const isModalOpen = !!document.querySelector('.modal-overlay:not(.hidden)');
+      if (isTypingTarget || isModalOpen) return;
+      if (this.gameState.status !== 'PLAYING' && this.gameState.status !== 'PREPARATION') return;
+
+      if (e.shiftKey && (e.code === 'Digit1' || e.code === 'Digit2' || e.code === 'Digit3')) {
+        e.preventDefault();
+        const speed = e.code === 'Digit1' ? 1 : e.code === 'Digit2' ? 2 : 4;
+        this.uiManager.setGameSpeed(speed);
+        return;
+      }
+
+      const towerType = digitToTower[e.code];
+      if (towerType) {
+        e.preventDefault();
+        this.towerManager.setSelectedBuildType(towerType);
+        return;
+      }
+
+      switch (e.code) {
+        case 'KeyQ':
+          e.preventDefault();
+          this.spellManager.selectSpell('METEOR');
+          break;
+        case 'KeyW':
+          e.preventDefault();
+          this.spellManager.triggerGlobalFreeze(this.enemyManager.getEnemies());
+          break;
+        case 'Enter':
+          e.preventDefault();
+          this.waveManager.startNextWave();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          // Sem este atalho o Meteoro armado não tinha como ser desarmado pelo
+          // teclado — o comentário em handleTap() sobre o clique com ouro
+          // insuficiente documenta um travamento real causado por isso. Esc
+          // sempre desarma a magia primeiro; só então desfaz seleção de tile
+          // (mobile) ou de torre (inspector).
+          if (this.spellManager.activeSpell !== null) {
+            this.spellManager.selectSpell(null);
+          } else if (this.isMobile && this.mobileSelectedGrid) {
+            this.cancelMobileTileSelection();
+          } else if (this.towerManager.selectedTower) {
+            this.towerManager.selectedTower = null;
+            EventBus.getInstance().emit('tower:select', null);
+          }
+          break;
+        case 'KeyU':
+          e.preventDefault();
+          this.towerManager.upgradeSelectedTower();
+          break;
+        case 'KeyS':
+          e.preventDefault();
+          // Passa pela confirmação da UIManager (D4): o mesmo atalho não pode
+          // vender uma torre nível 3 com upgrades caros de primeira.
+          this.uiManager.requestSellSelectedTower();
+          break;
+        case 'KeyR':
+          e.preventDefault();
+          this.towerManager.toggleShowAllRanges();
+          break;
+        default:
+          break;
       }
     });
     EventBus.getInstance().on('wave:start', () => {
@@ -555,30 +724,95 @@ export class Game2D implements IGame2D {
     this.ctx.strokeRect(x * size, y * size, size, size);
     this.ctx.restore();
   }
+
+  /**
+   * Sincroniza o hint DOM "toque de novo para construir · Xg" (E5) com o tile
+   * selecionado no mobile — o ghost em si continua desenhado no canvas por
+   * `renderGhostPlacement()`; este hint só existe como DOM (não canvas) para
+   * poder ter um botão ✖ clicável de verdade e não ficar ilegível em telas
+   * pequenas (mesmo motivo do tip de tile em E1).
+   */
+  private updateBuildHint() {
+    if (!this.isMobile) {
+      this.buildHintEl.classList.add('hidden');
+      return;
+    }
+
+    const grid = this.mobileSelectedGrid;
+    const isActiveState = this.gameState.status === 'PLAYING' || this.gameState.status === 'PREPARATION';
+    if (!grid || !isActiveState || this.gameState.isPaused || this.spellManager.activeSpell !== null) {
+      this.buildHintEl.classList.add('hidden');
+      return;
+    }
+
+    const { x, y } = grid;
+    // Toque num tile com torre existente seleciona na hora (ver handleTap) —
+    // não passa pelo fluxo de "selecionar tile vazio, tocar de novo".
+    if (this.towerManager.getTowerAt(x, y)) {
+      this.buildHintEl.classList.add('hidden');
+      return;
+    }
+
+    const isBuildable = this.mapManager.isBuildable(x, y);
+    const cost = this.towerManager.getTowerCost(this.towerManager.selectedBuildType);
+    const canAfford = this.gameState.gold >= cost;
+
+    const label = this.buildHintEl.querySelector('#build-hint-label');
+    if (label) {
+      label.textContent = !isBuildable
+        ? 'Terreno não construível'
+        : !canAfford
+        ? `Ouro insuficiente · ${cost}g`
+        : `Toque de novo para construir · ${cost}g`;
+    }
+    this.buildHintEl.classList.toggle('build-hint-invalid', !isBuildable || !canAfford);
+    this.buildHintEl.classList.remove('hidden');
+
+    // Posição em pixels CSS relativos a `#game-area` (mesmo ancestral
+    // `position: relative` do canvas), considerando o letterboxing.
+    const size = this.mapManager.tileSize;
+    const gameAreaRect = this.gameAreaEl.getBoundingClientRect();
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const { width: renderedWidth, height: renderedHeight } = this.computeCanvasRenderedSize();
+    const scaleCss = renderedWidth / this.canvas.width;
+    const offsetXCss = (canvasRect.width - renderedWidth) / 2;
+    const offsetYCss = (canvasRect.height - renderedHeight) / 2;
+
+    const tileTopCss = canvasRect.top - gameAreaRect.top + offsetYCss + y * size * scaleCss;
+    const tileCenterXCss = canvasRect.left - gameAreaRect.left + offsetXCss + (x + 0.5) * size * scaleCss;
+
+    this.buildHintEl.style.left = `${tileCenterXCss}px`;
+    this.buildHintEl.style.top = `${tileTopCss}px`;
+  }
+
   private renderAchievementToasts() {
+    // Todas as medidas escaladas por uiScale (E1): num telefone pequeno o
+    // toast de 12-14px de fonte ficava com ~6px reais — ilegível bem no
+    // momento em que o jogo está tentando comemorar algo com o jogador.
+    const s = this.uiScale;
     for (let i = 0; i < this.achievementManager.activeToasts.length; i++) {
       const toast = this.achievementManager.activeToasts[i];
-      const width = 280;
-      const height = 48;
-      const x = this.canvas.width - width - 16;
-      const y = 16 + i * 56;
+      const width = 280 * s;
+      const height = 48 * s;
+      const x = this.canvas.width - width - 16 * s;
+      const y = 16 * s + i * (56 * s);
 
       this.ctx.save();
       this.ctx.fillStyle = 'rgba(30, 30, 30, 0.92)';
       this.ctx.fillRect(x, y, width, height);
 
       this.ctx.strokeStyle = '#f57f17';
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = 2 * s;
       this.ctx.strokeRect(x, y, width, height);
 
       this.ctx.fillStyle = '#ffeb3b';
-      this.ctx.font = 'bold 14px Arial';
+      this.ctx.font = `bold ${Math.round(14 * s)}px Arial`;
       this.ctx.textAlign = 'left';
-      this.ctx.fillText(`${toast.icon} Achievement Unlocked!`, x + 10, y + 20);
+      this.ctx.fillText(`${toast.icon} Achievement Unlocked!`, x + 10 * s, y + 20 * s);
 
       this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = '12px Arial';
-      this.ctx.fillText(`${toast.title} (+${toast.reward} ★)`, x + 10, y + 38);
+      this.ctx.font = `${Math.round(12 * s)}px Arial`;
+      this.ctx.fillText(`${toast.title} (+${toast.reward} ★)`, x + 10 * s, y + 38 * s);
       this.ctx.restore();
     }
   }
@@ -675,10 +909,15 @@ export class Game2D implements IGame2D {
     const ctx = this.ctx;
     ctx.save();
 
-    const padding = 9;
-    const lineHeight = 15;
-    const titleFont = 'bold 12px Arial';
-    const bodyFont = '11px Arial';
+    // Todas as medidas escaladas por uiScale (E1): num telefone de ~360px o
+    // fator de escala do CSS é ~0.43, e 11-12px no espaço interno do canvas
+    // viravam ~5px reais — o press-and-hold abria uma caixa ilegível
+    // justamente no aparelho para o qual o gesto foi pensado.
+    const s = this.uiScale;
+    const padding = 9 * s;
+    const lineHeight = 15 * s;
+    const titleFont = `bold ${Math.round(12 * s)}px Arial`;
+    const bodyFont = `${Math.round(11 * s)}px Arial`;
 
     let largura = 0;
     linhas.forEach((linha, i) => {
@@ -687,13 +926,13 @@ export class Game2D implements IGame2D {
     });
 
     const boxW = largura + padding * 2;
-    const boxH = linhas.length * lineHeight + padding * 2 - 3;
+    const boxH = linhas.length * lineHeight + padding * 2 - 3 * s;
     const tile = this.mapManager.tileSize;
 
     // Acima do tile por padrão; abaixo se não couber. Sempre dentro do canvas.
     let boxX = gx * tile + tile / 2 - boxW / 2;
-    let boxY = gy * tile - boxH - 8;
-    if (boxY < 4) boxY = gy * tile + tile + 8;
+    let boxY = gy * tile - boxH - 8 * s;
+    if (boxY < 4) boxY = gy * tile + tile + 8 * s;
     boxX = Math.max(4, Math.min(this.canvas.width - boxW - 4, boxX));
     boxY = Math.max(4, Math.min(this.canvas.height - boxH - 4, boxY));
 
@@ -715,7 +954,7 @@ export class Game2D implements IGame2D {
     linhas.forEach((linha, i) => {
       ctx.font = i === 0 ? titleFont : bodyFont;
       ctx.fillStyle = linha.color;
-      ctx.fillText(linha.text, boxX + padding, boxY + padding + 10 + i * lineHeight);
+      ctx.fillText(linha.text, boxX + padding, boxY + padding + 10 * s + i * lineHeight);
     });
 
     ctx.restore();
@@ -962,11 +1201,12 @@ export class Game2D implements IGame2D {
       this.towerManager.renderDarkAltarTiles(this.ctx, this.mapManager.tileSize);
       this.particleManager.render(this.ctx);
       this.renderGhostPlacement();
+      this.updateBuildHint();
       this.towerManager.render(this.ctx, this.mousePos);
-      this.enemyManager.render(this.ctx);
+      this.enemyManager.render(this.ctx, this.uiScale);
       this.projectileManager.render(this.ctx);
       this.spellManager.renderSpellTargeting(this.ctx, this.mousePos);
-      this.fxManager.render(this.ctx);
+      this.fxManager.render(this.ctx, this.uiScale);
 
       this.renderAchievementToasts();
       this.renderPauseOverlay();
