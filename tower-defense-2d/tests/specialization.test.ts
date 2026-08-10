@@ -6,7 +6,7 @@ import {
   isValidSpecialization,
 } from '../src/engine/Specializations';
 import { Tower2D } from '../src/engine/Tower';
-import type { TowerType } from '../src/types';
+import type { TowerSpecialization, TowerType } from '../src/types';
 import {
   FULL_DEFENSE_BUILD,
   FULL_DEFENSE_UPGRADES,
@@ -87,10 +87,36 @@ describe('Upgrade ramificado da torre', () => {
         expect(tower.data.level).toBe(3);
         expect(tower.data.specialization).toBe(opcao.id);
 
-        // Nível 3 é o teto, mesmo com outra escolha em mãos
-        expect(tower.upgrade(opcao.id)).toBe(false);
+        // Nível 3 deixou de ser teto (P1_BALANCE_SPEC §1): upgrade() a partir
+        // daí sobe pra rank genérico e devolve true, ignorando o argumento de
+        // especialização — mas o que importa é que a escolha feita no salto
+        // 2->3 nunca é sobrescrita por essa chamada seguinte.
+        expect(tower.upgrade(opcao.id)).toBe(true);
+        expect(tower.data.level).toBe(4);
+        expect(tower.data.specialization).toBe(opcao.id);
       }
     }
+  });
+
+  it('deve permitir ranks infinitos sem exigir (nem aceitar) nova especialização', () => {
+    const tower = noNivel2('BASIC');
+    expect(tower.upgrade('PIERCING')).toBe(true); // 2->3, especialização obrigatória
+    expect(tower.data.specialization).toBe('PIERCING');
+
+    // A partir daqui os ranks são genéricos: upgrade() sem argumento continua
+    // funcionando (a especialização já foi decidida uma vez, no nível 3).
+    for (let nivelEsperado = 4; nivelEsperado <= 10; nivelEsperado++) {
+      expect(tower.upgrade()).toBe(true);
+      expect(tower.data.level).toBe(nivelEsperado);
+      // Continua a mesma escolha do nível 3, para sempre.
+      expect(tower.data.specialization).toBe('PIERCING');
+    }
+
+    // Nem passar uma especialização de outro tipo de torre (inválida para
+    // BASIC) trava o rank — o argumento é simplesmente ignorado acima do nível 3.
+    expect(tower.upgrade('SIEGE' as TowerSpecialization)).toBe(true);
+    expect(tower.data.level).toBe(11);
+    expect(tower.data.specialization).toBe('PIERCING');
   });
 
   it('deve dar ao SIEGE muito mais alcance que ao NAPALM', () => {

@@ -1282,8 +1282,15 @@ export class UIManager {
       const spec = tower.data.specialization
         ? getSpecializationOption(tower.data.specialization)
         : undefined;
+      // Níveis infinitos (P1 §1): a partir do rank 1 (nível 4) a torre já tem
+      // especialização, então o texto "· ícone nome" sozinho escondia o nível —
+      // o jogador perdia visibilidade de progresso justo na entrega que criou
+      // mais níveis para progredir. Rank = level - 3, só aparece quando > 0.
+      const rank = tower.data.level - 3;
       title.innerText = spec
-        ? `${tower.data.type} · ${spec.icon} ${spec.name}`
+        ? rank > 0
+          ? `${tower.data.type} · ${spec.icon} ${spec.name} · Rank ${rank}`
+          : `${tower.data.type} · ${spec.icon} ${spec.name}`
         : `${tower.data.type} (Nível ${tower.data.level})`;
     }
 
@@ -1319,14 +1326,15 @@ export class UIManager {
 
     const upgradeBtn = document.getElementById('btn-inspect-upgrade') as HTMLButtonElement;
     if (upgradeBtn) {
-      if (tower.data.level >= 3) {
-        upgradeBtn.innerText = '⭐ Máximo';
-        upgradeBtn.disabled = true;
-        upgradeBtn.classList.remove('hidden');
-      } else if (isSpecializing) {
+      if (isSpecializing) {
         // A escolha vive no painel abaixo; o botão genérico sairia sobrando.
         upgradeBtn.classList.add('hidden');
       } else {
+        // Níveis infinitos (P1 §1): o teto artificial no nível 3 foi removido —
+        // a engine (`Tower2D.upgrade()`/`getUpgradeCost()`) já aceita qualquer
+        // rank acima disso, então a única razão para desabilitar aqui é falta
+        // de ouro, igual ao nível 1. "⭐ Máximo" deixou de existir: não há mais
+        // teto para anunciar.
         upgradeBtn.classList.remove('hidden');
         upgradeBtn.innerText = `⬆️ ${cost}g`;
         upgradeBtn.disabled = this.gameState.gold < cost;
@@ -1694,6 +1702,14 @@ export class UIManager {
       let labelText = '';
       let className = '';
 
+      // Só não há próxima onda para iniciar quando a campanha (10 ondas) já
+      // terminou e o endless está desligado — mesma condição que faz
+      // `startNextWave()` (via `ensureWaveConfig`) retornar sem efeito. Fora
+      // disso o botão precisa ficar clicável mesmo em Auto (ver branch abaixo):
+      // é o único jeito de um jogador mobile, sem `Enter`, alcançar o bônus
+      // de chamada antecipada (P1_BALANCE_SPEC.md §3.4; docs/GAME_DESIGN_REVIEW.md).
+      const hasNextWave = this.waveManager.isEndlessMode || (this.waveManager.currentWaveIndex + 1) < this.waveManager.waves.length;
+
       if (this.waveManager.isWaveActive) {
         disabled = true;
         const activeWaveNum = this.waveManager.currentWaveIndex + 1;
@@ -1701,13 +1717,30 @@ export class UIManager {
         labelText = isCurrentBoss ? '⚠️ BOSS EM ANDAMENTO' : 'Onda em Andamento...';
         className = isCurrentBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn active';
       } else if (this.waveManager.isAutoMode) {
-        disabled = true;
+        // Destravado (era `disabled = true` fixo): em Auto o toque agora
+        // adianta a onda pelo mesmo `startNextWave()` do clique manual — sem
+        // isso o bônus anunciado no rótulo ("+Xg") era inalcançável no
+        // celular, que não tem `Enter`. Só volta a desabilitar se de fato não
+        // houver próxima onda (`hasNextWave`).
+        disabled = !hasNextWave;
         const countdownSec = this.waveManager.getAutoCountdownSeconds();
-        labelText = isNextBoss ? `⚠️ BOSS EM ${countdownSec}s` : `Auto em ${countdownSec}s...`;
+        // Contador roda em Auto também (§3.1) — o bônus por chamada antecipada
+        // vale mesmo aqui, para recompensar quem toca antes do disparo automático.
+        const bonus = this.waveManager.getEarlyCallBonus();
+        const bonusSuffix = bonus > 0 ? ` · +${bonus}g` : '';
+        // "Toque p/ adiantar" anuncia o gesto explicitamente — um contador
+        // sozinho não deixa claro que o botão responde a clique/toque em Auto.
+        labelText = isNextBoss
+          ? `⚠️ BOSS em ${countdownSec}s · toque p/ adiantar${bonusSuffix}`
+          : `Auto em ${countdownSec}s · toque p/ adiantar${bonusSuffix}`;
         className = isNextBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn primary';
       } else {
-        disabled = false;
-        labelText = isNextBoss ? `⚠️ Iniciar BOSS Onda ${nextWaveNum}` : `Iniciar Onda ${nextWaveNum}`;
+        disabled = !hasNextWave;
+        // Bônus decai a cada quadro (contador conta em ms reais); só aparece
+        // no rótulo quando é maior que zero, senão o texto de hoje some ruído.
+        const bonus = this.waveManager.getEarlyCallBonus();
+        const bonusSuffix = bonus > 0 ? ` · +${bonus}g` : '';
+        labelText = isNextBoss ? `⚠️ Iniciar BOSS Onda ${nextWaveNum}${bonusSuffix}` : `Iniciar Onda ${nextWaveNum}${bonusSuffix}`;
         className = isNextBoss ? 'start-wave-main-btn danger' : 'start-wave-main-btn primary';
       }
 

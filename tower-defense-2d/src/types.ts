@@ -119,6 +119,14 @@ export interface ITower2D {
   isPowerSurged?: boolean;
   equippedModule?: RogueliteModuleId;
   kills: number;
+  /**
+   * Snapshot de damage/range/maxHp/splashRadius capturado no instante em que
+   * `level` chega a 3, DEPOIS da especialização aplicada (P1_BALANCE_SPEC §1.4).
+   * Ranks 4+ recalculam sempre a partir daqui em forma fechada — nunca a
+   * partir do valor arredondado do rank anterior (armadilha do floor(), §1.3).
+   * Ausente para torres que nunca passaram do nível 3.
+   */
+  rankBaseline?: { damage: number; range: number; maxHp: number; splashRadius?: number };
 }
 
 export interface IProjectile2D {

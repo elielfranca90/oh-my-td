@@ -6,7 +6,7 @@ Este documento fornece a especificação técnica e comportamental detalhada de 
 
 ## 📑 Sumário
 1. [Motor de Simulação & Matemática](#1-motor-de-simulação--matemática)
-2. [Torres de Defesa & Especializações (Nível 3)](#2-torres-de-defesa--especializações-nível-3)
+2. [Torres de Defesa, Especializações (Nível 3) & Ranks Infinitos (Nível 4+)](#2-torres-de-defesa-especializações-nível-3--ranks-infinitos-nível-4)
 3. [Módulos Roguelite (Draft Modifiers)](#3-módulos-roguelite-draft-modifiers)
 4. [Catálogo de Inimigos & Habilidades Especiais](#4-catálogo-de-inimigos--habilidades-especiais)
 5. [Biomas, Mapas, Hazards & Climas](#5-biomas-mapas-hazards--climas)
@@ -38,7 +38,7 @@ Este documento fornece a especificação técnica e comportamental detalhada de 
 
 ---
 
-## 2. Torres de Defesa & Especializações (Nível 3)
+## 2. Torres de Defesa, Especializações (Nível 3) & Ranks Infinitos (Nível 4+)
 
 ### 2.1 Atributos e Configuração Base das Torres
 
@@ -50,9 +50,11 @@ Este documento fornece a especificação técnica e comportamental detalhada de 
 | **CANNON** | 🪙 105g | 120px | 14 | 90 (0.66 tiros/s) | 150 HP | Executor; causa **2x de dano** em Tank/Boss/Black Mega Boss acima de 50% HP (`MOSS_GIANT` sempre excluído); **perfura 50% da armadura de qualquer alvo permanentemente** (`armorPenetration: 0.5`), em qualquer especialização — ver §2.1.1. |
 | **ARTILLERY** | 🪙 110g | 170px | 25 | 110 (0.54 tiros/s)| 150 HP | Bombardeio de longo alcance com **área de impacto de 50px** (`splashRadius`). |
 
-- **Fórmula de Upgrade:** O custo de upgrade para o Nível 2 e Nível 3 é calculado por:
-  $$\text{CustoUpgrade} = \lfloor \text{CustoBase} \times 0.8 \times \text{NívelAtual} \rfloor$$
-- **Evolução Genérica (Nível 1 $\rightarrow$ 2):** Aumenta o Dano em **+50%** e o Alcance em **+15%**.
+- **Fórmula de Upgrade (`Tower2D.getUpgradeCost()`):**
+  $$\text{CustoUpgrade} = \left\lfloor \text{CustoBase} \times 0.8 \times \text{NívelAtual} \times 1.10^{\max(0,\ \text{NívelAtual}-3)} \right\rfloor$$
+  Para nível $\le 3$ o expoente zera e a fórmula é **bit-a-bit idêntica** à de antes dos ranks infinitos (nenhuma regressão nos níveis 1-3). A partir do nível 4 (rank 1), cada rank encarece o upgrade em +10% composto sobre o já caro — ver §2.2.1.
+- **Evolução Genérica (Nível 1 $\rightarrow$ 2 e 2 $\rightarrow$ 3):** Aumenta o Dano em **+50%**, o Alcance em **+15%**, o HP máximo em **+40%** e o `splashRadius` (se houver) em **+10%**, sempre por `Math.floor()`. Fórmula intocada pelos ranks infinitos.
+- **`getSellValue()`:** soma `getUpgradeCost()` de cada nível já comprado (de 1 até `level-1`) e devolve 70% do total investido — mesmo laço de sempre, agora usando a fórmula de custo com o expoente de rank.
 
 ---
 
@@ -112,6 +114,26 @@ No salto do Nível 2 para o Nível 3, o jogador **deve escolher uma de duas espe
 #### ☀️ **SOLAR PRISM**
 1. **FOCUS_LENS (Lente de Foco):** O multiplicador de foco no alvo acumula **duas vezes mais rápido**, atingindo o pico de dano máximo em metade do tempo de exposição.
 2. **CHAIN_BEAM (Feixe em Cadeia):** O feixe solar principal divide um segundo raio secundário para um inimigo próximo, causando 50% do dano atual.
+
+---
+
+### 2.2.1 Ranks Genéricos Infinitos (Nível 4+)
+
+O Nível 3 continua sendo o **único** ponto de escolha de especialização (`Tower2D.upgrade()` só exige `specialization` na transição 2→3). A partir do Nível 4 (**rank** = `level - 3`, ou seja Nível 4 = rank 1), a torre continua subindo de nível indefinidamente, sem pedir nova escolha — cada rank é comprado com `getUpgradeCost()` (§2.1) e aplica um crescimento fechado sobre um **baseline capturado no instante em que o nível chegou a 3**, já com a especialização aplicada (senão SIEGE/NAPALM/MULTISHOT teriam ranks calculados sobre o valor pré-especialização):
+
+| Atributo | Fórmula por rank (sobre o baseline de nível 3, `rankBaseline` em `src/types.ts`) | Teto |
+| :--- | :--- | :--- |
+| Dano | $\text{danoL3} \times 1.08^{\text{rank}}$ | Nenhum |
+| Alcance | $\text{alcanceL3} \times 1.02^{\min(\text{rank},\ 25)}$ | Rank 25 (≈+64% sobre o alcance de nível 3, depois congela) |
+| HP máximo | $\text{hpL3} \times 1.05^{\text{rank}}$ | Nenhum |
+| `splashRadius` (só ARTILLERY/CANNON com NAPALM/SHRAPNEL) | $\text{splashL3} \times 1.01^{\min(\text{rank},\ 40)}$ | Rank 40 (≈+49%, depois congela) |
+| `fireRate` | **Intocado** — ranks nunca alteram cadência | — |
+
+Todas as fórmulas usam `Math.floor()` sobre a **forma fechada** acima (base × potência), nunca sobre uma recorrência que aplicaria `floor()` a cada rank em cima do valor já arredondado do rank anterior — essa segunda abordagem trava para sempre atributos de valor baixo (ex.: BASIC nível 3 tem dano 10: `Math.floor(10 * 1.08) = 10` para qualquer rank, porque a fração nunca se acumula). `Tower2D.upgrade()` guarda o baseline uma única vez e recalcula os quatro atributos a partir dele em cada rank subsequente.
+
+Dano e HP crescem sem teto porque o HP do inimigo também escala sem teto no Modo Infinito (§7.2) — a torre precisa poder acompanhar indefinidamente. Alcance e `splashRadius` têm teto porque um raio de tiro geométrico sem fim eventualmente cobre o mapa inteiro (840×600px) e apaga a decisão de posicionamento. `fireRate` fica de fora de propósito: a cadência já é o eixo que diferencia as especializações (DEEP_FREEZE triplica o intervalo, MULTISHOT mantém o normal) — se ranks também acelerassem o tiro, um DEEP_FREEZE rankeado se aproximaria do congelamento permanente que a própria especialização evita por design.
+
+**Representação visual (`Tower2D.render()`):** até o nível 3, os pontos amarelos de nível continuam um por nível (1 a 3). A partir do nível 4, o desenho trava em **3 pontos fixos** seguidos de um rótulo `×{level}` (ex.: `×23`) — desenhar um ponto por nível além do rank 20 atravessaria o tile inteiro de 40px da torre.
 
 ---
 
@@ -225,18 +247,25 @@ Sob névoa ativa, **toda torre no mapa** (não só Frost ou Solar Prism) tem seu
 O jogador dispõe de 2 Poderes Supremos disparados manualmente pela interface:
 
 ### ☄️ Meteor Strike (Ataque Meteorítico)
-- **Custo Inicial:** 🪙 150g
+- **Custo Base:** 🪙 150g (varia por uso, ver "Escalonamento Dinâmico de Custos" abaixo)
 - **Cooldown Base:** 30 segundos (30.000ms)
-- **Efeito:** Dispara uma queda de meteoro com onda de choque, partículas de brasa e cratera no solo, causando **dano massivo em área (AoE)** em todos os inimigos presentes na zona de impacto.
+- **Efeito:** Dispara uma queda de meteoro com onda de choque, partículas de brasa e cratera no solo, causando dano em área (raio 90px) em todos os inimigos presentes na zona de impacto. **Dano por alvo (`SpellManager.castMeteorAt()`):**
+  $$\text{dano} = \text{round}\big(90 + 0.12 \times \text{HP máximo do alvo}\big)$$
+  Usa o HP **máximo**, não o atual — o Meteoro não varia se o alvo já estiver ferido, para não incentivar "guardar" a magia para finalizar em vez de abrir combate com ela. A parte fixa (90) preserva o one-shot contra inimigos fracos do início de jogo; a parte proporcional (12%) mantém o Meteoro relevante contra chefes em qualquer onda do Modo Infinito (≈12-14% do HP máximo de um BOSS, estável, em vez de despencar para <3% como no dano fixo antigo). Continua dano em área: `armorPenetration = 1`, `isAvoidable = false` — ignora armadura e não é esquivável, sem exceção.
 
 ### ❄️ Global Freeze (Congelamento Global)
-- **Custo Inicial:** 🪙 120g
+- **Custo Base:** 🪙 120g (varia por uso, ver "Escalonamento Dinâmico de Custos" abaixo)
 - **Cooldown Base:** 40 segundos (40.000ms)
-- **Efeito:** Aplica uma vinheta congelante na tela e trava a velocidade de **todos os inimigos no mapa em 0 por 3,5 segundos**.
+- **Efeito:** Aplica uma vinheta congelante na tela e trava a velocidade de **todos os inimigos no mapa em 0 por 3,5 segundos (210 frames)**. Duração, custo base e cooldown base são intocados por esta rodada — Congelamento não causa dano, então o problema de "dano fixo evapora contra HP exponencial" não se aplica a ele.
 
 ### 📈 Escalonamento Dinâmico de Custos & Talentos
-- **Escalonamento por Uso:** O custo em ouro de cada magia **dobra a cada uso** efetuado na mesma partida ($150\text{g} \rightarrow 300\text{g} \rightarrow 600\text{g}\dots$).
-- **Redução por Talentos:** O talento de *Channeling* reduz o tempo de recarga base em até **-30%**.
+
+- **Custo dinâmico com decaimento (`SpellManager`):** cada magia tem um `costStep` (inteiro, estado independente por magia — Meteoro e Congelamento não compartilham) e o custo efetivo é derivado, nunca escrito direto:
+  $$\text{custoAtual} = \text{custoBase} \times 2^{\text{costStep}}$$
+  Ao conjurar com sucesso, `costStep = min(6, costStep + 1)` (dobra o custo, com teto absoluto em `costStep = 6`, ou seja **64× o custo base** — 9.600g para o Meteoro, 7.680g para o Congelamento — nunca mais que isso, mesmo em spam contínuo). A cada onda completada (`wave:end` → `SpellManager.onWaveCompleted()`), o contador `wavesSinceLastCast` de cada magia sobe; a cada **2 ondas sem conjurar aquela magia**, `costStep = max(0, costStep - 1)` — o custo decai de volta em direção ao base. Antes deste ciclo o custo só dobrava, sem decaimento nem teto: quem usava a magia uma vez continuava pagando cada vez mais pelo resto da partida, mesmo parando de usá-la.
+  - Jogador que usa com parcimônia (≥1 onda de intervalo a cada uso) nunca escala de fato, porque o passo decai antes do próximo cast.
+  - Jogador que abusa (uma conjuração por onda) converge para o teto de 64× em poucas ondas, em vez de uma escalada geométrica sem fim.
+- **Redução por Talentos:** O talento de *Channeling* reduz o tempo de recarga **base** (30s/40s) em até **-30%** — não interage com o custo em ouro, só com o cooldown.
 
 ---
 
@@ -246,8 +275,29 @@ O jogador dispõe de 2 Poderes Supremos disparados manualmente pela interface:
 - O jogador enfrenta **10 ondas** pré-configuradas com dificuldade progressiva (`GameState.maxWaves = 10`, `WaveManager.CAMPAIGN_MAX_WAVES = 10`). Esta seção do documento chegou a afirmar "20 Ondas" numa versão anterior — número que nunca existiu no código.
 - A Onda 10 culmina no Chefão e a vitória exibe o painel de celebração com relatórios detalhados. A checagem de vitória roda **antes** da checagem do Draft Roguelite no mesmo passo de simulação, então a onda 10 nunca abre o modal de draft por cima do modal de vitória.
 - O Draft Roguelite dispara ao completar as ondas **3, 6 e 9** (ver §3) — não mais 5/10/15, esquema em que a onda 15 nunca chegava a existir numa campanha de 10 ondas.
-- Multiplicadores de HP da Campanha:
+- Multiplicadores de HP da Campanha (`WaveManager.getNextEnemyToSpawn()` → `campaignHpScales`, intocados por este ciclo):
   $$\text{Onda 1}: 1.0\times \quad \text{Onda 5}: 1.85\times \quad \text{Onda 10}: 4.50\times$$
+
+#### 7.1.1 Densidade de Onda (`WaveManager.waves`)
+
+A contagem de inimigos por onda da campanha subiu para gerar sobreposição em tela (mais de 8 inimigos simultâneos), com os inimigos "grandes" (TANK/SHIELDED/MOSS_GIANT/BOSS) nas mesmas quantidades de antes — o volume extra é RUNNER/STANDARD/SPORE_SPRINTER com delays mais curtos, sem introduzir tipos novos por onda:
+
+| Onda | Total de inimigos | Identidade |
+| :--- | :--- | :--- |
+| 1 | 12 | Só STANDARD, primeira experiência |
+| 2 | 13 | STANDARD + RUNNER |
+| 3 | 13 | Introduz TANK / SPORE_SPRINTER |
+| 4 | 13 | Introduz MOSS_GIANT |
+| 5 | 14 | Mid-game BOSS |
+| 6 | 14 | Introduz SHIELDED |
+| 7 | 16 | SWARM |
+| 8 | 16 | BOSS + escolta |
+| 9 | 16 | CHAOS (todos os tipos exceto BOSS/BLACK_MEGA_BOSS) |
+| 10 | 17 | Ultimate Boss Wave (2 BOSS) |
+
+**Total: 144 inimigos** nas 10 ondas (contagem somada diretamente do array `WaveManager.waves`, elemento por elemento — não de uma estimativa feita antes da implementação).
+
+O limiar que a HUD/áudio usam para considerar a partida "tensa" (vinheta de tela e camada de tensão sonora) foi recalibrado de `enemyCount > 20` para **`enemyCount > 8`** (`Game.ts`) — com a densidade nova a campanha efetivamente cruza esse número a partir da onda 3, o que não acontecia com o limiar antigo em nenhuma onda da campanha.
 
 ### 7.2 Modo Infinito (Endless Scaling)
 No Modo Infinito, após a Onda 10, o jogo sorteia **Arquétipos de Onda** especiais:
@@ -266,6 +316,24 @@ No Modo Infinito, após a Onda 10, o jogo sorteia **Arquétipos de Onda** especi
 
 ---
 
+### 7.2.1 Economia de Ouro por Abate
+
+A recompensa de cada inimigo (`Enemy2D` construtor) é:
+
+$$\text{recompensa} = \text{round}\big(\text{recompensaBase} \times \text{HPMultiplier}^{0.4} \times \text{goldMultiplier}\big)$$
+
+O expoente **`0.4` está cravado em `Enemy.ts` e não muda nesta rodada** — toda a recalibração de curva vive inteiramente em `goldMultiplier`, calculado por `EnemyManager2D.computeGoldMultiplier(waveNum, hpMultiplier)` a partir do mesmo `hpMultiplier` que o `WaveManager` já calcula por onda (nenhum dado novo é encanado; nenhuma fórmula de HP é duplicada). É o próximo ponto de leitura errado se alguém for procurar a curva de ouro dentro de `Enemy.ts` — ela não está lá.
+
+**Campanha (onda ≤ 10):**
+$$\text{goldMultiplier} = (\text{MORTE\_CERTA} \Rightarrow 1.5,\ \text{senão } 1.0) \times (\text{onda} \ge 2 \Rightarrow 0.60,\ \text{senão } 1.0)$$
+O corte fixo mudou de "×0.75 a partir da onda 4" para "×0.60 a partir da onda 2" — recalibração necessária porque a densidade de inimigos por onda (§7.1.1) mais que dobrou (64 → 144 inimigos, +125%). Sem esse corte mais agressivo, a renda total da campanha teria subido na mesma proporção do volume de inimigos; com o corte novo, a estimativa do `docs/P1_BALANCE_SPEC.md` (calculada à mão pelo game-designer antes do harness, **não recomputada por esta rodada de documentação**) é que o ouro total da campanha sobe só ~+15% (de ~1.474g para ~1.695g em NORMAL, com todos os multiplicadores) — o lado que fica mais difícil é a superfície de ameaça (mais que o dobro de inimigos para interceptar), não a economia. Validar esse agregado exige rodar o harness headless (`tests/helpers/balanceSim.ts`), fora do escopo de uma passagem de documentação.
+
+**Modo Infinito (onda > 10):**
+$$\text{goldMultiplier} = (\text{MORTE\_CERTA} \Rightarrow 1.5,\ \text{senão } 1.0) \times \text{HPMultiplier}^{0.35} \times \max\!\big(0.45,\ 0.85 - 0.008 \times (\text{onda}-10)\big)$$
+O termo `HPMultiplier^0.35` soma ao expoente `0.4` já aplicado em `Enemy.ts`, produzindo um **expoente efetivo de 0,75** sem duplicar a fórmula de HP em nenhum outro arquivo. O corte fixo de 25% que existia antes para todo o jogo foi substituído, só no endless, por um corte suave que começa em 0,842 na onda 11 e desce linearmente até um piso de **0,45** na onda 60 (nunca chega a zero). Resultado: a razão "ouro por ponto de HP" continua caindo com a onda — o dreno de ouro dos ranks de torre (§2.2.1) continua tendo motivo de existir — mas a queda deixa de ser um precipício: de uma perda de ~19× entre a onda 10 e a onda 40 (curva antiga) para uma perda de ~2,5× (curva nova).
+
+---
+
 ### 7.3 Níveis de Desafio (`ChallengeMode`)
 
 | Modo | Velocidade do inimigo | Ouro do inimigo | Custo de reparo | Vida da Base |
@@ -274,10 +342,29 @@ No Modo Infinito, após a Onda 10, o jogo sorteia **Arquétipos de Onda** especi
 | **HARDCORE** | **1.25×** | 1.0× | **1.5×** | 1 HP |
 | **MORTE_CERTA** | **1.4×** | **1.5×** | **2.0×** | 1 HP |
 
-- Os multiplicadores de velocidade e ouro são aplicados por inimigo no spawn (`EnemyManager.spawnEnemy()`); o de ouro do MORTE_CERTA se acumula com o corte fixo de 25% que já existe a partir da onda 4 em qualquer modo.
+- Os multiplicadores de velocidade e ouro são aplicados por inimigo no spawn (`EnemyManager.spawnEnemy()`); o multiplicador de ouro `1.5×` do MORTE_CERTA se acumula por cima do `goldMultiplier` de campanha/endless descrito em §7.2.1 (ex.: onda 30 do endless, NORMAL 256g × 1.5 = 384g).
 - O multiplicador de custo de reparo (`Tower.getRepairCost()`) é aplicado **sobre o custo base, antes** do desconto do talento Engineering — senão o desconto anularia o modificador de dificuldade em vez de descontar sobre ele.
 - Até este ciclo, **nenhum dos multiplicadores de HARDCORE existia**: a única diferença entre HARDCORE e NORMAL era a Vida da Base reduzida a 1 HP. A tabela acima é a matriz real, fechada pelo game-designer.
 - **MORTE_CERTA:** além da matriz acima, **Poderes Supremos ficam desativados por completo** (`SpellManager` recusa qualquer conjuração), e o `BOSS` da onda 10 — tanto na campanha quanto a cada múltiplo de 10 no Modo Infinito — é substituído pelo `BLACK_MEGA_BOSS`.
+
+---
+
+### 7.4 Chamada Antecipada de Onda com Bônus de Ouro
+
+Entre ondas, `WaveManager.autoCountdownMs` conta 5000ms reais para baixo. Até este ciclo o contador só decrescia em Modo Auto; agora **decresce nos dois modos** (`updateAutoCountdown()`), o que dá significado a "tempo poupado" mesmo em Manual. A diferença entre os modos continua sendo só o auto-início:
+- **Modo Auto:** ao chegar a zero, `startNextWave()` dispara sozinho e o contador reseta para 5000ms.
+- **Modo Manual:** ao chegar a zero, o contador simplesmente fica parado em zero (bônus zerado) até o jogador clicar/tocar em "Iniciar Onda" ou apertar `Enter`.
+
+**Fórmula do bônus (`WaveManager.getEarlyCallBonus()`, getter puro — não lê `GameState`):**
+
+$$\text{segundosPoupados} = \frac{\text{autoCountdownMs}}{1000} \qquad \text{taxa/s} = 2 + \left\lfloor \frac{\text{próximaOnda}}{5} \right\rfloor$$
+$$\text{bônus} = \left\lfloor \min\big(60,\ \text{taxa/s} \times \text{segundosPoupados}\big) \right\rfloor$$
+
+`próximaOnda` é 1-based e conta a onda que está **para começar**, não a que acabou. O teto de **60g** é absoluto, independente de qualquer ajuste futuro na taxa. O bônus vale para os dois modos de jogo (campanha e endless) e para os dois modos de avanço (Manual e Auto) — inclusive Auto, porque um jogador que clica antes do disparo automático está mais engajado que o padrão passivo e merece ser recompensado; quem não toca em nada em Auto recebe bônus 0 (`segundosPoupados = 0` no instante do auto-disparo), preservando o comportamento passivo de hoje como piso.
+
+**Integração (`Game.ts`):** o bônus é lido a cada passo fixo de simulação (`cachedEarlyCallBonus = waveManager.getEarlyCallBonus()`, antes de `updateAutoCountdown()` decrementar o contador daquele passo) e só é de fato creditado (`gameState.addGold()`) no listener do evento `wave:start`, que só dispara quando `startNextWave()` retornou `true` — um clique que falha (onda já ativa, duplo clique) nunca credita ouro de brincadeira.
+
+**Não há multiplicador ×2 por "onda anterior ainda em tela".** `isWaveActive` só vira `false` quando não há mais nenhum inimigo em tela (`WaveManager.onEnemyCleared()` exige `remainingEnemiesCount === 0`), então essa condição é estruturalmente impossível de ocorrer sem permitir ondas sobrepostas — mudança de arquitetura maior (fila única de spawn deixaria de ser única) e fora do escopo desta rodada.
 
 ---
 
@@ -385,3 +472,10 @@ O canvas interno é fixo em 840×600px e escalado por CSS até o tamanho da tela
 - Em retrato/mobile (`max-width: 768px and orientation: portrait`), a barra de seleção de torres/magias (`#action-toolbar`) fica fixa acima de `.time-controls` — a zona do polegar —, e a barra de stats (ouro/HP/onda, só leitura) permanece no topo.
 - Dica de gesto: ao selecionar um tile vazio para construir no mobile, um balão DOM "Toque de novo para construir · Xg" (com botão ✖ para cancelar) aparece sobre o tile; o texto muda para "Ouro insuficiente · Xg" ou "Terreno não construível" quando aplicável. É DOM, não canvas, pelo mesmo motivo do §9.5 — e porque precisa de um botão ✖ clicável de verdade.
 - `tests/mobile_ui_ux.test.ts` trava a regressão desses pisos (guard-rail em `>= 38px`/`>= 48px`, abaixo dos valores atuais de propósito, para pegar quedas futuras sem exigir o número exato).
+
+### 9.7 Inspetor de Torre & Botão de Onda acima do Nível 3
+
+- **Botão de Upgrade (`UIManager`):** deixou de travar em "⭐ Máximo" no nível 3. Acima do nível 2 (com especialização já escolhida), o botão sempre mostra `⬆️ {custo}g` e só desabilita por falta de ouro — o teto de retorno de `upgrade()` só existe no nível 2 sem especialização válida (§2.2.1).
+- **Título do Inspetor:** a partir do rank 1 (nível 4), o cabeçalho passa a incluir o rank (`{TIPO} · {ícone especialização} {nome especialização} · Rank {N}`) em vez de só tipo + especialização.
+- **Botão "Iniciar Onda":** o rótulo passa a exibir o bônus de chamada antecipada quando maior que zero (`· +Xg`), tanto em Manual (`Iniciar Onda N · +Xg`) quanto em Auto (`Auto em Ns · toque p/ adiantar · +Xg`).
+- **Botão "Iniciar Onda" em Modo Auto:** deixou de ficar permanentemente desabilitado. Agora aceita toque/clique para adiantar a onda (mesmo `startNextWave()` do fluxo manual) — sem isso, o bônus da §7.4 seria inatingível em mobile no Modo Auto, onde não há tecla `Enter` para chamar a onda manualmente. Só volta a desabilitar quando de fato não há próxima onda (campanha terminada e endless desligado).

@@ -8,11 +8,14 @@ describe('Preview de onda e arquétipos do endless', () => {
 
     expect(preview).not.toBeNull();
     expect(preview?.waveNumber).toBe(1);
-    expect(preview?.totalEnemies).toBe(6);
+    // Densidade nova da campanha (P1_BALANCE_SPEC §4.4): onda 1 passa de 6
+    // para 12 STANDARD — número confirmado em WaveManager.waves[0], não
+    // copiado da tabela-resumo §4.3 (que diverge da soma real das listas §4.4).
+    expect(preview?.totalEnemies).toBe(12);
     expect(preview?.hasBoss).toBe(false);
 
     // Onda 1 é só STANDARD -> uma única entrada agrupada
-    expect(preview?.entries).toEqual([{ type: 'STANDARD', count: 6 }]);
+    expect(preview?.entries).toEqual([{ type: 'STANDARD', count: 12 }]);
   });
 
   it('deve marcar hasBoss nas ondas de chefe da campanha', () => {

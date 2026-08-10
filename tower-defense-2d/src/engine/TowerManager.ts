@@ -159,12 +159,13 @@ export class TowerManager2D {
 
   /**
    * Melhora a torre selecionada. O salto de nível 2 para 3 exige a
-   * especialização escolhida; sem ela o ouro não é gasto.
+   * especialização escolhida; sem ela o ouro não é gasto. A partir do nível 3
+   * os ranks são genéricos e infinitos (P1_BALANCE_SPEC §1) — não há mais
+   * teto de nível aqui, só a exigência de especialização em level===2.
    */
   public upgradeSelectedTower(specialization?: TowerSpecialization): boolean {
     if (!this.selectedTower) return false;
     const cost = this.selectedTower.getUpgradeCost();
-    if (this.selectedTower.data.level >= 3) return false;
 
     // Valida antes de cobrar: cobrar e falhar torraria o ouro do jogador.
     if (this.selectedTower.data.level === 2) {

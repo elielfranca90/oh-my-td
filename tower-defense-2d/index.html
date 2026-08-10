@@ -1108,6 +1108,21 @@
     font-size: 0.82rem;
     font-weight: 800;
     min-height: 52px;
+    /*
+     * O rótulo do bônus de chamada antecipada (P1 §3, ex.: "Iniciar Onda 7 ·
+     * +18g") é mais longo que os rótulos de hoje e a linha de `.time-controls`
+     * é `flex-wrap: nowrap` de propósito (ver nota abaixo, ~L1220) — então o
+     * botão precisa poder encolher e quebrar em 2 linhas em vez de empurrar
+     * os controles de velocidade para fora da tela (que criaria rolagem
+     * horizontal, proibida por convenção do projeto). `min-height` continua
+     * sendo só o piso: com bônus visível o botão cresce em altura, nunca
+     * em largura além do espaço que a flexbox lhe sobra.
+     */
+    white-space: normal;
+    flex-shrink: 1;
+    min-width: 0;
+    text-align: center;
+    line-height: 1.15;
   }
 
   .inspector-toolbar-row {
@@ -1216,16 +1231,23 @@
   }
   /*
    * Mesmo piso de 52px do breakpoint anterior — em telas de ~360px de
-   * largura o botão de onda NÃO pode encolher para caber ao lado dos
-   * controles de velocidade (.time-controls usa flex-wrap: nowrap). Se a
-   * largura apertar, o ajuste é no padding lateral deste botão (abaixo,
-   * menor que no breakpoint de 768px), nunca na altura.
+   * largura o botão de onda não tem largura livre ao lado dos controles de
+   * velocidade (.time-controls usa flex-wrap: nowrap). Com o rótulo do
+   * bônus de chamada antecipada (P1 §3) o texto fica longo demais para uma
+   * linha aqui; em vez de estourar a largura da barra (rolagem horizontal),
+   * o botão quebra em 2 linhas e cresce em altura — o piso de 52px nunca
+   * é violado, só deixa de ser o teto quando o bônus aparece.
    */
   .start-wave-main-btn {
     padding: 6px 8px;
     font-size: 0.76rem;
     font-weight: 800;
     min-height: 52px;
+    white-space: normal;
+    flex-shrink: 1;
+    min-width: 0;
+    text-align: center;
+    line-height: 1.15;
   }
   .active-mode-badge {
     padding: 3px 6px;

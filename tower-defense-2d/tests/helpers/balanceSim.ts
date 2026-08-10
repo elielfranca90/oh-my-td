@@ -9,6 +9,7 @@ import { ParticleManager } from '../../src/engine/ParticleManager';
 import { ProjectileManager2D } from '../../src/engine/ProjectileManager';
 import { Rng } from '../../src/engine/Rng';
 import { getSpecializations } from '../../src/engine/Specializations';
+import { Tower2D } from '../../src/engine/Tower';
 import { TowerManager2D } from '../../src/engine/TowerManager';
 import { WaveManager } from '../../src/engine/WaveManager';
 import type {
@@ -75,6 +76,25 @@ export interface SimOptions {
   startingGold?: number;
   /** Trava anti-loop-infinito: passos máximos por onda (padrão ~2 min de jogo). */
   maxStepsPerWave?: number;
+  /**
+   * Investimento automático em ranks (P1_BALANCE_SPEC §1): no início de cada
+   * onda, depois das ordens de build/upgrade explícitas, gasta todo o ouro
+   * disponível comprando repetidamente o upgrade mais barato entre as torres
+   * já erguidas (nível 2 usa a primeira especialização do catálogo do tipo).
+   * Sem isso, medir "a parede do endless" com níveis infinitos não tem sentido
+   * — uma build parada no nível 3 nunca vai exercitar os ranks 4+ que essa
+   * entrega introduziu.
+   */
+  autoUpgradeGold?: boolean;
+  /**
+   * Ordem de prioridade de tipo usada por `autoUpgradeGold` (torres do início
+   * da lista são rankeadas antes das de tipos posteriores/ausentes). Sem isso,
+   * o critério é só "custo mais barato primeiro" — o que gasta desproporcionalmente
+   * em FROST (base 70g, dano baixo) antes de ARTILLERY/CANNON (110g/105g, dano
+   * alto). Existe para medir a sensibilidade da "parede do endless" à estratégia
+   * de investimento, não para prescrever a estratégia ótima.
+   */
+  autoUpgradePriority?: TowerType[];
 }
 
 export interface SimWaveMetrics {
@@ -236,6 +256,49 @@ export function runBalanceSim(options: SimOptions): SimResult {
     }
   };
 
+  /**
+   * Gasta ouro em ranks gananciosamente: sempre a torre viva mais barata de
+   * melhorar primeiro, até não sobrar ouro para nenhum upgrade. Aproxima o
+   * jogador de endless que reinveste tudo em vez de acumular ouro parado —
+   * é a hipótese que precisa ser exercitada para medir a parede com ranks
+   * infinitos (§1), não uma estratégia ótima nem realista em todo detalhe.
+   */
+  const priority = options.autoUpgradePriority;
+  const priorityTier = (type: TowerType): number => {
+    if (!priority) return 0;
+    const idx = priority.indexOf(type);
+    return idx === -1 ? priority.length : idx;
+  };
+
+  const applyAutoUpgradeGold = () => {
+    if (!options.autoUpgradeGold) return;
+    let progressed = true;
+    while (progressed) {
+      progressed = false;
+      let cheapest: Tower2D | null = null;
+      let cheapestCost = Infinity;
+      let cheapestTier = Infinity;
+      for (const t of towerManager.getTowers()) {
+        if (t.data.isDestroyed) continue;
+        const cost = t.getUpgradeCost();
+        const tier = priorityTier(t.data.type);
+        if (tier < cheapestTier || (tier === cheapestTier && cost < cheapestCost)) {
+          cheapestCost = cost;
+          cheapestTier = tier;
+          cheapest = t;
+        }
+      }
+      if (cheapest && state.gold >= cheapestCost) {
+        towerManager.selectedTower = cheapest;
+        const spec = cheapest.data.level === 2 ? getSpecializations(cheapest.data.type)[0].id : undefined;
+        if (towerManager.upgradeSelectedTower(spec)) {
+          upgradesApplied++;
+          progressed = true;
+        }
+      }
+    }
+  };
+
   // Espelha Game2D.stepSimulation, menos magias e apresentação.
   const step = () => {
     enemyManager.update(FIXED_STEP_MS, towerManager.getTowers());
@@ -260,6 +323,7 @@ export function runBalanceSim(options: SimOptions): SimResult {
       const goldAtStart = state.gold;
       applyBuildOrders(waveNumber);
       applyUpgradeOrders(waveNumber);
+      applyAutoUpgradeGold();
 
       if (!waveManager.startNextWave()) break;
       wavesStarted++;
