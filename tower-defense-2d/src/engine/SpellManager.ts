@@ -129,7 +129,8 @@ export class SpellManager {
         if (enemy.data.isDead) continue;
         const dist = Math.hypot(enemy.data.position.x - x, enemy.data.position.y - y);
         if (dist <= radius) {
-          enemy.takeDamage(damage, false);
+          // Magia em área: ignora armadura e não é esquivável.
+          enemy.takeDamage(damage, 1, false);
           this.fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${damage}`, '#ff3d00');
           if (enemy.data.hp <= 0) {
             enemy.data.isDead = true;

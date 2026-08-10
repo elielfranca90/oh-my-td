@@ -6,7 +6,7 @@ Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower 
 
 ## 🌟 Visão Geral
 
-O projeto utiliza uma arquitetura híbrida de renderização (**WebGL via Three.js** para renderização de terrenos em sRGB e background 3D Diorama Low-Poly de Natureza na Tela Inicial + **HTML5 Canvas 2D** para entidades e projéteis em tempo real). A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 3 mapas com mecânicas e trilhas sonoras únicas, 2 Modos de Jogo (**Modo Campanha com 20 Ondas e Vitória** & **Modo Infinito com Seleção de Desafios**), especializações de torres no Nível 3, simulação determinística com sub-stepping em 2x/4x, autenticação anônima persistente e placar global na nuvem via **Supabase**, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida e suporte a controles sensíveis ao toque.
+O projeto utiliza uma arquitetura híbrida de renderização (**WebGL via Three.js** para renderização de terrenos em sRGB e background 3D Diorama Low-Poly de Natureza na Tela Inicial + **HTML5 Canvas 2D** para entidades e projéteis em tempo real). A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 4 mapas com mecânicas e trilhas sonoras únicas, 2 Modos de Jogo (**Modo Campanha com 10 Ondas e Vitória** & **Modo Infinito com Seleção de Desafios**), especializações de torres no Nível 3, simulação determinística com sub-stepping em 2x/4x, autenticação anônima persistente e placar global na nuvem via **Supabase**, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida e suporte a controles sensíveis ao toque.
 ---
 
 ## 🚀 Como Executar o Projeto
@@ -51,8 +51,8 @@ npm run build
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Basic** | 🪙 50g | 150px | 5 | ⚡ **Critical Hit (20% chance):** 2x dano crítico | *Sniper Rifle* (Dano massivo a distância) / *Gatling Gun* (Cadência ultra-rápida) |
 | **Frost** | 🪙 70g | 130px | 2 | ❄️ **Aura Glacial Pulse AoE:** Dano e slow 50% em área | *Blizzard Aura* (Raio expandido) / *Permafrost* (Congelamento profundo) |
-| **Solar Prism** | 🪙 80g | 140px | 6 | ☀️ **Lente Prismática:** +10%/s de foco no alvo | *Melter Beam* (Dano acumulativo rápido) / *Refractor* (Multi-laser) |
-| **Cannon** | 🪙 90g | 120px | 18 | 💥 **Executor:** 2x dano em Tanks e Bosses acima 50% HP | *Cluster Bomb* (Sub-explosões AoE) / *Bunker Buster* (Perfura armaduras) |
+| **Solar Prism** | 🪙 100g | 140px | 6 | ☀️ **Lente Prismática:** +10%/s de foco no alvo | *Melter Beam* (Dano acumulativo rápido) / *Refractor* (Multi-laser) |
+| **Cannon** | 🪙 105g | 120px | 14 | 💥 **Executor:** 2x dano em Tanks, Bosses e Black Mega Boss acima 50% HP, perfurando sempre 50% da armadura do alvo | *Cluster Bomb* (Sub-explosões AoE) / *Bunker Buster* (Perfura armaduras) |
 | **Artillery** | 🪙 110g | 170px | 25 | 🔥 **Zona de Napalm:** Poça DoT no solo por 2.5s | *Inferno Mortar* (Chagas de fogo persistentes) / *Nuke Cannon* (Impacto devastador) |
 ---
 
@@ -78,8 +78,8 @@ npm run build
 
 ## 🌟 Meta-Progressão, Conquistas & Cloud (Supabase)
 
-* 🌟 **Skill Tree Permanente (`TalentManager.ts`):** Ganhe Estrelas ao jogar e evolua talentos salvos no `LocalStorage` (*Archery, Economy, Fortress, Channeling*).
-* 🏆 **Badges & Achievements (`AchievementManager.ts`):** 11 conquistas desbloqueáveis com notificações flutuantes, modal de inspeção e sincronização cloud.
+* 🌟 **Skill Tree Permanente (`TalentManager.ts`):** Ganhe Estrelas ao jogar e evolua talentos salvos no `LocalStorage` (*Archery, Economy, Fortress, Channeling, Engineering, Precision*).
+* 🏆 **Badges & Achievements (`AchievementManager.ts`):** 9 conquistas desbloqueáveis com notificações flutuantes, modal de inspeção e sincronização cloud.
 * ☁️ **Perfil & Leaderboard Supabase (`DatabaseManager.ts`):** Autenticação anônima com persistência de identidade e placar de líderes global online.
 * 📊 **Análises Pós-Partida (`AnalyticsManager.ts`):** Relatório com Torre MVP, total de abates, estatísticas financeiras e recorde pessoal de maior onda (`🏆 Best: Wave X`).
 
@@ -88,13 +88,15 @@ npm run build
 * **Mobile Tab Bar & Auto-Inspector:** Abas em celulares (`Build`, `Spells`, `Skills`, `Inspector`) com troca automática ao tocar em torres.
 * **Press-and-Hold Tooltips:** Dicas contextuais de tiles acionadas via clique prolongado em mobile ou mouse.
 * **Motor Físico com Timestep Fixo & Sub-stepping:** Simulação 100% determinística sem travamento ou perda de tiros em velocidades 2x e 4x.
+* **Estabilidade Vite HMR & Grafo Limpo:** Grafo de módulos 100% livre de dependências circulares (verificado via `madge`), garantindo recargas ultrarrápidas no servidor de desenvolvimento sem erros de avaliação de imports.
 * **Controles Independentes de Áudio:** Sliders individuais para volume da Música (`🎵 BGM`) e dos Efeitos Sonoros (`🔊 SFX`) com salvamento automático.
-* **Bateria de Testes Vitest:** 163 testes unitários e de integração divididos em 27 suítes cobrindo motores matemáticos, wave scaling, física de sub-stepping, banco de dados, draft roguelite e o novo Mapa 4 (Grave Pass).
+* **Bateria de Testes Vitest:** 220 testes unitários e de integração divididos em 32 suítes cobrindo motores matemáticos, wave scaling, física de sub-stepping, banco de dados, draft roguelite e o Mapa 4 (Grave Pass).
 ---
 
 ## 📚 Documentação Técnica
 
 A arquitetura detalhada e especificações do projeto estão disponíveis na pasta [`/docs`](./docs):
+* 🎮 [**GAME_MECHANICS.md**](./docs/GAME_MECHANICS.md): Guia exaustivo de todas as mecânicas do jogo (torres, especializações, inimigos, biomas, climas, magias, talentos, ondas e fórmulas).
 * 📐 [**ARCHITECTURE_CANVAS.md**](./docs/ARCHITECTURE_CANVAS.md): Arquitetura do motor Canvas 2D, loop de renderização e sintetização de áudio.
 * 📝 [**PRD.md**](./docs/PRD.md): Documento de Requisitos do Produto e User Stories.
 * 🛠️ [**TECH_SPEC.md**](./docs/TECH_SPEC.md): Especificação Técnica e Contrato de Testes.

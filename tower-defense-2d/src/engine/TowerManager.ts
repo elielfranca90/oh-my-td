@@ -197,7 +197,7 @@ export class TowerManager2D {
 
   public repairSelectedTower(): boolean {
     if (!this.selectedTower) return false;
-    const cost = this.selectedTower.getRepairCost(this.talentManager);
+    const cost = this.selectedTower.getRepairCost(this.talentManager, this.gameState.challengeMode);
     if (this.selectedTower.data.hp >= this.selectedTower.data.maxHp && !this.selectedTower.data.isDestroyed) return false;
 
     if (this.gameState.spendGold(cost)) {
@@ -274,19 +274,24 @@ export class TowerManager2D {
       // 1. Frost Tower: AoE Glacial Pulse
       if (tower.data.type === 'FROST') {
         this.audioManager.playFrostShot();
+        // A partícula usa o MESMO raio que decidiu quem é atingido (effectiveRange,
+        // reduzido sob névoa) — desenhar com tower.data.range faria a onda glacial
+        // cobrir visualmente inimigos que não tomam dano nenhum sob névoa.
         this.particleManager?.triggerFrostPulse(
           tower.data.position.x,
           tower.data.position.y,
-          tower.data.range
+          effectiveRange
         );
         const spec = tower.data.specialization;
         for (const enemy of inRangeEnemies) {
-          const dmgDealt = enemy.takeDamage(tower.data.damage, true);
+          // Pulso glacial: sofre a armadura do alvo normalmente (0 penetração),
+          // mas é área — não pode ser desviado pelo Runner (isAvoidable=false).
+          const dmgDealt = enemy.takeDamage(tower.data.damage, 0, false);
           if (dmgDealt > 0) {
             if (this.analyticsManager) {
               this.analyticsManager.recordDamage('FROST', dmgDealt);
             }
-            handleTowerDamageDealt(tower, enemy, dmgDealt, this.gameState);
+            handleTowerDamageDealt(tower, enemy, dmgDealt, this.gameState, enemies);
           }
           const slowMult = this.mapManager.hazardState?.isMistActive ? 0.75 : 1.0;
           if (spec === 'DEEP_FREEZE') {
@@ -337,12 +342,15 @@ export class TowerManager2D {
           const focusBonus = Math.min(1.5, Math.floor((tower.data.beamDuration || 0) / focusPeriod) * 0.25);
           const laserDmg = Math.round(tower.data.damage * (1 + focusBonus));
 
-          const dmgDealt = target.takeDamage(laserDmg, false);
+          // Antes ignorava a armadura por acidente (era o único disparo "pesado"
+          // dos três não-BASIC); agora sofre 0 de penetração como as demais —
+          // nerf intencional para a armadura valer de fato contra Tank/Moss Giant.
+          const dmgDealt = target.takeDamage(laserDmg, 0, true);
           if (dmgDealt > 0) {
             if (this.analyticsManager) {
               this.analyticsManager.recordDamage('SOLAR_PRISM', dmgDealt);
             }
-            handleTowerDamageDealt(tower, target, dmgDealt, this.gameState);
+            handleTowerDamageDealt(tower, target, dmgDealt, this.gameState, enemies);
           }
 
           // CHAIN_BEAM ou PIERCING_CORE: o feixe salta para um segundo alvo por metade do dano
@@ -350,12 +358,12 @@ export class TowerManager2D {
             const secondary = inRangeEnemies.find(e => e !== target && !e.data.isDead);
             if (secondary) {
               const chainDmg = Math.max(1, Math.round(laserDmg * 0.5));
-              const chainDealt = secondary.takeDamage(chainDmg, false);
+              const chainDealt = secondary.takeDamage(chainDmg, 0, true);
               if (chainDealt > 0) {
                 if (this.analyticsManager) {
                   this.analyticsManager.recordDamage('SOLAR_PRISM', chainDealt);
                 }
-                handleTowerDamageDealt(tower, secondary, chainDealt, this.gameState);
+                handleTowerDamageDealt(tower, secondary, chainDealt, this.gameState, enemies);
               }
             }
           }
@@ -373,7 +381,9 @@ export class TowerManager2D {
         let radius = 4;
         let splashRadius: number | undefined;
         let isCrit = false;
-        let isLightShot = false;
+        // 0..1 — quanto da armadura do alvo este disparo ignora. BASIC não
+        // penetra por padrão; PIERCING e o Canhão são os diferenciais.
+        let armorPenetration = 0;
 
         const spec = tower.data.specialization;
         const extraCritChance = this.talentManager ? this.talentManager.getCritChance() : 0;
@@ -381,7 +391,6 @@ export class TowerManager2D {
         const targets: Enemy2D[] = [target];
 
         if (tower.data.type === 'BASIC') {
-          isLightShot = true;
           // 20% Base Critical Hit chance + Talent Crit Chance
           if (this.rng.chance(0.20 + extraCritChance)) {
             damage *= 2;
@@ -390,7 +399,7 @@ export class TowerManager2D {
           }
 
           if (spec === 'PIERCING') {
-            isLightShot = false; // ignora o armorFactor do alvo
+            armorPenetration = 1; // ignora 100% da armadura do alvo, como o texto da carta promete
             color = isCrit ? '#80d8ff' : '#b3e5fc';
           } else if (spec === 'MULTISHOT' || tower.data.equippedModule === 'PIERCING_CORE') {
             const secondary = inRangeEnemies.find(e => e !== target && !e.data.isDead);
@@ -398,9 +407,19 @@ export class TowerManager2D {
           }
           this.audioManager.playBasicShot();
         } else if (tower.data.type === 'CANNON') {
+          // Diferencial permanente do Canhão (qualquer especialização): sempre
+          // perfura metade da armadura do alvo.
+          armorPenetration = 0.5;
           // Executioner (+100% damage against Tanks & Bosses > 50% HP)
           const targetHpRatio = target.data.hp / target.data.maxHp;
-          const isExecutionTarget = target.data.type === 'TANK' || target.data.type === 'BOSS';
+          // MOSS_GIANT fica de fora deliberadamente: a identidade dele é
+          // regeneração/terreno, não alvo blindado — e o texto da carta só
+          // promete Tank/Boss. BLACK_MEGA_BOSS entra porque é o chefe final do
+          // Morte Certa, exatamente o momento em que o jogador escolheu o Executor.
+          const isExecutionTarget =
+            target.data.type === 'TANK' ||
+            target.data.type === 'BOSS' ||
+            target.data.type === 'BLACK_MEGA_BOSS';
           // EXECUTIONER derruba o corte de 50% de HP do bônus base
           const hpGateOk = spec === 'EXECUTIONER' || targetHpRatio >= 0.5;
 
@@ -419,7 +438,16 @@ export class TowerManager2D {
             if (secondary && spec !== 'SHRAPNEL') targets.push(secondary);
             if (spec === 'SHRAPNEL') splashRadius = tower.data.splashRadius;
           }
+          this.audioManager.playCannonShot();
         } else if (tower.data.type === 'ARTILLERY') {
+          // Artilharia sempre nasce com splashRadius > 0, então todo tiro passa
+          // pelo ramo de respingo em Projectile.ts — mas esse ramo agora separa
+          // o alvo primário (recebe armorPenetration abaixo e pode esquivar) das
+          // vítimas secundárias no raio (dano em área, ignora armadura, não
+          // esquivam). Sem essa separação o armorPenetration=0 daqui era código
+          // morto: o alvo primário nunca chegava a passar pelo ramo de impacto
+          // direto e saía sempre com penetração 1 (bug corrigido em Projectile.ts).
+          armorPenetration = 0;
           if (this.rng.chance(extraCritChance)) {
             damage *= 2;
             isCrit = true;
@@ -447,7 +475,7 @@ export class TowerManager2D {
             undefined,
             isCrit,
             tower.data.type,
-            isLightShot,
+            armorPenetration,
             tower
           );
         }

@@ -2,16 +2,26 @@ import { AchievementManager } from '../engine/AchievementManager';
 import { AnalyticsManager } from '../engine/AnalyticsManager';
 import { AudioManager } from '../engine/AudioManager';
 import { EventBus } from '../engine/EventBus';
-import { Game2D } from '../engine/Game';
+import type { DatabaseManager } from '../engine/DatabaseManager';
 import { GameState } from '../engine/GameState';
 import type { MapId } from '../engine/MapManager';
 import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
 import { getAllRogueliteModules, getRogueliteModule, getSpecializationOption, getSpecializations } from '../engine/Specializations';
-import { TalentManager, type TalentData } from '../engine/TalentManager';
+import { TalentManager } from '../engine/TalentManager';
 import type { Tower2D } from '../engine/Tower';
 import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager, type EndlessArchetype, type WavePreview } from '../engine/WaveManager';
-import type { ChallengeMode, EnemyType, RogueliteModuleId, TowerSpecialization, TowerType } from '../types';
+import type { ChallengeMode, EnemyType, RogueliteModuleId, TalentData, TowerSpecialization, TowerType } from '../types';
+
+export interface IGame2D {
+  currentMapId: MapId;
+  gameSpeedMultiplier: number;
+  databaseManager: DatabaseManager | null;
+  changeMap(mapId: MapId): void;
+  changeChallengeMode(mode: ChallengeMode): void;
+  setEndlessMode(enabled: boolean): void;
+  [key: string]: any;
+}
 
 export class UIManager {
   private gameState: GameState;
@@ -22,7 +32,7 @@ export class UIManager {
   private talentManager: TalentManager;
   public achievementManager: AchievementManager;
   private analyticsManager: AnalyticsManager;
-  private game: Game2D;
+  private game: IGame2D;
   private onRestartCallback: () => void;
   public playerModules: RogueliteModuleId[] = [];
 
@@ -76,7 +86,7 @@ export class UIManager {
     talentManager: TalentManager,
     achievementManager: AchievementManager,
     analyticsManager: AnalyticsManager,
-    game: Game2D,
+    game: IGame2D,
     onRestart: () => void
   ) {
     this.gameState = gameState;
@@ -89,7 +99,6 @@ export class UIManager {
     this.analyticsManager = analyticsManager;
     this.game = game;
     this.onRestartCallback = onRestart;
-
     this.createUI();
     this.subscribeToEvents();
     this.setupUIEvents();
@@ -258,11 +267,10 @@ export class UIManager {
           <button id="btn-speed-2x" class="hud-btn speed-btn">2x</button>
           <button id="btn-speed-4x" class="hud-btn speed-btn">4x</button>
           <button id="btn-auto-mode" class="hud-btn auto-toggle-btn" title="Avanço Automático">Auto</button>
+          <button id="btn-next-wave" class="start-wave-main-btn">
+            <span id="start-wave-label">Iniciar Onda 1</span>
+          </button>
         </div>
-
-        <button id="btn-next-wave" class="start-wave-main-btn">
-          <span id="start-wave-label">Iniciar Onda 1</span>
-        </button>
       </div>
     `;
 
@@ -366,7 +374,7 @@ export class UIManager {
         <div id="achievements-modal-overlay" class="modal-overlay hidden pointer-events-auto">
           <div class="modal-card achievements-modal-card">
             <h1>🏆 Badges & Achievements</h1>
-            <p id="achievements-summary">Unlocked 0/7 Badges</p>
+            <p id="achievements-summary">Unlocked 0/${this.achievementManager.totalCount} Badges</p>
             <div id="achievements-grid" class="achievements-grid"></div>
             <button id="close-achievements-btn" class="btn primary modal-restart-btn">Fechar</button>
           </div>
@@ -1184,7 +1192,7 @@ export class UIManager {
         repairBtn.innerText = '🔧 100% OK';
         repairBtn.disabled = true;
       } else {
-        const repairCost = tower.getRepairCost();
+        const repairCost = tower.getRepairCost(undefined, this.gameState.challengeMode);
         repairBtn.innerText = `🔧 Reparo (${repairCost}g)`;
         repairBtn.disabled = this.gameState.gold < repairCost;
       }

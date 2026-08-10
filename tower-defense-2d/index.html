@@ -500,12 +500,13 @@
         box-shadow: 0 0 12px rgba(224, 64, 251, 0.5);
       }
 
-      .speed-btns-group {
+      .speed-buttons, .speed-btns-group {
         display: flex;
         align-items: center;
         gap: 4px;
         background: rgba(18, 18, 26, 0.85);
         backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 8px;
         padding: 3px 5px;
@@ -535,10 +536,12 @@
         background: linear-gradient(135deg, #00c853, #64dd17);
         color: #000000;
         border: none;
-        border-radius: 8px;
-        padding: 6px 14px;
+        border-radius: 6px;
+        padding: 5px 10px;
         font-weight: 800;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        flex-shrink: 0;
         cursor: pointer;
         box-shadow: 0 4px 16px rgba(0, 200, 83, 0.4);
         transition: transform 140ms ease-out, box-shadow 140ms ease;
@@ -1027,9 +1030,26 @@
     gap: 6px;
   }
 
-  .toolbar-card, .btn, .toolbar-chip, .speed-btn, .start-wave-main-btn {
+  .toolbar-card, .btn, .toolbar-chip, .speed-btn {
     min-height: 38px;
     padding: 4px 8px;
+  }
+
+  /*
+   * "Iniciar Onda" é o botão mais pressionado da sessão inteira (uma vez
+   * por onda, do início ao fim da run) — não pode ser o menor alvo de
+   * toque da tela. Piso de 48px em TODOS os breakpoints (Apple HIG pede
+   * 44px, Material 48dp; usamos o maior dos dois porque este é também o
+   * elemento que deve se destacar visualmente na barra de tempo).
+   * Regressão histórica: esta regra chegou a cair para 32px/28px numa
+   * revisão de CSS; ver docs/GAME_DESIGN_REVIEW.md (E2) e
+   * tests/mobile_ui_ux.test.ts para o guard-rail automatizado.
+   */
+  .start-wave-main-btn {
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    min-height: 48px;
   }
 
   .inspector-toolbar-row {
@@ -1043,6 +1063,7 @@
   .time-controls {
     bottom: max(8px, env(safe-area-inset-bottom));
     gap: 4px;
+    flex-wrap: nowrap;
   }
   .leaderboard-modal-card, .retro-modal-card {
     width: 96%;
@@ -1118,6 +1139,32 @@
   }
   .game-title {
     font-size: 0.9rem;
+  }
+  .speed-buttons, .speed-btns-group {
+    gap: 2px;
+    padding: 2px 4px;
+  }
+  .speed-btn, .auto-toggle-btn {
+    padding: 3px 5px;
+    font-size: 0.75rem;
+    min-height: 28px;
+  }
+  /*
+   * Mesmo piso de 48px do breakpoint anterior — em telas de ~360px de
+   * largura o botão de onda NÃO pode encolher para caber ao lado dos
+   * controles de velocidade (.time-controls usa flex-wrap: nowrap). Se a
+   * largura apertar, o ajuste é no padding lateral deste botão (abaixo,
+   * menor que no breakpoint de 768px), nunca na altura.
+   */
+  .start-wave-main-btn {
+    padding: 6px 8px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    min-height: 48px;
+  }
+  .active-mode-badge {
+    padding: 3px 6px;
+    font-size: 0.7rem;
   }
 }
 

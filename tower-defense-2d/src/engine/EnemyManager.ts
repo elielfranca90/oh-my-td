@@ -165,11 +165,14 @@ export class EnemyManager2D {
     }
 
     const waypoints = this.mapManager.getWaypoints(pathIndex);
-    const isFast = this.gameState.challengeMode === 'MORTE_CERTA';
-    const isTurbo = this.gameState.challengeMode === 'MORTE_CERTA';
-    const speedMultiplier = isFast ? 1.4 : 1.0;
+    // Matriz de dificuldade (fechada pelo game-designer): HARDCORE só acelera os
+    // inimigos e encarece reparo (ver Tower.getRepairCost); MORTE_CERTA acelera
+    // mais e ainda paga bônus de ouro por cima, coerente com o risco de 1 HP.
+    const challengeMode = this.gameState.challengeMode;
+    const speedMultiplier =
+      challengeMode === 'MORTE_CERTA' ? 1.4 : challengeMode === 'HARDCORE' ? 1.25 : 1.0;
     const currentWaveNum = this.waveManager.currentWaveIndex + 1;
-    let goldMultiplier = isTurbo ? 1.5 : 1.0;
+    let goldMultiplier = challengeMode === 'MORTE_CERTA' ? 1.5 : 1.0;
     if (currentWaveNum >= 4) {
       goldMultiplier *= 0.75;
     }

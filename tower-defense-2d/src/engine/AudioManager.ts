@@ -437,19 +437,28 @@ export class AudioManager {
   public playCannonShot() {
     if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
     const osc = this.ctx.createOscillator();
+    const filter = this.ctx.createBiquadFilter();
     const gain = this.ctx.createGain();
 
     osc.type = 'square';
-    osc.frequency.setValueAtTime(160, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(35, this.ctx.currentTime + 0.2);
+    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.18);
 
-    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+    // Lowpass abafa os harmônicos ásperos do square wave: sem ele, o Canhão (fireRate 90,
+    // 2º mais rápido depois da Basic) estourava a mixagem quando várias unidades disparavam
+    // juntas em campo. O ganho também caiu de 0.25 para 0.18 pelo mesmo motivo.
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(500, this.ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.18);
 
-    osc.connect(gain);
+    gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+
+    osc.connect(filter);
+    filter.connect(gain);
     gain.connect(this.sfxGainNode);
     osc.start();
-    osc.stop(this.ctx.currentTime + 0.2);
+    osc.stop(this.ctx.currentTime + 0.18);
   }
 
   public playArtilleryShot() {

@@ -55,7 +55,7 @@ describe('Ativação de conteúdo: SHIELDED, regen do Moss Giant e Sprout', () =
     ];
 
     const perto = new Enemy2D(waypoints, 'MOSS_GIANT', 'moss-1', 1.0);
-    perto.takeDamage(10, false);
+    perto.takeDamage(10, 1); // armorPenetration=1: dano cheio, para isolar a regeneração
     const hpFerido = perto.data.hp;
     expect(hpFerido).toBe(35);
 
@@ -65,7 +65,7 @@ describe('Ativação de conteúdo: SHIELDED, regen do Moss Giant e Sprout', () =
     expect(perto.isRegenerating).toBe(true);
 
     const longe = new Enemy2D(waypoints, 'MOSS_GIANT', 'moss-2', 1.0);
-    longe.takeDamage(10, false);
+    longe.takeDamage(10, 1);
     for (let i = 0; i < 60; i++) longe.update(waypoints, false);
     expect(longe.data.hp).toBe(hpFerido);
     expect(longe.isRegenerating).toBe(false);
@@ -78,7 +78,7 @@ describe('Ativação de conteúdo: SHIELDED, regen do Moss Giant e Sprout', () =
     ];
 
     const tank = new Enemy2D(waypoints, 'TANK', 'tank-1', 1.0);
-    tank.takeDamage(10, false);
+    tank.takeDamage(10, 1);
     const hpFerido = tank.data.hp;
 
     for (let i = 0; i < 60; i++) tank.update(waypoints, true);

@@ -134,10 +134,11 @@ export interface IProjectile2D {
   slowFactor?: number;
   isCrit?: boolean;
   /**
-   * Se o disparo é "leve" (sofre o armorFactor do alvo). Era inferido da cor do
-   * projétil, o que quebrava ao introduzir variações de cor por especialização.
+   * 0..1 — quanto da armadura do alvo o disparo ignora (ver Enemy2D.takeDamage).
+   * Era um booleano "isLightShot"; virou contínuo para o Canhão (0.5) e PIERCING
+   * (1) terem penetração parcial/total em vez de só ligado/desligado.
    */
-  isLightShot?: boolean;
+  armorPenetration?: number;
   hasHit: boolean;
 }
 
@@ -198,3 +199,20 @@ export interface IChangelogItem {
   badge?: string;
   changes: string[];
 }
+
+export interface TalentData {
+  damageLvl: number;
+  goldLvl: number;
+  hpLvl: number;
+  cdLvl: number;
+  repairLvl: number;
+  critLvl: number;
+}
+
+export const TileType = {
+  BUILDABLE: 0,
+  PATH: 1,
+  OBSTACLE_MOUNTAIN: 2,
+  OBSTACLE_FOREST: 3,
+} as const;
+export type TileType = typeof TileType[keyof typeof TileType];

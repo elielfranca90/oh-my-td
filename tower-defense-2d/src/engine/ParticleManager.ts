@@ -246,7 +246,9 @@ export class ParticleManager {
           if (enemy.data.isDead) continue;
           const dist = Math.hypot(enemy.data.position.x - fp.x, enemy.data.position.y - fp.y);
           if (dist <= fp.radius) {
-            enemy.takeDamage(fp.damage, true);
+            // DoT de napalm: coerente com o respingo da mesma torre, que já
+            // ignora armadura — e um tick de fogo não dá para esquivar.
+            enemy.takeDamage(fp.damage, 1, false);
             if (fxManager && typeof fxManager === 'object' && 'addDamageText' in fxManager && typeof fxManager.addDamageText === 'function') {
               fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, `-${fp.damage}`, '#ff9100');
             }

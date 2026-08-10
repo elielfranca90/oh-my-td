@@ -20,14 +20,14 @@ describe('Black Mega Boss & Renderer Safety Tests', () => {
     const boss = new Enemy2D(mockWaypoints, 'BLACK_MEGA_BOSS', 'boss-1', 1.0);
     const initialShield = boss.data.shieldHp; // 120
 
-    // Shield absorbs damage first
-    boss.takeDamage(50, false);
+    // Shield absorbs damage first (armorPenetration=1: bypass total, para isolar o escudo)
+    boss.takeDamage(50, 1);
     expect(boss.data.shieldHp).toBe(initialShield - 50);
 
-    // Armor factor 0.45 absorbs 55% of light shots
+    // Armor factor 0.45 absorbs 55% of unpenetrated hits
     boss.data.shieldHp = 0;
     const initialHp = boss.data.hp;
-    const dmgDealt = boss.takeDamage(20, true);
+    const dmgDealt = boss.takeDamage(20, 0);
     expect(dmgDealt).toBe(9); // 20 * 0.45 = 9
     expect(boss.data.hp).toBe(initialHp - 9);
   });

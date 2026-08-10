@@ -88,6 +88,25 @@ export interface SimWaveMetrics {
   timedOut: boolean;
 }
 
+/**
+ * Desfecho de um BLACK_MEGA_BOSS individual, rastreado passo a passo desde o
+ * spawn. Existe para responder a uma pergunta específica de gate de
+ * balanceamento (docs/GAME_DESIGN_REVIEW.md A2): depois do nerf de armadura,
+ * o chefe final do Morte Certa ainda morre antes de atravessar o mapa? Sem
+ * isso, o harness só sabia dizer "a run terminou em GAME_OVER", não *por causa
+ * de qual inimigo* nem *quão perto* a defesa chegou de falhar.
+ */
+export interface MegaBossEncounter {
+  id: string;
+  /** Passo fixo (1/60s) em que o Black Mega Boss apareceu na lista de inimigos. */
+  spawnStep: number;
+  /** Passo fixo em que saiu da lista (morto ou vazado); null se a simulação acabou primeiro. */
+  resolvedStep: number | null;
+  outcome: 'KILLED' | 'LEAKED' | 'UNRESOLVED';
+  /** `resolvedStep - spawnStep`, em passos fixos de 1/60s. */
+  framesToResolve: number | null;
+}
+
 export interface SimResult {
   seed: number | string;
   status: GameStatus;
@@ -116,6 +135,8 @@ export interface SimResult {
   upgradesApplied: number;
   steps: number;
   waveMetrics: SimWaveMetrics[];
+  /** Todo BLACK_MEGA_BOSS que apareceu na run, na ordem em que apareceu. */
+  megaBossEncounters: MegaBossEncounter[];
 }
 
 export function runBalanceSim(options: SimOptions): SimResult {
@@ -229,6 +250,10 @@ export function runBalanceSim(options: SimOptions): SimResult {
   let wavesStarted = 0;
   let wavesCompleted = 0;
 
+  // Rastreamento de BLACK_MEGA_BOSS: id -> encontro em andamento.
+  const megaBossTracker = new Map<string, MegaBossEncounter>();
+  let globalStep = 0;
+
   try {
     for (let w = 0; w < options.waves; w++) {
       const waveNumber = w + 1;
@@ -241,8 +266,32 @@ export function runBalanceSim(options: SimOptions): SimResult {
 
       let waveSteps = 0;
       while (waveManager.isWaveActive && state.status === 'PLAYING' && waveSteps < maxStepsPerWave) {
+        const leaksBefore = leaks;
         step();
+        globalStep++;
         waveSteps++;
+
+        const liveEnemies = enemyManager.getEnemies();
+        for (const enemy of liveEnemies) {
+          if (enemy.data.type === 'BLACK_MEGA_BOSS' && !megaBossTracker.has(enemy.data.id)) {
+            megaBossTracker.set(enemy.data.id, {
+              id: enemy.data.id,
+              spawnStep: globalStep,
+              resolvedStep: null,
+              outcome: 'UNRESOLVED',
+              framesToResolve: null,
+            });
+          }
+        }
+        const liveIds = new Set(liveEnemies.map(e => e.data.id));
+        for (const encounter of megaBossTracker.values()) {
+          if (encounter.outcome !== 'UNRESOLVED' || liveIds.has(encounter.id)) continue;
+          // Saiu da lista de inimigos neste passo: ou morreu, ou vazou (EnemyManager
+          // remove o inimigo no mesmo passo em que decide a causa).
+          encounter.resolvedStep = globalStep;
+          encounter.outcome = leaks > leaksBefore ? 'LEAKED' : 'KILLED';
+          encounter.framesToResolve = encounter.resolvedStep - encounter.spawnStep;
+        }
       }
       totalSteps += waveSteps;
 
@@ -287,6 +336,7 @@ export function runBalanceSim(options: SimOptions): SimResult {
     upgradesApplied,
     steps: totalSteps,
     waveMetrics,
+    megaBossEncounters: Array.from(megaBossTracker.values()),
   };
 }
 
