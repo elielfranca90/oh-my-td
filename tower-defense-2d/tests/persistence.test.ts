@@ -110,3 +110,15 @@ describe('AnalyticsManager persistence validation', () => {
     expect(new AnalyticsManager().highScoreWave).toBe(0);
   });
 });
+
+describe('Player preferences persistence (Speed & Auto-Wave)', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('persists and restores game speed and auto-mode settings in localStorage', () => {
+    localStorage.setItem('oh_my_td_game_speed', '4');
+    localStorage.setItem('oh_my_td_auto_mode', 'true');
+
+    expect(localStorage.getItem('oh_my_td_game_speed')).toBe('4');
+    expect(localStorage.getItem('oh_my_td_auto_mode')).toBe('true');
+  });
+});

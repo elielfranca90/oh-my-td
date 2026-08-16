@@ -65,7 +65,7 @@ O Nível 3 continua sendo o único ponto de escolha de especialização, mas dei
 * **Tank:** **Placa de Armadura (absorve 40% de dano)** de tiros leves.
 * **Shielded Speeder:** **Escudo de Energia Azul (22 Shield HP)** que absorve impacto antes da vida.
 * **Spore Sprinter:** Libera uma nuvem de esporos dando **+30% de velocidade** aos aliados quando fica com menos de 50% HP.
-* **Moss Giant:** Regenera **+3 HP/seg** enquanto pisar em blocos de grama.
+* **Moss Giant:** Regenera **~1,5% do HP máximo por segundo** (mínimo 3 HP/s no nível 1) enquanto adjacente à mata.
 * **BOSS:** **160 HP** (escalar no modo infinito), causa 5 de dano à base e **invoca 2 Corredores de reforço** ao morrer.
 * **BLACK MEGA BOSS:** Chefão com alta resistência, gráficos de spritesheet com transparência e renderizador dedicado (`MegaBossSpriteRenderer`).
 ---

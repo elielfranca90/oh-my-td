@@ -406,7 +406,7 @@ export class TowerManager2D {
               }
             }
           }
-          if (fxManager && Math.random() < 0.3) {
+          if (fxManager && dmgDealt > 0) {
             fxManager.addDamageText(target.data.position.x, target.data.position.y, `-${dmgDealt}`, '#ffff8d');
           }
 

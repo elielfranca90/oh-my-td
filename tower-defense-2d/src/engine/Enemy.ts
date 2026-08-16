@@ -151,8 +151,10 @@ export class Enemy2D {
       this.data.type === 'MOSS_GIANT' && isNearFoliage && this.data.hp < this.data.maxHp;
     if (this.isRegenerating) {
       this.mossRegenTimer++;
-      if (this.mossRegenTimer >= 20) { // +1 HP every 20 frames (~3 HP/sec)
-        this.data.hp = Math.min(this.data.maxHp, this.data.hp + 1);
+      if (this.mossRegenTimer >= 20) {
+        // Regenera ~1.5% do HP máximo por segundo (~0.5% a cada 20 frames / ~0.33s), mínimo 1 HP.
+        const regenAmount = Math.max(1, Math.round(this.data.maxHp * 0.005));
+        this.data.hp = Math.min(this.data.maxHp, this.data.hp + regenAmount);
         this.mossRegenTimer = 0;
       }
     } else {

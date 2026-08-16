@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Game2D } from '../src/engine/Game';
+import { Rng } from '../src/engine/Rng';
+import { UIManager } from '../src/ui/UIManager';
 
 /**
  * A5 (docs/GAME_DESIGN_REVIEW.md): antes o Draft Roguelite disparava nas ondas
@@ -49,8 +51,48 @@ describe('Draft Roguelite — gatilhos de onda (A5)', () => {
     game['stepSimulation'](1000 / 60);
   }
 
-  it('dispara nas ondas 3, 6 e 9 na campanha — nunca na 10ª, que é vitória', () => {
+  it('NÃO dispara no modo NORMAL nem no HARDCORE', () => {
+    const gameNormal = new Game2D();
+    const draftSpyNormal = vi.spyOn(gameNormal['uiManager'], 'triggerDraftModal').mockImplementation(() => {});
+
+    for (let w = 1; w <= 10; w++) {
+      gameNormal.waveManager.startNextWave();
+      finishCurrentWave(gameNormal);
+    }
+    expect(draftSpyNormal).not.toHaveBeenCalled();
+
+    const gameHardcore = new Game2D();
+    gameHardcore.changeChallengeMode('HARDCORE');
+    const draftSpyHardcore = vi.spyOn(gameHardcore['uiManager'], 'triggerDraftModal').mockImplementation(() => {});
+
+    for (let w = 1; w <= 10; w++) {
+      gameHardcore.waveManager.startNextWave();
+      finishCurrentWave(gameHardcore);
+    }
+    expect(draftSpyHardcore).not.toHaveBeenCalled();
+  });
+
+  it('dispara exclusivamente no modo MORTE_CERTA a cada 5 ondas (5, 10, 15...)', () => {
     const game = new Game2D();
+    game.changeChallengeMode('MORTE_CERTA');
+    const draftSpy = vi.spyOn(game['uiManager'], 'triggerDraftModal').mockImplementation(() => {});
+
+    const firedAtWave: number[] = [];
+    for (let w = 1; w <= 16; w++) {
+      const before = draftSpy.mock.calls.length;
+      game.waveManager.startNextWave();
+      finishCurrentWave(game);
+      if (draftSpy.mock.calls.length > before) firedAtWave.push(w);
+    }
+
+    expect(firedAtWave).toEqual([5, 10, 15]);
+    expect(draftSpy).toHaveBeenCalledTimes(3);
+  });
+
+  it('se MORTE_CERTA for configurado em modo campanha com teto de ondas, dispara em 3, 6 e 9', () => {
+    const game = new Game2D();
+    game.changeChallengeMode('MORTE_CERTA');
+    game.waveManager.setEndlessMode(false);
     const draftSpy = vi.spyOn(game['uiManager'], 'triggerDraftModal').mockImplementation(() => {});
 
     const firedAtWave: number[] = [];
@@ -63,25 +105,27 @@ describe('Draft Roguelite — gatilhos de onda (A5)', () => {
 
     expect(firedAtWave).toEqual([3, 6, 9]);
     expect(draftSpy).toHaveBeenCalledTimes(3);
-    // A vitória e o draft não competem pela tela: a campanha terminou.
     expect(game.gameState.status).toBe('VICTORY');
   });
 
-  it('dispara em múltiplos de 5 no endless (5, 10, 15...) e não trava na 15', () => {
-    const game = new Game2D();
-    game.waveManager.setEndlessMode(true);
-    const draftSpy = vi.spyOn(game['uiManager'], 'triggerDraftModal').mockImplementation(() => {});
+  it('deve gerar escolhas de módulos determinísticas com Rng', () => {
+    const game1 = new Game2D();
+    const rng1 = new Rng(42);
+    game1['uiManager'].triggerDraftModal(undefined, rng1);
+    const cards1 = Array.from(document.querySelectorAll('.draft-card-btn')).map(
+      el => (el as HTMLElement).dataset.id
+    );
+    document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
 
-    const firedAtWave: number[] = [];
-    for (let w = 1; w <= 16; w++) {
-      const before = draftSpy.mock.calls.length;
-      game.waveManager.startNextWave();
-      finishCurrentWave(game);
-      if (draftSpy.mock.calls.length > before) firedAtWave.push(w);
-    }
+    const game2 = new Game2D();
+    const rng2 = new Rng(42);
+    game2['uiManager'].triggerDraftModal(undefined, rng2);
+    const cards2 = Array.from(document.querySelectorAll('.draft-card-btn')).map(
+      el => (el as HTMLElement).dataset.id
+    );
+    document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
 
-    expect(firedAtWave).toEqual([5, 10, 15]);
-    // Endless nunca declara vitória.
-    expect(game.gameState.status).toBe('PLAYING');
+    expect(cards1).toEqual(cards2);
+    expect(cards1.length).toBe(3);
   });
 });

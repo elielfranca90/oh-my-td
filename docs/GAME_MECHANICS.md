@@ -146,12 +146,11 @@ Todas as torres permitem alternar livremente o critério de seleção de alvos:
 
 ---
 
-## 3. Módulos Roguelite (Draft Modifiers)
+## 3. Módulos Roguelite (Draft Modifiers - Exclusivo do Modo Morte Certa)
 
-Durante a partida, um modal de Draft Roguelite sorteia módulos para equipar em torres de nível 2+. **Gatilhos** (`Game.ts`):
+No modo **Morte Certa** (`challengeMode === 'MORTE_CERTA'`), um modal de Draft Roguelite com sorteio determinístico via `Rng` oferece módulos para equipar em torres de nível 2+. Nos modos Normal e Hardcore, o fluxo tradicional segue direto sem pausas de cartas. **Gatilhos** (`Game.ts`):
 - **Campanha (10 ondas):** ao completar as ondas **3, 6 e 9** — a 10ª nunca dispara o draft porque o mesmo passo de simulação já declara `VICTORY` primeiro, evitando o modal de draft competir com o de vitória.
 - **Modo Infinito:** a cada múltiplo de **5** ondas (5, 10, 15, 20…), sem linha de chegada.
-
 Módulos disponíveis:
 
 - 💰 **MIDAS_TOUCH (Módulo Midas):** Concede **+2 de ouro** a cada 5 abates efetuados pela torre.
@@ -185,7 +184,7 @@ Módulos disponíveis:
 - 🛡️ **Placa de Armadura (`TANK`):** Multiplica todo dano recebido, **de qualquer torre**, por $0.6$ (redução passiva de 40%), atenuada pela penetração (`armorPenetration`) do disparo que a atingiu — ver §2.1.1.
 - 🔮 **Escudo de Energia (`SHIELDED`):** Uma barra azul de 22 HP absorve todos os danos antes de impactar a vida primária da unidade.
 - 🍄 **Nuvem de Esporos (`SPORE_SPRINTER`):** Ao ter sua vida reduzida abaixo de 50% HP, libera instantaneamente uma nuvem de esporos que concede **+30% de velocidade de movimento** aos aliados próximos.
-- 🌿 **Regeneração da Mata (`MOSS_GIANT`):** Enquanto estiver caminhando sobre tiles de mata/floresta (`OBSTACLE_FOREST` ou grama viva), recupera **+3 HP/segundo**.
+- 🌿 **Regeneração da Mata (`MOSS_GIANT`):** Enquanto estiver caminhando sobre tiles de mata/floresta (`OBSTACLE_FOREST` ou adjacente à folhagem), recupera **~1,5% do seu HP máximo por segundo** (mínimo de 1 HP a cada 20 frames / ~3 HP/s no nível 1), escalando perfeitamente nas ondas tardias do Modo Infinito.
 - 👑 **Reinforços ao Morrer (`BOSS`):** Ao ser derrotado, o Chefão invoca **2 unidades Runner** nos waypoints imediatos.
 - 💀 **Fases do Mega Chefão (`BLACK_MEGA_BOSS`):** Possui renderizador procedural dedicado (`MegaBossSpriteRenderer`), aura de partículas, 90 de escudo de energia e causa 10 de dano direto à base se alcançar o final.
 

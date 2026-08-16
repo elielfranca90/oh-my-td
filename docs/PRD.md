@@ -30,21 +30,22 @@ O **Tower Defense 2D (Oh My TD)** é um jogo de estratégia em tempo real execut
 | **RF10** | Áudio Dinâmico em 2 Faixas | Sintetizar 3 trilhas BGM únicas para os mapas + trilha pesada e sinistra de Boss via Web Audio API. |
 | **RF11** | Modo Auto & Infinito | Suportar temporizador de 5s entre ondas e modo infinito com escalonamento de HP $+12\%/\text{onda}$. |
 | **RF12** | Árvore de Talentos | Permitir gastar Estrelas ganhas em partidas para evoluir bônus salvos no `LocalStorage`. |
-| **RF13** | Badges & Achievements | Monitorar 7 conquistas desbloqueáveis com notificações flutuantes e modal de badges. |
+| **RF13** | Badges & Achievements | Monitorar 9 conquistas desbloqueáveis com notificações flutuantes e modal de badges. |
 | **RF14** | Analytics Pós-Partida | Exibir relatório final com Torre MVP, abates, finanças e High Score no `LocalStorage`. |
-| **RF15** | UX Mobile Responsivo | Barra de abas mobile com auto-inspector no toque da torre e controles duplos de volume BGM/SFX. |
-| **RF16** | Tela Inicial & Modos de Jogo | Tela Inicial com Diorama 3D Low-Poly de Natureza (Three.js) com ilha flutuante, pinheiros, sol dourado com bloom e vaga-lumes, permitindo escolher entre Modo Campanha (20 ondas com Boss final e modal de vitória) e Modo Infinito com Seleção de Desafios (`NORMAL`, `HARDCORE`, `MORTE_CERTA`). |
-| **RF17** | Especializações de Torres | Permitir ramificação e escolha de caminhos de especialização no Nível 3 para todas as 5 torres com efeitos únicos. |
+| **RF15** | UX Mobile Responsivo | Barra de abas mobile com auto-inspector no toque da torre, feedback háptico e controles duplos de volume BGM/SFX. |
+| **RF16** | Tela Inicial & Modos de Jogo | Tela Inicial com Diorama 3D Low-Poly de Natureza (Three.js) com ilha flutuante, pinheiros, sol dourado com bloom e vaga-lumes, permitindo escolher entre Modo Campanha (10 ondas densas com Boss final e vitória) e Modo Infinito com Seleção de Desafios (`NORMAL`, `HARDCORE`, `MORTE_CERTA`). |
+| **RF17** | Especializações & Ranks Infinitos | Permitir ramificação de especialização no Nível 3 para todas as 5 torres com efeitos únicos e progressão contínua em ranks infinitos a partir do Nível 4. |
 | **RF18** | Perfil & Leaderboard Supabase | Autenticação anônima com persistência de identidade, sincronização de conquistas na nuvem e placar global de High Scores via Supabase. |
-| **RF19** | Motor Determinístico & Sub-stepping | Simulação com timestep fixo e sub-stepping para execução fluida e física precisa em velocidades 2x e 4x independente do refresh rate da tela. |
+| **RF19** | Motor Determinístico & Sub-stepping | Simulação com timestep fixo e sub-stepping para execução fluida e física precisa em velocidades 2x e 4x independente do refresh rate da tela, com RNG semeado Mulberry32. |
 | **RF20** | Tooltip Press-and-Hold | Exibição contextual de dicas de terreno/tile via press-and-hold (toque longo em telas sensíveis ao toque e mouse). |
 | **RF21** | Mega Boss & Renderização Customizada | Suporte ao chefão lendário `BLACK_MEGA_BOSS` com spritesheet com transparência e renderizador procedural dedicado (`MegaBossSpriteRenderer`). |
 | **RF22** | Renderização WebGL sRGB | Renderizar os tiles dos mapas via `ThreeRenderer` usando `THREE.CanvasTexture` configurados com `THREE.SRGBColorSpace`, garantindo fidelidade de cores vivas e vibrantes sem desbotamento por dupla correção de gama. |
-
+| **RF23** | Módulos Roguelite (Morte Certa) | Sorteio determinístico de módulos passivos/ativos para torres nível 2+ exclusivo do modo Morte Certa nas ondas 3, 6 e 9 (ou a cada 5 no infinito). |
+| **RF24** | Persistência de Preferências | Armazenar e recuperar preferências do usuário (velocidade de simulação 1x/2x/4x e avanço automático de onda) no `localStorage`. |
 ---
 
 ## 4. Requisitos Não-Funcionais
 * **Performance:** Manter 60 FPS estáveis mesmo com 50+ entidades simultâneas em velocidade 4x com sub-stepping.
 * **Tamanho do Bundle:** Build de produção otimizado com suporte a Three.js para o background 3D low-poly de natureza.
 * **Layout Zero-Scroll:** Garantir que 100% dos elementos da interface caibam na tela em `100vh` e `100dvh` com suporte a *Safe Area Insets*.
-* **Testes Automatizados:** Suíte de 140 testes unitários e de integração divididos em 22 arquivos de teste (Vitest) passando com 100% de sucesso.
+* **Testes Automatizados:** Suíte de 273 testes unitários e de integração divididos em 37 arquivos de teste (Vitest) passando com 100% de sucesso.

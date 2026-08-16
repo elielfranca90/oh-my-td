@@ -67,7 +67,7 @@ export class Game2D implements IGame2D {
   public analyticsManager!: AnalyticsManager;
   public databaseManager!: DatabaseManager;
   public mapManager!: MapManager2D;
-  private enemyManager!: EnemyManager2D;
+  public enemyManager!: EnemyManager2D;
   private projectileManager!: ProjectileManager2D;
   private towerManager!: TowerManager2D;
   private fxManager!: FXManager;
@@ -86,7 +86,7 @@ export class Game2D implements IGame2D {
    * o harness de balanceamento comparar builds.
    */
   public runSeed = 0;
-  private rng!: Rng;
+  public rng!: Rng;
   public isMobile: boolean;
   private mobileSelectedGrid: { x: number; y: number } | null = null;
   private mousePos: { x: number; y: number } | null = null;
@@ -140,8 +140,19 @@ export class Game2D implements IGame2D {
    * e o infinito voltava a `false` — parecia que só existia no Morte Certa.
    */
   private currentSavedEndlessMode = false;
+  public currentSavedAutoMode = false;
 
   constructor() {
+    try {
+      const savedSpeed = parseInt(localStorage.getItem('oh_my_td_game_speed') || '1', 10);
+      if (savedSpeed === 1 || savedSpeed === 2 || savedSpeed === 4) {
+        this.gameSpeedMultiplier = savedSpeed;
+      }
+      const savedAuto = localStorage.getItem('oh_my_td_auto_mode');
+      this.currentSavedAutoMode = savedAuto === 'true';
+    } catch {
+      // ignore
+    }
     this.isMobile = initMobileDetection();
     this.databaseManager = DatabaseManager.getInstance();
     const gameArea = document.getElementById('game-area');
@@ -221,6 +232,8 @@ export class Game2D implements IGame2D {
     // Morte Certa é sempre infinito; nos demais modos vale a preferência salva do jogador.
     this.waveManager.setEndlessMode(this.currentSavedEndlessMode || this.waveManager.isMorteCerta);
     if (this.waveManager.isMorteCerta) {
+      this.waveManager.setAutoMode(true);
+    } else if (this.currentSavedAutoMode) {
       this.waveManager.setAutoMode(true);
     }
     this.mapManager = new MapManager2D(this.currentSavedMapId);
@@ -1096,15 +1109,16 @@ export class Game2D implements IGame2D {
       return false;
     }
 
-    // Draft Roguelite: na campanha (10 ondas) dispara nas ondas 3/6/9 — a 10ª
+    // Draft Roguelite: exclusivo do modo MORTE_CERTA.
+    // Na campanha (10 ondas) dispara nas ondas 3/6/9 — a 10ª
     // nunca chega aqui porque a vitória já retornou acima. No endless, sem
     // linha de chegada, mantém o ritmo original de 5 em 5 (5/10/15/20...).
-    if (completedWave !== null) {
+    if (completedWave !== null && this.gameState.challengeMode === 'MORTE_CERTA') {
       const isDraftWave = this.waveManager.isEndlessMode
         ? completedWave % 5 === 0
         : completedWave === 3 || completedWave === 6 || completedWave === 9;
       if (isDraftWave) {
-        this.uiManager.triggerDraftModal();
+        this.uiManager.triggerDraftModal(undefined, this.rng);
       }
     }
 

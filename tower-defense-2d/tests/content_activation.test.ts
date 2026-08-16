@@ -70,6 +70,24 @@ describe('Ativação de conteúdo: SHIELDED, regen do Moss Giant e Sprout', () =
     expect(longe.data.hp).toBe(hpFerido);
     expect(longe.isRegenerating).toBe(false);
   });
+  it('deve escalar a regeneração do MOSS_GIANT proporcionalmente ao maxHp em ondas avançadas', () => {
+    const waypoints: Vector2D[] = [
+      { x: 30, y: 30 },
+      { x: 600, y: 30 },
+    ];
+
+    // hpMultiplier=20 -> maxHp = 45 * 20 = 900
+    const bossMoss = new Enemy2D(waypoints, 'MOSS_GIANT', 'moss-boss', 20.0);
+    expect(bossMoss.data.maxHp).toBe(900);
+    bossMoss.takeDamage(100, 1);
+    const hpFerido = bossMoss.data.hp;
+    expect(hpFerido).toBe(800);
+
+    // 20 passos junto à mata -> +5 HP (0.5% de 900 = 4.5 -> 5)
+    for (let i = 0; i < 20; i++) bossMoss.update(waypoints, true);
+    expect(bossMoss.data.hp).toBe(hpFerido + 5);
+  });
+
 
   it('não deve regenerar outros tipos de inimigo junto à mata', () => {
     const waypoints: Vector2D[] = [

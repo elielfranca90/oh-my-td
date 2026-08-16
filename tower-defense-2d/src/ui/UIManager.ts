@@ -1,19 +1,20 @@
 import { AchievementManager } from '../engine/AchievementManager';
 import { AnalyticsManager } from '../engine/AnalyticsManager';
 import { AudioManager } from '../engine/AudioManager';
-import { EventBus } from '../engine/EventBus';
 import type { DatabaseManager } from '../engine/DatabaseManager';
+import type { EnemyManager2D } from '../engine/EnemyManager';
+import { EventBus } from '../engine/EventBus';
 import { GameState } from '../engine/GameState';
 import { isHapticsEnabled, setHapticsEnabled } from '../helpers/haptics';
 import type { MapId } from '../engine/MapManager';
+import { Rng } from '../engine/Rng';
 import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
 import { getAllRogueliteModules, getRogueliteModule, getSpecializationOption, getSpecializations } from '../engine/Specializations';
 import { TalentManager } from '../engine/TalentManager';
 import type { Tower2D } from '../engine/Tower';
 import { TowerManager2D } from '../engine/TowerManager';
 import { WaveManager, type EndlessArchetype, type WavePreview } from '../engine/WaveManager';
-import type { ChallengeMode, EnemyType, RogueliteModuleId, TalentData, TowerSpecialization, TowerType } from '../types';
-
+import type { ChallengeMode, EnemyType, IRogueliteModule, RogueliteModuleId, TalentData, TowerSpecialization, TowerType } from '../types';
 export interface IGame2D {
   currentMapId: MapId;
   gameSpeedMultiplier: number;
@@ -21,7 +22,9 @@ export interface IGame2D {
   changeMap(mapId: MapId): void;
   changeChallengeMode(mode: ChallengeMode): void;
   setEndlessMode(enabled: boolean): void;
-  [key: string]: any;
+  currentSavedAutoMode?: boolean;
+  rng?: Rng;
+  enemyManager?: EnemyManager2D;
 }
 
 export class UIManager {
@@ -565,9 +568,8 @@ export class UIManager {
                 <p style="margin: 0; color: #b0bec5;">Alcança o poder com Altares Obscuros no solo (+25% de dano necrótico) e Erupções Espirituais que aplicam 30% de desaceleração nos inimigos.</p>
               </div>
               <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid #ffeb3b;">
-                <h3 style="margin: 0 0 4px 0; color: #ffd54f;">🃏 Módulos Roguelite</h3>
-                <p style="margin: 0; color: #b0bec5;">Recompensas oferecidas ao completar as ondas 5, 10 e 15. Podem ser equipados em torres para conceder habilidades passivas poderosas (Ex: Toque de Midas, Dreno Vampírico, Núcleo Perfurante e Caçador de Recompensas).</p>
-              </div>
+                <h3 style="margin: 0 0 4px 0; color: #ffd54f;">🃏 Módulos Roguelite (Modo Morte Certa)</h3>
+                <p style="margin: 0; color: #b0bec5;">Recompensas exclusivas do modo Morte Certa oferecidas ao completar as ondas 3, 6 e 9 (ou a cada 5 no infinito). Podem ser equipados em torres para conceder habilidades passivas poderosas (Ex: Toque de Midas, Dreno Vampírico, Núcleo Perfurante e Sobrecarga Voltaica).</p>
             </div>
             <button id="close-mechanics-bottom-btn" class="btn primary modal-restart-btn" style="margin-top: 14px;">Entendido!</button>
           </div>
@@ -942,7 +944,8 @@ export class UIManager {
     });
 
     this.addDomListener('chip-freeze', 'click', () => {
-      this.spellManager.triggerGlobalFreeze(this.game['enemyManager'].getEnemies());
+      const enemies = this.game.enemyManager ? this.game.enemyManager.getEnemies() : [];
+      this.spellManager.triggerGlobalFreeze(enemies);
     });
 
     this.addDomListener('btn-speed-1x', 'click', () => this.setGameSpeed(1));
@@ -952,6 +955,14 @@ export class UIManager {
     this.addDomListener('btn-auto-mode', 'click', () => {
       const isAuto = !this.waveManager.isAutoMode;
       this.waveManager.setAutoMode(isAuto);
+      if (this.game && typeof this.game.currentSavedAutoMode !== 'undefined') {
+        this.game.currentSavedAutoMode = isAuto;
+      }
+      try {
+        localStorage.setItem('oh_my_td_auto_mode', isAuto ? 'true' : 'false');
+      } catch {
+        // ignore
+      }
       document.getElementById('btn-auto-mode')?.classList.toggle('active', isAuto);
     });
 
@@ -1169,6 +1180,11 @@ export class UIManager {
   /** Público: também chamado pelo atalho de teclado Shift+1/2/3 (D2), fora do clique nos botões. */
   public setGameSpeed(speed: number) {
     this.game.gameSpeedMultiplier = speed;
+    try {
+      localStorage.setItem('oh_my_td_game_speed', speed.toString());
+    } catch {
+      // ignore
+    }
     document.getElementById('btn-speed-1x')?.classList.toggle('active', speed === 1);
     document.getElementById('btn-speed-2x')?.classList.toggle('active', speed === 2);
     document.getElementById('btn-speed-4x')?.classList.toggle('active', speed === 4);
@@ -2012,13 +2028,24 @@ export class UIManager {
     `;
   }
 
-  public triggerDraftModal(onSelect?: (moduleId: RogueliteModuleId) => void) {
+  public triggerDraftModal(onSelect?: (moduleId: RogueliteModuleId) => void, rng?: Rng) {
     this.gameState.isPaused = true;
     EventBus.getInstance().emit('pause:change', true);
     const all = getAllRogueliteModules();
-    const shuffled = [...all].sort(() => Math.random() - 0.5);
-    const choices = shuffled.slice(0, 3);
-
+    const effectiveRng = rng || this.game.rng;
+    let choices: IRogueliteModule[];
+    if (effectiveRng && typeof effectiveRng.next === 'function') {
+      const pool = [...all];
+      choices = [];
+      const count = Math.min(3, pool.length);
+      for (let i = 0; i < count; i++) {
+        const idx = Math.floor(effectiveRng.next() * pool.length);
+        choices.push(pool.splice(idx, 1)[0]);
+      }
+    } else {
+      const shuffled = [...all].sort(() => Math.random() - 0.5);
+      choices = shuffled.slice(0, 3);
+    }
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.style.cssText = `

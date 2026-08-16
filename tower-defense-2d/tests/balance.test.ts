@@ -103,6 +103,23 @@ describe('Harness de balanceamento', () => {
       expect(r.totalKills).toBeGreaterThan(30);
     }
   });
+  it('deve vencer a campanha completa de 10 ondas com a build de referência e reinvestimento de ouro em upgrades', () => {
+    for (const seed of ['s1', 's2', 's3', 's4', 's5', 's6']) {
+      const r = runBalanceSim({
+        seed,
+        waves: 10,
+        build: MAP1_REFERENCE_BUILD,
+        autoUpgradeGold: true,
+      });
+
+      expect(r.failedOrders).toEqual([]);
+      expect(r.wavesCompleted).toBe(10);
+      expect(r.baseHpRemaining).toBeGreaterThan(0);
+      expect(r.upgradesApplied).toBeGreaterThanOrEqual(10);
+      expect(r.waveMetrics.every(w => !w.timedOut)).toBe(true);
+    }
+  });
+
 
   it('deve encerrar toda onda por conta própria, sem estourar a trava de passos', () => {
     // Pega regressão do tipo "inimigo virou imatável" ou "onda nunca termina".
