@@ -122,7 +122,7 @@ export class UIManager {
 
     const part1Html = `
       <div id="game-title-bar" class="game-title-bar">
-        <h1 class="game-title">OH MY TD <span class="game-version">v0.4.0</span></h1>
+        <h1 class="game-title">OH MY TD <span class="game-version">v0.5.0</span></h1>
       </div>
 
       <header id="hud-top" class="hud-top pointer-events-auto">
@@ -416,6 +416,19 @@ export class UIManager {
               <div class="changelog-item latest">
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v0.5.0</strong>
+                  <span class="changelog-title">Ranks Infinitos, Decisões Táticas & UX</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Ranks Infinitos de Torre:</strong> Torres agora continuam evoluindo após o Nível 3 com ranks infinitos de dano e alcance sem teto artificial.</li>
+                  <li><strong>Chamada Antecipada de Onda:</strong> Adiantar a próxima onda concede bônus de ouro proporcional ao tempo poupado (em modo Manual e Auto).</li>
+                  <li><strong>Magias com Dano Escalável:</strong> O Meteoro agora causa dano proporcional ao HP máximo do alvo (90 + 12% maxHp) e possui decaimento de custo por ondas sem uso.</li>
+                  <li><strong>Draft Roguelite em Morte Certa:</strong> O sistema de cartas e módulos roguelite agora é exclusivo do modo Morte Certa com sorteio 100% determinístico.</li>
+                  <li><strong>Polimento Mobile & Atalhos:</strong> Alvos de toque em 44px+, retorno tátil háptico, atalhos de teclado (1-5, Q/W, U/S/R, Esc) e persistência de velocidade e auto-wave.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
                   <strong class="version-tag">v0.4.0</strong>
                   <span class="changelog-title">Oh My TD — Nova Interface</span>
                 </div>
