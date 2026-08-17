@@ -23,12 +23,22 @@ describe('Entrega 3 — WaveManager.getEarlyCallBonus() é um getter puro', () =
 
   it('duas chamadas seguidas devolvem exatamente o mesmo valor', () => {
     const wm = new WaveManager();
+    wm.currentWaveIndex = 0;
     wm.autoCountdownMs = 3200;
 
     const primeira = wm.getEarlyCallBonus();
     const segunda = wm.getEarlyCallBonus();
 
     expect(segunda).toBe(primeira);
+  });
+
+  it('retorna 0 antes da Onda 1 (currentWaveIndex < 0)', () => {
+    const wm = new WaveManager();
+    expect(wm.currentWaveIndex).toBe(-1);
+    wm.autoCountdownMs = 5000;
+    expect(wm.getEarlyCallBonus()).toBe(0);
+    wm.autoCountdownMs = 2500;
+    expect(wm.getEarlyCallBonus()).toBe(0);
   });
 
   it('devolve 0 durante uma onda ativa, independente do tempo restante no contador', () => {
@@ -51,11 +61,11 @@ describe('Entrega 3 — WaveManager.getEarlyCallBonus() é um getter puro', () =
     expect(wm.getEarlyCallBonus()).toBe(60);
   });
 
-  it('fórmula exata: perSecondRate = 2 + floor(nextWaveNum/5), bônus = floor(min(60, taxa*segundos))', () => {
+  it('fórmula exata: perSecondRate = 2 + floor(nextWaveNum/5), bônus = floor(min(60, taxa*segundos)) a partir da onda 2', () => {
     const wm = new WaveManager();
 
-    // Estado inicial: currentWaveIndex = -1 -> nextWaveNum = 1 -> taxa = 2g/s
-    // (linha 1 da tabela §3.6 do P1_BALANCE_SPEC.md)
+    // Entre onda 1 e 2: currentWaveIndex = 0 -> nextWaveNum = 2 -> taxa = 2g/s
+    wm.currentWaveIndex = 0;
     wm.autoCountdownMs = 5000; // 5s poupados, chamada instantânea
     expect(wm.getEarlyCallBonus()).toBe(10); // floor(min(60, 2*5)) = 10
 
@@ -134,7 +144,8 @@ describe('Entrega 3 — updateAutoCountdown decrementa nos dois modos (§3.1)', 
 describe('Entrega 3 — contrato de ordem de chamada (§3.3)', () => {
   it('getEarlyCallBonus() ANTES de startNextWave() dá o bônus certo; depois, o valor já mudou', () => {
     const wm = new WaveManager();
-    wm.autoCountdownMs = 2500; // 2.5s poupados na onda 1
+    wm.currentWaveIndex = 0; // Preparando onda 2
+    wm.autoCountdownMs = 2500; // 2.5s poupados na onda 2
 
     const bonusAntes = wm.getEarlyCallBonus();
     expect(bonusAntes).toBe(5); // floor(min(60, 2*2.5)) = 5
@@ -147,7 +158,6 @@ describe('Entrega 3 — contrato de ordem de chamada (§3.3)', () => {
     // ordem errada (depois) sempre dá um valor diferente do que o jogador viu.
     expect(wm.getEarlyCallBonus()).toBe(0);
   });
-
   it('só credita quando startNextWave() de fato inicia a onda (uso correto do contrato)', () => {
     const wm = new WaveManager();
     wm.startNextWave(); // onda já ativa

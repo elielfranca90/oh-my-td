@@ -9,6 +9,7 @@ inject();
 
 new WelcomeScreen((mode) => {
   const game = new Game2D();
+  (window as any).game = game;
   if (mode === 'CAMPAIGN') {
     game.gameState.isCampaignMode = true;
     game.changeMap('MAP_1');

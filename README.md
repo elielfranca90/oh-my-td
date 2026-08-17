@@ -1,4 +1,4 @@
-# 🏰 Tower Defense 2D - Oh My TD (v0.5.0)
+# 🏰 Tower Defense 2D - Oh My TD (v0.5.1)
 
 Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower Defense 2D** desenvolvido com **HTML5 Canvas 2D / WebGL (Three.js)**, **TypeScript 5.x** e **Vite**.
 

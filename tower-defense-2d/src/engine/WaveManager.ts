@@ -546,6 +546,7 @@ export class WaveManager {
    */
   public getEarlyCallBonus(): number {
     if (this.isWaveActive) return 0;
+    if (this.currentWaveIndex < 0) return 0;
 
     const secondsSaved = this.autoCountdownMs / 1000; // autoCountdownMs é ms reais
     const nextWaveNum = this.currentWaveIndex + 2; // onda que está PRA COMEÇAR (1-based)

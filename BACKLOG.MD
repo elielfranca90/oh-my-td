@@ -57,6 +57,11 @@
 - [x] **Densidade de Onda da Campanha + Gatilho de Tensão**: as 10 ondas da campanha somam 144 inimigos (eram 64); limiar de tensão de áudio/vinheta recalibrado de `enemyCount > 20` para `enemyCount > 8`. Corte de ouro específico da campanha recalibrado (`×0.60` a partir da onda 2) para compensar a densidade maior.
 - [x] **Magias com Dano Escalável**: Meteoro passa de dano fixo (90) para `90 + 12% do HP máximo do alvo`, por inimigo no impacto. Custo de Meteoro e Congelamento Global continua dobrando por uso, mas agora decai 1 passo a cada 2 ondas sem uso, com teto em 64× o custo base.
 
+## 🟢 Concluído (v0.5.1 — Correções Críticas de Fim de Jogo & Bônus de Onda)
+
+- [x] **Correção da Estrutura DOM do Modal de Fim de Jogo**: Fechamento adequado de tag `<div>` no modal de mecânicas em `UIManager.ts`, evitando o aninhamento indevido de `#modal-overlay` dentro de `#mechanics-modal-overlay` que mantinha as telas de Vitória e Game Over invisíveis.
+- [x] **Trava de Bônus de Chamada Antecipada na Onda 1**: Adicionada verificação `if (this.currentWaveIndex < 0) return 0;` em `WaveManager.ts`, bloqueando recompensa de ouro indevida antes do início da partida.
+- [x] **Testes de Regressão de Visibilidade e Contratos**: Adicionados testes no Vitest e validação com navegador headless cobrindo a hierarquia de contêineres e a exibição de modais nos modos Normal, Campanha e Morte Certa.
 ## 🟡 Próximas Funcionalidades (Backlog)
 
 - [ ] **P2 — Retenção entre sessões** (`docs/GAME_DESIGN_REVIEW.md` Parte F, itens 15-18, pendente por completo): onboarding de ~40s guiando a primeira torre/onda/especialização; objetivos de run + Desafio Diário visível na UI (a infraestrutura de `ReplayEngine`/Daily Seed já existe, só falta porta de entrada); desbloqueios e prestígio na meta-progressão em vez de uma árvore de talentos que satura em 2-3 partidas; "Última Chance" na derrota (revivência única em troca do ouro acumulado). Inclui também as magias com recurso próprio ("Fúria") adiadas do P1.

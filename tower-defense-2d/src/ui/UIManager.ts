@@ -122,7 +122,7 @@ export class UIManager {
 
     const part1Html = `
       <div id="game-title-bar" class="game-title-bar">
-        <h1 class="game-title">OH MY TD <span class="game-version">v0.5.0</span></h1>
+        <h1 class="game-title">OH MY TD <span class="game-version">v0.5.1</span></h1>
       </div>
 
       <header id="hud-top" class="hud-top pointer-events-auto">
@@ -416,6 +416,17 @@ export class UIManager {
               <div class="changelog-item latest">
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v0.5.1</strong>
+                  <span class="changelog-title">Correções do Modal de Fim de Jogo & Trava de Bônus</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Modal de Fim de Jogo:</strong> Corrigida a estrutura HTML do modal de mecânicas que impedia a exibição das telas de Vitória e Derrota (Game Over / Morte Certa).</li>
+                  <li><strong>Trava de Bônus na Onda 1:</strong> Bloqueado o bônus de chamada antecipada antes da partida começar; o bônus agora é aplicado estritamente a partir da Onda 2.</li>
+                  <li><strong>Testes de Regressão:</strong> Adicionados testes automatizados cobrindo a hierarquia DOM dos modais e a regra de bônus por onda.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
                   <strong class="version-tag">v0.5.0</strong>
                   <span class="changelog-title">Ranks Infinitos, Decisões Táticas & UX</span>
                 </div>
@@ -439,7 +450,6 @@ export class UIManager {
               </div>
               <div class="changelog-item">
                 <div class="changelog-item-header">
-                  <span class="badge-tag new">NOVO</span>
                   <strong class="version-tag">v2.3</strong>
                   <span class="changelog-title">Especializações de Torres & Efeito Glacial</span>
                 </div>
@@ -454,59 +464,12 @@ export class UIManager {
               </div>
               <div class="changelog-item">
                 <div class="changelog-item-header">
-                  <span class="badge-tag new">NOVO</span>
                   <strong class="version-tag">v2.2</strong>
                   <span class="changelog-title">Árvore de Talentos & Novas Conquistas</span>
                 </div>
                 <ul class="changelog-bullets">
                   <li><strong>Novos Talentos:</strong> Engenharia de Reparo (até 50% de desconto nos reparos) e Foco Crítico (até +20% de chance crítica).</li>
                   <li><strong>4 Novas Badges:</strong> Engenheiro de Campo, Matador do Pesadelo, Mestre da Guerra e Puro Talento (+20★ em recompensas).</li>
-                </ul>
-              </div>
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <span class="badge-tag new">NOVO</span>
-                  <strong class="version-tag">v2.1</strong>
-                  <span class="changelog-title">Interface Responsiva Mobile</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>Layout Adaptado para Telas Pequenas:</strong> Compatibilidade completa para smartphones (Galaxy, iPhone) e tablets (iPad).</li>
-                  <li><strong>Otimização de Espaço sem Colisão:</strong> Distribuição inteligente dos menus e controles nas áreas livres acima e abaixo do mapa.</li>
-                  <li><strong>Navegação por Toque:</strong> Scroll horizontal fluido para seleção de torres e poderes.</li>
-                </ul>
-              </div>
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <span class="badge-tag new">NOVO</span>
-                  <strong class="version-tag">v2.0</strong>
-                  <span class="changelog-title">Sistema de Reparo & Modo Morte Certa</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>Reparo de Torres:</strong> Opção de reparar a vida das torres danificadas diretamente pelo menu de inspeção.</li>
-                  <li><strong>Modo Morte Certa:</strong> Desafio de altíssima dificuldade com a presença exclusiva do chefe Black Mega Boss.</li>
-                  <li><strong>Interface Overlay 2.0:</strong> Interface reformulada com alto desempenho e clareza visual.</li>
-                </ul>
-              </div>
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <span class="badge-tag new">NOVO</span>
-                  <strong class="version-tag">v1.9</strong>
-                  <span class="changelog-title">Visual & Animações de Sprites</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>Sprites de Torres:</strong> Ilustrações customizadas para as torres Básica, Gelo, Prisma Solar, Canhão e Artilharia.</li>
-                  <li><strong>Animações de Inimigos:</strong> Sprites detalhados para tropas terrestres, corredores, tanques e chefes.</li>
-                </ul>
-              </div>
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <span class="badge-tag new">NOVO</span>
-                  <strong class="version-tag">v1.8</strong>
-                  <span class="changelog-title">Poderes Arcanos & Rebalanceamento</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>Poderes de Apogeu:</strong> Invocação de Meteoro e Congelamento Global integrados com indicador visual de recarga.</li>
-                  <li><strong>Ajustes de Economia:</strong> Rebalanceamento de ouro inicial (70g) e progressão de upgrades.</li>
                 </ul>
               </div>
             </div>
@@ -583,6 +546,7 @@ export class UIManager {
               <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid #ffeb3b;">
                 <h3 style="margin: 0 0 4px 0; color: #ffd54f;">🃏 Módulos Roguelite (Modo Morte Certa)</h3>
                 <p style="margin: 0; color: #b0bec5;">Recompensas exclusivas do modo Morte Certa oferecidas ao completar as ondas 3, 6 e 9 (ou a cada 5 no infinito). Podem ser equipados em torres para conceder habilidades passivas poderosas (Ex: Toque de Midas, Dreno Vampírico, Núcleo Perfurante e Sobrecarga Voltaica).</p>
+              </div>
             </div>
             <button id="close-mechanics-bottom-btn" class="btn primary modal-restart-btn" style="margin-top: 14px;">Entendido!</button>
           </div>
