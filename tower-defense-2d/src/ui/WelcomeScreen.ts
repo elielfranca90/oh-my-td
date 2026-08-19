@@ -4,14 +4,15 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { DatabaseManager } from '../engine/DatabaseManager';
-
+import { AudioManager } from '../engine/AudioManager';
 export class WelcomeScreen {
   private overlayEl: HTMLDivElement | null = null;
   private canvasContainerEl: HTMLDivElement | null = null;
   private leaderboardModalEl: HTMLDivElement | null = null;
   private onStartCallback: (mode: 'CAMPAIGN' | 'TRADITIONAL') => void;
   private db: DatabaseManager;
-
+  private audioManager: AudioManager;
+  private audioBtnEl: HTMLButtonElement | null = null;
   private scene: THREE.Scene | null = null;
   private camera: THREE.PerspectiveCamera | null = null;
   private renderer: THREE.WebGLRenderer | null = null;
@@ -25,24 +26,44 @@ export class WelcomeScreen {
 
   private handleResizeBound: () => void;
 
-  constructor(onStart: (mode: 'CAMPAIGN' | 'TRADITIONAL') => void, db?: DatabaseManager) {
+  constructor(
+    onStart: (mode: 'CAMPAIGN' | 'TRADITIONAL') => void,
+    db?: DatabaseManager,
+    audioManager?: AudioManager
+  ) {
     this.onStartCallback = onStart;
     this.db = db || DatabaseManager.getInstance();
+    this.audioManager = audioManager || new AudioManager();
     this.handleResizeBound = this.handleResize.bind(this);
     this.initUI();
     this.initThree();
+    this.audioManager.playMenuTheme().catch(() => {});
   }
 
   private initUI(): void {
     // Create main overlay
     this.overlayEl = document.createElement('div');
     this.overlayEl.id = 'welcome-screen-overlay';
-
+    this.overlayEl.style.cssText = 'position:fixed!important;inset:0!important;top:0!important;left:0!important;right:0!important;bottom:0!important;width:100vw!important;height:100dvh!important;margin:0 auto!important;z-index:100000!important;';
     // Create 3D canvas container
     this.canvasContainerEl = document.createElement('div');
     this.canvasContainerEl.id = 'welcome-canvas-container';
     this.overlayEl.appendChild(this.canvasContainerEl);
 
+    // Create sound toggle button
+    const audioBtn = document.createElement('button');
+    audioBtn.id = 'welcome-audio-btn';
+    audioBtn.className = `welcome-audio-toggle${this.audioManager.isBgmMuted ? ' muted' : ''}`;
+    audioBtn.setAttribute('aria-label', this.audioManager.isBgmMuted ? 'Ativar música do menu' : 'Silenciar música do menu');
+    audioBtn.title = this.audioManager.isBgmMuted ? 'Ativar música' : 'Silenciar música';
+    audioBtn.innerHTML = `<span class="welcome-audio-icon">${this.audioManager.isBgmMuted ? '🔇' : '🎵'}</span>`;
+    audioBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isMuted = this.audioManager.toggleBgmMute();
+      this.updateAudioButtonState(isMuted);
+    });
+    this.audioBtnEl = audioBtn;
+    this.overlayEl.appendChild(audioBtn);
     // Create UI content card
     const uiContent = document.createElement('div');
     uiContent.id = 'welcome-ui-content';
@@ -106,6 +127,24 @@ export class WelcomeScreen {
     this.overlayEl.appendChild(devFooter);
 
     document.body.appendChild(this.overlayEl);
+  }
+  private updateAudioButtonState(isMuted: boolean): void {
+    if (!this.audioBtnEl) return;
+    if (isMuted) {
+      this.audioBtnEl.classList.add('muted');
+      this.audioBtnEl.setAttribute('aria-label', 'Ativar música do menu');
+      this.audioBtnEl.title = 'Ativar música';
+      this.audioBtnEl.innerHTML = '<span class="welcome-audio-icon">🔇</span>';
+    } else {
+      this.audioBtnEl.classList.remove('muted');
+      this.audioBtnEl.setAttribute('aria-label', 'Silenciar música do menu');
+      this.audioBtnEl.title = 'Silenciar música';
+      this.audioBtnEl.innerHTML = '<span class="welcome-audio-icon">🎵</span>';
+    }
+  }
+
+  public getAudioManager(): AudioManager {
+    return this.audioManager;
   }
   private async openLeaderboardModal(): Promise<void> {
     if (!this.overlayEl) return;
@@ -405,6 +444,9 @@ export class WelcomeScreen {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
 
+    // Stop and fade out menu theme music smoothly
+    this.audioManager.stopMenuTheme(500).catch(() => {});
+
     // Cancel animation frame
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
@@ -425,6 +467,7 @@ export class WelcomeScreen {
         }
         this.overlayEl = null;
         this.leaderboardModalEl = null;
+        this.audioBtnEl = null;
       }, 600);
     }
 

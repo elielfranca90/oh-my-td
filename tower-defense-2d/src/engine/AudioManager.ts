@@ -19,6 +19,10 @@ export class AudioManager {
   public isSfxMuted = false;
   public isBgmMuted = false;
 
+  // Menu Audio State (Theme Loop)
+  private menuAudio: HTMLAudioElement | null = null;
+  private autoplayUnlockHandler: (() => void) | null = null;
+  private isMenuThemeActive = false;
   // BGM Sequencer State
   private bgmIntervalId: number | null = null;
   private bgmStep = 0;
@@ -178,6 +182,18 @@ export class AudioManager {
   }
 
   public dispose() {
+    this.removeAutoplayUnlockHandler();
+    if (this.menuAudio) {
+      try {
+        this.menuAudio.pause();
+        this.menuAudio.currentTime = 0;
+      } catch {
+        // Ignore
+      }
+      this.menuAudio = null;
+    }
+    this.isMenuThemeActive = false;
+
     this.stopBGM();
 
     const ctx = this.ctx;
@@ -236,6 +252,9 @@ export class AudioManager {
   public setBgmVolume(vol: number) {
     this.bgmVolume = readVolume(vol, 0.6);
     this.updateNodeVolumes();
+    if (this.menuAudio) {
+      this.menuAudio.volume = this.isBgmMuted ? 0 : this.bgmVolume;
+    }
     this.savePrefs();
   }
 
@@ -246,9 +265,18 @@ export class AudioManager {
   public toggleBgmMute(): boolean {
     this.isBgmMuted = !this.isBgmMuted;
     this.updateNodeVolumes();
+    if (this.menuAudio) {
+      this.menuAudio.volume = this.isBgmMuted ? 0 : this.bgmVolume;
+      if (this.isBgmMuted) {
+        this.menuAudio.pause();
+      } else if (this.isMenuThemeActive) {
+        this.menuAudio.play().catch(() => {});
+      }
+    }
+
     if (this.isBgmMuted) {
       this.stopBGM();
-    } else {
+    } else if (!this.menuAudio) {
       this.unlockAudio();
       if (this.isUnlocked) {
         this.startBGM(this.currentSpeed, this.currentTrack);
@@ -256,6 +284,120 @@ export class AudioManager {
     }
     this.savePrefs();
     return this.isBgmMuted;
+  }
+
+  // --- MENU BGM METHODS ---
+  private removeAutoplayUnlockHandler() {
+    if (this.autoplayUnlockHandler && typeof window !== 'undefined') {
+      window.removeEventListener('pointerdown', this.autoplayUnlockHandler, { capture: true });
+      window.removeEventListener('keydown', this.autoplayUnlockHandler, { capture: true });
+      this.autoplayUnlockHandler = null;
+    }
+  }
+
+  public async playMenuTheme(audioSrc: string = '/audio/Game_Main_Theme_Sunlit_Grasses.mp3'): Promise<void> {
+    this.isMenuThemeActive = true;
+    this.removeAutoplayUnlockHandler();
+
+    if (typeof Audio === 'undefined') {
+      return;
+    }
+
+    if (!this.menuAudio) {
+      try {
+        this.menuAudio = new Audio(audioSrc);
+        this.menuAudio.loop = true;
+      } catch {
+        return;
+      }
+    }
+
+    this.menuAudio.volume = this.isBgmMuted ? 0 : this.bgmVolume;
+
+    if (this.isBgmMuted) {
+      return;
+    }
+
+    try {
+      const playPromise = this.menuAudio.play();
+      if (playPromise !== undefined) {
+        await playPromise;
+      }
+    } catch {
+      // Autoplay blocked by browser: listen for first interaction
+      const unlockAndPlay = () => {
+        this.removeAutoplayUnlockHandler();
+        if (this.isMenuThemeActive && this.menuAudio && !this.isBgmMuted) {
+          this.menuAudio.play().catch(() => {});
+        }
+      };
+      this.autoplayUnlockHandler = unlockAndPlay;
+      if (typeof window !== 'undefined') {
+        window.addEventListener('pointerdown', unlockAndPlay, { once: true, capture: true });
+        window.addEventListener('keydown', unlockAndPlay, { once: true, capture: true });
+      }
+    }
+  }
+
+  public async stopMenuTheme(fadeOutDurationMs: number = 500): Promise<void> {
+    this.isMenuThemeActive = false;
+    this.removeAutoplayUnlockHandler();
+
+    const audio = this.menuAudio;
+    if (!audio) return;
+
+    if (fadeOutDurationMs <= 0 || audio.paused || this.isBgmMuted || audio.volume === 0) {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {
+        // Ignore
+      }
+      this.menuAudio = null;
+      return;
+    }
+
+    const initialVolume = audio.volume;
+    const steps = 10;
+    const stepTime = fadeOutDurationMs / steps;
+
+    const { promise, resolve } = typeof Promise.withResolvers === 'function'
+      ? Promise.withResolvers<void>()
+      : (() => {
+          let res!: () => void;
+          const p = new Promise<void>((r) => { res = r; });
+          return { promise: p, resolve: res };
+        })();
+
+    let currentStep = 0;
+    const interval = setInterval(() => {
+      currentStep++;
+      if (currentStep >= steps) {
+        clearInterval(interval);
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch {
+          // Ignore
+        }
+        if (this.menuAudio === audio) {
+          this.menuAudio = null;
+        }
+        resolve();
+      } else {
+        const factor = 1 - currentStep / steps;
+        audio.volume = Math.max(0, initialVolume * factor);
+      }
+    }, stepTime);
+
+    return promise;
+  }
+  public getMenuAudioElement(): HTMLAudioElement | null {
+    return this.menuAudio;
+  }
+
+  public isMenuPlaying(): boolean {
+    return this.isMenuThemeActive && !!this.menuAudio && !this.menuAudio.paused;
   }
 
   // BGM Control Methods

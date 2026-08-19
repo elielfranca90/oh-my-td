@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
+import fs from 'fs';
+import path from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WelcomeScreen } from '../src/ui/WelcomeScreen';
-
 describe('WelcomeScreen Component Test', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
@@ -168,5 +169,80 @@ describe('WelcomeScreen Component Test', () => {
     closeBtn.click();
 
     expect(modalOverlay?.classList.contains('hidden')).toBe(true);
+  });
+
+  it('should have proper flex hierarchy preventing dev footer from overlapping buttons', () => {
+    const onStart = vi.fn();
+    new WelcomeScreen(onStart);
+
+    const overlay = document.getElementById('welcome-screen-overlay');
+    expect(overlay).not.toBeNull();
+
+    const uiContent = overlay?.querySelector('#welcome-ui-content');
+    const devFooter = overlay?.querySelector('.welcome-dev-footer');
+    const btnContainer = uiContent?.querySelector('.welcome-buttons-container');
+
+    expect(uiContent).not.toBeNull();
+    expect(devFooter).not.toBeNull();
+    expect(btnContainer).not.toBeNull();
+
+    // Dev footer is a direct sibling of uiContent inside flex overlay
+    expect(devFooter?.parentElement).toBe(overlay);
+    expect(uiContent?.parentElement).toBe(overlay);
+    expect(uiContent?.contains(devFooter!)).toBe(false);
+  });
+
+  it('should define non-overlapping relative positioning and responsive styles for welcome screen in index.html', () => {
+    const indexPath = path.resolve(__dirname, '../index.html');
+    const htmlContent = fs.readFileSync(indexPath, 'utf-8');
+
+    // Verify welcome-screen-overlay uses flexbox layout with dvh
+    expect(htmlContent).toMatch(/#welcome-screen-overlay\s*\{[^}]*display:\s*flex;/);
+    expect(htmlContent).toMatch(/#welcome-screen-overlay\s*\{[^}]*flex-direction:\s*column;/);
+    expect(htmlContent).toMatch(/#welcome-screen-overlay\s*\{[^}]*justify-content:\s*space-between;/);
+    expect(htmlContent).toMatch(/#welcome-screen-overlay\s*\{[^}]*height:\s*100dvh;/);
+
+    // Verify welcome-dev-footer uses relative positioning in the flex flow, avoiding absolute overlap
+    expect(htmlContent).toMatch(/\.welcome-dev-footer\s*\{[^}]*position:\s*relative;/);
+    expect(htmlContent).toMatch(/\.welcome-dev-footer\s*\{[^}]*margin-top:\s*auto;/);
+
+    // Verify subtitle responsive constraints
+    expect(htmlContent).toMatch(/\.retro-subtitle\s*\{[^}]*max-width:\s*320px;/);
+    expect(htmlContent).toMatch(/\.retro-subtitle\s*\{[^}]*line-height:\s*1\.4;/);
+
+    // Verify landscape mobile media queries (< 500px height)
+    expect(htmlContent).toMatch(/@media\s*\(max-height:\s*500px\)/);
+  });
+
+  it('should render audio toggle button and toggle mute when clicked', () => {
+    const onStart = vi.fn();
+    const welcome = new WelcomeScreen(onStart);
+
+    const audioBtn = document.getElementById('welcome-audio-btn');
+    expect(audioBtn).not.toBeNull();
+    expect(audioBtn?.querySelector('.welcome-audio-icon')?.textContent).toBe('🎵');
+
+    // Click to mute
+    audioBtn?.click();
+    expect(audioBtn?.classList.contains('muted')).toBe(true);
+    expect(audioBtn?.querySelector('.welcome-audio-icon')?.textContent).toBe('🔇');
+    expect(welcome.getAudioManager().isBgmMuted).toBe(true);
+
+    // Click to unmute
+    audioBtn?.click();
+    expect(audioBtn?.classList.contains('muted')).toBe(false);
+    expect(audioBtn?.querySelector('.welcome-audio-icon')?.textContent).toBe('🎵');
+    expect(welcome.getAudioManager().isBgmMuted).toBe(false);
+  });
+
+  it('should trigger playMenuTheme on mount and stopMenuTheme on destroy', async () => {
+    const onStart = vi.fn();
+    const welcome = new WelcomeScreen(onStart);
+    const am = welcome.getAudioManager();
+
+    const stopSpy = vi.spyOn(am, 'stopMenuTheme');
+    welcome.destroy('CAMPAIGN');
+
+    expect(stopSpy).toHaveBeenCalledWith(500);
   });
 });

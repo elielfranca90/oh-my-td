@@ -1,4 +1,4 @@
-# 🏰 Tower Defense 2D - Oh My TD (v0.5.1)
+# 🏰 Tower Defense 2D - Oh My TD (v0.6.0)
 
 Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower Defense 2D** desenvolvido com **HTML5 Canvas 2D / WebGL (Three.js)**, **TypeScript 5.x** e **Vite**.
 
@@ -6,7 +6,7 @@ Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower 
 
 ## 🌟 Visão Geral
 
-O projeto utiliza uma arquitetura híbrida de renderização (**WebGL via Three.js** para renderização de terrenos em sRGB e background 3D Diorama Low-Poly de Natureza na Tela Inicial + **HTML5 Canvas 2D** para entidades e projéteis em tempo real). A engine conta com renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 4 mapas com mecânicas e trilhas sonoras únicas, 2 Modos de Jogo (**Modo Campanha com 10 Ondas densas (144 inimigos) e Vitória** & **Modo Infinito com Seleção de Desafios**), especializações de torres no Nível 3 seguidas de **ranks genéricos infinitos**, chamada antecipada de onda com bônus de ouro, magias com dano escalável contra o HP do alvo, simulação determinística com sub-stepping em 2x/4x, autenticação anônima persistente e placar global na nuvem via **Supabase**, árvore de talentos permanente, sistema de conquistas (*Badges*), relatórios de análises pós-partida e suporte a controles sensíveis ao toque.
+O projeto utiliza uma arquitetura híbrida de renderização (**WebGL via Three.js** para renderização de terrenos em sRGB e background 3D Diorama Low-Poly de Natureza na Tela Inicial com trilha orquestrada tema + **HTML5 Canvas 2D** para entidades e projéteis em tempo real). A engine conta com arquitetura mobile zero-scroll para Galaxy S23 (Dual Thumb Zones em Landscape), renderização procedural de biomas em memória (*Offscreen Canvas*), áudio sintetizado em tempo real via **Web Audio API**, 4 mapas com mecânicas e trilhas sonoras únicas, 2 Modos de Jogo (**Modo Campanha com 10 Ondas densas (144 inimigos) e Vitória** & **Modo Infinito com Seleção de Desafios**), especializações de torres no Nível 3 seguidas de **ranks genéricos infinitos**, chamada antecipada de onda com bônus de ouro, magias com dano escalável contra o HP do alvo, simulação determinística com sub-stepping e placar global Supabase.
 ---
 
 ## 🚀 Como Executar o Projeto

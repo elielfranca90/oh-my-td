@@ -1,6 +1,6 @@
-# 🏰 Tower Defense 2D (Oh My TD)
+# 🏰 Tower Defense 2D (Oh My TD - v0.6.0)
 
-Jogo de estratégia *Tower Defense 2D* completo desenvolvido com **HTML5 Canvas**, **TypeScript** e **Vite**.
+Jogo de estratégia *Tower Defense 2D* completo desenvolvido com **HTML5 Canvas**, **WebGL (Three.js)**, **TypeScript** e **Vite**.
 
 ---
 
@@ -33,7 +33,7 @@ npm run build
 * **🌟 Meta-Progressão & Badges:** Árvore de Talentos permanente salvando no LocalStorage e 9 Conquistas desbloqueáveis com notificações flutuantes.
 * **☄️ Magias com Dano Escalável:** Meteoro causa `90 + 12% do HP máximo` do alvo (em vez de dano fixo); custo de ambas as magias dobra por uso e decai por ondas sem uso, com teto.
 * **📊 Analytics Pós-Partida:** Painel de relatório exibindo a Torre MVP da partida, finanças, contagem de abates e recordes.
-* **📱 UX Mobile Responsivo & Press-and-Hold:** Suporte a `100dvh`, *Safe Area Insets*, abas mobile com auto-inspector, seletores rápidos na HUD, tooltips por toque longo (*press-and-hold*) e controle duplo de áudio BGM/SFX.
+* **📱 Arquitetura Mobile Landscape Galaxy S23 (Zero-Scroll):** Layout 100dvh adaptativo em 3 colunas (Dual Thumb Zones) para smartphones widescreen (19.5:9), cortina de orientação retrato, *Safe Area Insets*, fechamento ergonômico de modais por toque externo (backdrop) e trilha tema orquestrada no menu inicial.
 * **⌨️ Atalhos de Teclado & 📳 Retorno Tátil:** `1`-`5` seleciona torre, `Q`/`W` arma Meteoro/conjura Congelamento, `Enter` inicia onda, `Esc` desarma magia/cancela seleção, `U`/`S` upgrade/vende (com confirmação em duas etapas), `R` alterna alcance de todas as torres; vibração no mobile em construir, upgrade, dano na base e chefe, com interruptor nas Configurações.
 * **🧪 Bateria de Testes Automatizados (Vitest):** cobre motor matemático, física, banco de dados, fluxo de ondas, draft roguelite, UI e Mapa 4 (Grave Pass).
 * **⚡ Vite HMR Estabilizado:** Grafo de dependências totalmente livre de ciclos circulares (`madge`), eliminando falhas de recarga e erros de export em tempo de desenvolvimento.

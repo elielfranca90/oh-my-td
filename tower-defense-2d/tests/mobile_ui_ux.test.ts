@@ -231,8 +231,77 @@ describe('Mobile UI/UX & Touch Controls Integration', () => {
       expect(minHeightMatch).not.toBeNull();
       expect(Number(minHeightMatch![1])).toBeGreaterThanOrEqual(38);
     });
-  });
 
+    it('deve conter o overlay de rotação de dispositivo para mobile portrait (#rotate-device-overlay)', () => {
+      const indexPath = path.resolve(__dirname, '../index.html');
+      const htmlContent = fs.readFileSync(indexPath, 'utf-8');
+
+      expect(htmlContent).toContain('id="rotate-device-overlay"');
+      expect(htmlContent).toContain('.rotate-device-overlay');
+      expect(htmlContent).toMatch(/@media\s*\(orientation:\s*portrait\)/);
+      expect(htmlContent).toMatch(/@media\s*\(orientation:\s*landscape\)/);
+    });
+
+    it('deve configurar arquitetura de zonas de polegar em landscape mobile (max-height: 500px)', () => {
+      const indexPath = path.resolve(__dirname, '../index.html');
+      const htmlContent = fs.readFileSync(indexPath, 'utf-8');
+
+      expect(htmlContent).toMatch(/@media\s*\(orientation:\s*landscape\)\s*and\s*\(max-height:\s*500px\)/);
+      expect(htmlContent).toContain('left-col');
+      expect(htmlContent).toContain('center-col');
+      expect(htmlContent).toContain('right-col');
+      expect(htmlContent).toMatch(/grid-template-columns:\s*130px\s*1fr\s*140px/);
+    });
+
+    it('deve separar estatísticas (left-top) e utilitários (left-bottom), além de toolbar (right-top) e onda (right-bottom) no grid landscape', () => {
+      const indexPath = path.resolve(__dirname, '../index.html');
+      const htmlContent = fs.readFileSync(indexPath, 'utf-8');
+
+      expect(htmlContent).toContain('left-top');
+      expect(htmlContent).toContain('left-bottom');
+      expect(htmlContent).toContain('right-top');
+      expect(htmlContent).toContain('right-bottom');
+      expect(htmlContent).toMatch(/\.hud-stats-bar\s*\{[^}]*grid-area:\s*left-top/);
+      expect(htmlContent).toMatch(/\.hud-top\s*\{[^}]*grid-area:\s*left-bottom/);
+      expect(htmlContent).toMatch(/\.action-toolbar\s*\{[^}]*grid-area:\s*right-top/);
+      expect(htmlContent).toMatch(/\.time-controls\s*\{[^}]*grid-area:\s*right-bottom/);
+    });
+
+    it('deve configurar o canvas de batalha para altura total 100dvh e proporção 840/600', () => {
+      const indexPath = path.resolve(__dirname, '../index.html');
+      const htmlContent = fs.readFileSync(indexPath, 'utf-8');
+
+      expect(htmlContent).toMatch(/#game-area\s*canvas\s*\{[^}]*aspect-ratio:\s*840\s*\/\s*600/);
+      expect(htmlContent).toMatch(/#game-area\s*canvas\s*\{[^}]*object-fit:\s*contain/);
+    });
+
+    it('deve configurar deck de torres em coluna única vertical e poderes em 2 colunas no landscape', () => {
+      const indexPath = path.resolve(__dirname, '../index.html');
+      const htmlContent = fs.readFileSync(indexPath, 'utf-8');
+
+      expect(htmlContent).toContain('towers-items-row');
+      expect(htmlContent).toContain('powers-items-row');
+      expect(htmlContent).toMatch(/\.towers-items-row[^{]*\{[^}]*flex-direction:\s*column/);
+      expect(htmlContent).toMatch(/\.powers-items-row[^{]*\{[^}]*grid-template-columns:\s*1fr\s*1fr/);
+    });
+
+    it('deve aplicar travas de zero-scroll (100dvh, position fixed, overflow hidden) na raiz', () => {
+      const indexPath = path.resolve(__dirname, '../index.html');
+      const htmlContent = fs.readFileSync(indexPath, 'utf-8');
+
+      expect(htmlContent).toMatch(/html,\s*body\s*\{[^}]*overflow:\s*hidden;/);
+      expect(htmlContent).toMatch(/html,\s*body\s*\{[^}]*position:\s*fixed;/);
+      expect(htmlContent).toMatch(/html,\s*body\s*\{[^}]*height:\s*100dvh;/);
+    });
+
+    it('deve aplicar scroll vertical independente e limitação de altura para modais', () => {
+      const indexPath = path.resolve(__dirname, '../index.html');
+      const htmlContent = fs.readFileSync(indexPath, 'utf-8');
+
+      expect(htmlContent).toMatch(/\.modal-card\s*\{[^}]*max-height:\s*85dvh/);
+      expect(htmlContent).toMatch(/\.settings-content[^{]*\{[^}]*overflow-y:\s*auto/);
+    });
+  });
   describe('A11 — Contador de badges do modal de conquistas', () => {
     it('AchievementManager.totalCount reflete o número real de conquistas (9), não um literal desatualizado', () => {
       const talentManager = new TalentManager();
