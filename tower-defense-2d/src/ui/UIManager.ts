@@ -122,7 +122,7 @@ export class UIManager {
 
     const part1Html = `
       <div id="game-title-bar" class="game-title-bar">
-        <h1 class="game-title">OH MY TD <span class="game-version">v0.5.1</span></h1>
+        <h1 class="game-title">OH MY TD <span class="game-version">v0.6.0</span></h1>
       </div>
 
       <header id="hud-top" class="hud-top pointer-events-auto">
@@ -180,15 +180,17 @@ export class UIManager {
           <strong id="hud-wave-val">0/10</strong>
           <span id="hud-boss-badge" class="boss-badge hidden">⚠️ BOSS</span>
         </div>
-        <button id="hud-endless-btn" class="hud-btn endless-btn" title="Alternar Modo Infinito">
-          ♾️
-        </button>
-        <button id="hud-ranges-btn" class="hud-btn ranges-btn" title="Mostrar alcance de todas as torres (R)" aria-label="Alternar alcance de todas as torres">
-          🎯
-        </button>
-        <button id="hud-pause-btn" class="hud-btn pause-btn" title="Pausar / Retomar Jogo">
-          ⏸️
-        </button>
+        <div class="hud-stats-actions">
+          <button id="hud-endless-btn" class="hud-btn endless-btn" title="Alternar Modo Infinito">
+            ♾️
+          </button>
+          <button id="hud-ranges-btn" class="hud-btn ranges-btn" title="Mostrar alcance de todas as torres (R)" aria-label="Alternar alcance de todas as torres">
+            🎯
+          </button>
+          <button id="hud-pause-btn" class="hud-btn pause-btn" title="Pausar / Retomar Jogo">
+            ⏸️
+          </button>
+        </div>
       </div>
 
       <!-- 2. FIXED RED ZONE ACTION TOOLBAR (Just below top bar, above map) -->
@@ -198,7 +200,7 @@ export class UIManager {
           <!-- ROW 1: TOWERS -->
           <div class="toolbar-row">
             <span class="toolbar-label">🏗️ TORRES:</span>
-            <div class="toolbar-items-row">
+            <div class="toolbar-items-row towers-items-row">
               <button id="card-basic" class="toolbar-card active" data-type="BASIC" title="Torre Básica (50g)">
                 <img class="tower-card-icon" src="/assets/basic_tower_icon.svg" alt="Básica" />
                 <span class="name">Básica</span>
@@ -230,7 +232,7 @@ export class UIManager {
           <!-- ROW 2: POWERS (BELOW TOWERS) -->
           <div class="toolbar-row">
             <span class="toolbar-label">☄️ PODERES:</span>
-            <div class="toolbar-items-row">
+            <div class="toolbar-items-row powers-items-row">
               <button id="chip-meteor" class="toolbar-chip" title="Invocar Meteoro (150g)">
                 <span>☄️ Meteoro</span>
                 <span id="meteor-chip-cost" class="cost">150g</span>
@@ -249,7 +251,10 @@ export class UIManager {
         <div id="inspector-state" class="toolbar-state hidden">
           <div class="inspector-toolbar-row">
             <div class="inspector-info-group">
-              <strong id="inspector-title">Torre Nível 1</strong>
+              <div class="inspector-header-row">
+                <strong id="inspector-title">Torre Nível 1</strong>
+                <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
+              </div>
               <div id="inspector-stats-summary" class="stats-summary-inline"></div>
             </div>
 
@@ -258,7 +263,6 @@ export class UIManager {
               <button id="btn-inspect-repair" class="btn success btn-inspect-action">🔧 Reparo</button>
               <button id="btn-inspect-upgrade" class="btn success btn-inspect-action">⬆️ Upgrade (40g)</button>
               <button id="btn-inspect-sell" class="btn danger btn-inspect-action">💰 Vender (35g)</button>
-              <button id="inspector-close-btn" class="close-icon-btn" title="Fechar Inspeção">✖</button>
             </div>
           </div>
 
@@ -416,6 +420,19 @@ export class UIManager {
               <div class="changelog-item latest">
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v0.6.0</strong>
+                  <span class="changelog-title">Arquitetura Mobile Landscape Galaxy S23 & Trilha do Menu</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Arquitetura Mobile Zero-Scroll:</strong> Layout adaptativo 100dvh para Galaxy S23 e smartphones widescreen em modo paisagem, eliminando qualquer rolagem indesejada.</li>
+                  <li><strong>Dual Thumb Zones:</strong> Painel esquerdo com dados vitais/menu e painel direito com deck de torres e controles de onda, posicionados ergonomicamente sob os polegares.</li>
+                  <li><strong>Cortina de Rotação (Portrait):</strong> Alerta interativo em modo retrato orientando o jogador a rotacionar o aparelho para a experiência ideal.</li>
+                  <li><strong>Trilha Sonora Tema:</strong> Música tema orquestrada adicionada ao menu inicial (WelcomeScreen) com loop suave, controle de mudo e desbloqueio tátil.</li>
+                  <li><strong>Ergonomia de Toque & Modais:</strong> Modais com altura dinâmica (85dvh), fechamento rápido ao tocar fora (backdrop click/touch) e alvos ampliados de 44px+.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
                   <strong class="version-tag">v0.5.1</strong>
                   <span class="changelog-title">Correções do Modal de Fim de Jogo & Trava de Bônus</span>
                 </div>
@@ -462,18 +479,8 @@ export class UIManager {
                   <li><strong>Novos Inimigos:</strong> Inimigo com Escudo e Espectro ativados com suporte a conquistas.</li>
                 </ul>
               </div>
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <strong class="version-tag">v2.2</strong>
-                  <span class="changelog-title">Árvore de Talentos & Novas Conquistas</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>Novos Talentos:</strong> Engenharia de Reparo (até 50% de desconto nos reparos) e Foco Crítico (até +20% de chance crítica).</li>
-                  <li><strong>4 Novas Badges:</strong> Engenheiro de Campo, Matador do Pesadelo, Mestre da Guerra e Puro Talento (+20★ em recompensas).</li>
-                </ul>
-              </div>
             </div>
-            <button id="close-changelog-btn" class="btn primary modal-restart-btn">Fechar</button>
+            <button id="close-changelog-btn" class="btn primary modal-restart-btn" style="margin-top: 14px;">Entendido!</button>
           </div>
         </div>
 
@@ -521,7 +528,7 @@ export class UIManager {
 
         <!-- MAP MECHANICS INFO MODAL (❓) -->
         <div id="mechanics-modal-overlay" class="modal-overlay hidden pointer-events-auto">
-          <div class="modal-card mechanics-modal-card" style="max-width: 520px; max-height: 80vh; overflow-y: auto;">
+          <div class="modal-card mechanics-modal-card" style="max-width: 520px;">
             <div class="modal-header">
               <h1>🗺️ Guia de Mecânicas & Perigos</h1>
               <button id="close-mechanics-btn" class="close-icon-btn">✖</button>
@@ -822,6 +829,12 @@ export class UIManager {
       if (!overlay) return;
       this.addDomListener(overlay, 'click', (e) => {
         if (e.target === overlay) {
+          this.dismissModal();
+        }
+      });
+      this.addDomListener(overlay, 'touchend', (e) => {
+        if (e.target === overlay) {
+          e.preventDefault();
           this.dismissModal();
         }
       });

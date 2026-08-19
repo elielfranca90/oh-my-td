@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioManager } from '../src/engine/AudioManager';
 
 /** Minimal AudioContext stub — happy-dom does not implement the Web Audio API. */
@@ -32,6 +32,35 @@ class FakeAudioContext {
     this.closeCount++;
     this.state = 'closed';
     return Promise.resolve();
+  }
+}
+class FakeAudioElement {
+  public static instances: FakeAudioElement[] = [];
+  public src: string;
+  public loop = false;
+  public volume = 1;
+  public paused = true;
+  public currentTime = 0;
+  public playCallCount = 0;
+  public pauseCallCount = 0;
+  public shouldRejectPlay = false;
+
+  constructor(src: string) {
+    this.src = src;
+    FakeAudioElement.instances.push(this);
+  }
+
+  public async play(): Promise<void> {
+    this.playCallCount++;
+    if (this.shouldRejectPlay) {
+      throw new Error('NotAllowedError: play failed because the user didn\'t interact yet');
+    }
+    this.paused = false;
+  }
+
+  public pause(): void {
+    this.pauseCallCount++;
+    this.paused = true;
   }
 }
 
@@ -167,5 +196,142 @@ describe('AudioManager preferences validation', () => {
     const am = new AudioManager();
     expect(am.sfxVolume).toBe(0.8);
     expect(am.bgmVolume).toBe(0.6);
+  });
+});
+
+describe('AudioManager Menu BGM Theme', () => {
+  const originalAudio = globalThis.Audio;
+
+  beforeEach(() => {
+    FakeAudioElement.instances = [];
+    globalThis.Audio = FakeAudioElement as unknown as typeof Audio;
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    globalThis.Audio = originalAudio;
+    localStorage.clear();
+    vi.useRealTimers();
+  });
+
+  it('initializes menu theme audio with loop and persisted volume', async () => {
+    localStorage.setItem('td2d_audio_prefs_v1', JSON.stringify({ bgmVolume: 0.75, isBgmMuted: false }));
+    const am = new AudioManager();
+    await am.playMenuTheme('/audio/Game_Main_Theme_Sunlit_Grasses.mp3');
+
+    expect(FakeAudioElement.instances.length).toBe(1);
+    const audio = FakeAudioElement.instances[0];
+    expect(audio.src).toBe('/audio/Game_Main_Theme_Sunlit_Grasses.mp3');
+    expect(audio.loop).toBe(true);
+    expect(audio.volume).toBe(0.75);
+    expect(audio.paused).toBe(false);
+    expect(am.isMenuPlaying()).toBe(true);
+  });
+
+  it('respects isBgmMuted when starting menu theme', async () => {
+    localStorage.setItem('td2d_audio_prefs_v1', JSON.stringify({ bgmVolume: 0.75, isBgmMuted: true }));
+    const am = new AudioManager();
+    await am.playMenuTheme();
+
+    expect(FakeAudioElement.instances.length).toBe(1);
+    const audio = FakeAudioElement.instances[0];
+    expect(audio.volume).toBe(0);
+    expect(audio.playCallCount).toBe(0);
+  });
+
+  it('dynamically updates menu audio volume when setBgmVolume is called', async () => {
+    const am = new AudioManager();
+    await am.playMenuTheme();
+
+    const audio = FakeAudioElement.instances[0];
+    expect(audio.volume).toBe(0.6);
+
+    am.setBgmVolume(0.3);
+    expect(audio.volume).toBe(0.3);
+  });
+
+  it('pauses and resumes menu theme audio on toggleBgmMute', async () => {
+    const am = new AudioManager();
+    await am.playMenuTheme();
+
+    const audio = FakeAudioElement.instances[0];
+    expect(audio.paused).toBe(false);
+
+    am.toggleBgmMute(); // Mutes
+    expect(am.isBgmMuted).toBe(true);
+    expect(audio.paused).toBe(true);
+    expect(audio.volume).toBe(0);
+
+    am.toggleBgmMute(); // Unmutes
+    expect(am.isBgmMuted).toBe(false);
+    expect(audio.paused).toBe(false);
+    expect(audio.volume).toBe(0.6);
+  });
+
+  it('stops menu theme immediately when fade duration is 0', async () => {
+    const am = new AudioManager();
+    await am.playMenuTheme();
+
+    expect(am.getMenuAudioElement()).not.toBeNull();
+    await am.stopMenuTheme(0);
+
+    expect(am.getMenuAudioElement()).toBeNull();
+    expect(am.isMenuPlaying()).toBe(false);
+  });
+
+  it('performs gradual fade out during stopMenuTheme with timer progression', async () => {
+    vi.useFakeTimers();
+    const am = new AudioManager();
+    await am.playMenuTheme();
+
+    const audio = FakeAudioElement.instances[0];
+    const stopPromise = am.stopMenuTheme(500);
+
+    // Advance half of the fadeout time
+    vi.advanceTimersByTime(250);
+    expect(audio.volume).toBeLessThan(0.6);
+    expect(audio.volume).toBeGreaterThan(0);
+
+    // Advance rest of fadeout
+    vi.advanceTimersByTime(300);
+    await stopPromise;
+
+    expect(am.getMenuAudioElement()).toBeNull();
+    expect(audio.paused).toBe(true);
+  });
+
+  it('handles autoplay policy rejection and registers interaction listeners', async () => {
+    let playAttempt = 0;
+    class RejectingAudio extends FakeAudioElement {
+      public override async play(): Promise<void> {
+        playAttempt++;
+        if (playAttempt === 1) {
+          throw new Error('NotAllowedError');
+        }
+        this.paused = false;
+      }
+    }
+    globalThis.Audio = RejectingAudio as unknown as typeof Audio;
+
+    const am = new AudioManager();
+    await am.playMenuTheme();
+    const audio = FakeAudioElement.instances[0];
+    expect(audio.paused).toBe(true);
+
+    // User gesture triggers playback
+    window.dispatchEvent(new Event('pointerdown'));
+    expect(audio.paused).toBe(false);
+  });
+
+  it('cleans up menu audio and event listeners on dispose()', async () => {
+    const am = new AudioManager();
+    await am.playMenuTheme();
+
+    const audio = FakeAudioElement.instances[0];
+    expect(audio.paused).toBe(false);
+
+    am.dispose();
+    expect(am.getMenuAudioElement()).toBeNull();
+    expect(audio.paused).toBe(true);
   });
 });
