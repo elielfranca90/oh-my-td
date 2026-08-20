@@ -186,8 +186,23 @@ Módulos disponíveis:
 - 🍄 **Nuvem de Esporos (`SPORE_SPRINTER`):** Ao ter sua vida reduzida abaixo de 50% HP, libera instantaneamente uma nuvem de esporos que concede **+30% de velocidade de movimento** aos aliados próximos.
 - 🌿 **Regeneração da Mata (`MOSS_GIANT`):** Enquanto estiver caminhando sobre tiles de mata/floresta (`OBSTACLE_FOREST` ou adjacente à folhagem), recupera **~1,5% do seu HP máximo por segundo** (mínimo de 1 HP a cada 20 frames / ~3 HP/s no nível 1), escalando perfeitamente nas ondas tardias do Modo Infinito.
 - 👑 **Reinforços ao Morrer (`BOSS`):** Ao ser derrotado, o Chefão invoca **2 unidades Runner** nos waypoints imediatos.
-- 💀 **Fases do Mega Chefão (`BLACK_MEGA_BOSS`):** Possui renderizador procedural dedicado (`MegaBossSpriteRenderer`), aura de partículas, 90 de escudo de energia e causa 10 de dano direto à base se alcançar o final.
+- 💀 **Fases do Mega Chefão (`BLACK_MEGA_BOSS`):** Possui alta resistência, aura de partículas, 90 de escudo de energia e causa 10 de dano direto à base se alcançar o final.
 
+### 4.3 Arquitetura de Spritesheets & Animações 4×5 (`MonsterSpriteRenderer`)
+
+Todos os 8 tipos de inimigos utilizam o renderizador centralizado `MonsterSpriteRenderer`, operando sobre spritesheets em matriz homogênea de **4 colunas (frames 0 a 3) por 5 linhas (estados)**:
+
+| Linha do Grid | Estado | Descrição do Ciclo de Animação |
+| :--- | :--- | :--- |
+| **Linha 0** | `IDLE` | 4 frames de respiração / postura de prontidão sutil. |
+| **Linha 1** | `MOVING` | 4 frames de ciclo contínuo de caminhada/corrida (*Walk Cycle*). |
+| **Linha 2** | `ATTACK` | 4 frames de golpe, lunge ou liberação de habilidade ativa. |
+| **Linha 3** | `HURT` | 4 frames de reação a impacto / congelamento / dano. |
+| **Linha 4** | `DEFEAT` | 4 frames de dissolução, quebra de carapaça ou explosão em partículas. |
+
+- **Temporizador de Animação:** Ciclo global de **140ms por frame (~7.14 FPS)** sincronizado centralmente pelo loop de apresentação do motor.
+- **Flip Direcional Horizontal:** Ao se movimentar para a esquerda ($\Delta X < 0$), o motor aplica inversão horizontal no contexto 2D (`ctx.scale(-1, 1)`), mantendo o monstro virado no sentido correto do percurso.
+- **Fallback Automático:** Caso algum spritesheet PNG não esteja presente em `public/assets/`, o renderizador executa o desenho vetorial de contingência do `SpriteManager` sem quebras de execução.
 ---
 
 ## 5. Biomas, Mapas, Hazards & Climas

@@ -128,7 +128,7 @@ export class UIManager {
 
     const part1Html = `
       <div id="game-title-bar" class="game-title-bar">
-        <h1 class="game-title">OH MY TD <span class="game-version">v0.7.0</span></h1>
+        <h1 class="game-title">OH MY TD <span class="game-version">v0.8.0</span></h1>
       </div>
 
       <header id="hud-top" class="hud-top pointer-events-auto">
@@ -461,6 +461,19 @@ export class UIManager {
               <div class="changelog-item latest">
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v0.8.0</strong>
+                  <span class="changelog-title">Spritesheets & Animações Completas dos Monstros</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Spritesheets 4×5 Unificados:</strong> Todos os 8 tipos de monstros agora possuem spritesheets animados completos em grid 4 colunas × 5 linhas (20 frames por criatura).</li>
+                  <li><strong>Máquina de Estados de Animação:</strong> Suporte nativo a 5 estados distintos (IDLE, MOVING, ATTACK, HURT e DEFEAT) com ciclo de caminhada sincronizado a 140ms por frame (~7.14 FPS).</li>
+                  <li><strong>Flip Direcional Automático:</strong> Inimigos viram horizontalmente para a esquerda ou direita dependendo do sentido da rota nos waypoints.</li>
+                  <li><strong>Feedback Visual de Dano:</strong> Monstros sob congelamento ou dano exibem frame de reação de impacto (HURT) instantâneo.</li>
+                  <li><strong>Pipeline Automatizado de Assets:</strong> Scripts de processamento e normalização com remoção inteligente de fundo por flood-fill.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
                   <strong class="version-tag">v0.7.0</strong>
                   <span class="changelog-title">Desafio Diário, Objetivos da Run & Meta-Progressão</span>
                 </div>
@@ -507,16 +520,6 @@ export class UIManager {
                   <li><strong>Magias com Dano Escalável:</strong> O Meteoro agora causa dano proporcional ao HP máximo do alvo (90 + 12% maxHp) e possui decaimento de custo por ondas sem uso.</li>
                   <li><strong>Draft Roguelite em Morte Certa:</strong> O sistema de cartas e módulos roguelite agora é exclusivo do modo Morte Certa com sorteio 100% determinístico.</li>
                   <li><strong>Polimento Mobile & Atalhos:</strong> Alvos de toque em 44px+, retorno tátil háptico, atalhos de teclado (1-5, Q/W, U/S/R, Esc) e persistência de velocidade e auto-wave.</li>
-                </ul>
-              </div>
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <strong class="version-tag">v0.4.0</strong>
-                  <span class="changelog-title">Oh My TD — Nova Interface</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>Rebrand:</strong> O jogo agora se chama "Oh My TD" com título e versão exibidos no topo da tela.</li>
-                  <li><strong>Novo Layout:</strong> Botões informativos no canto superior direito, dados de jogo em barra dedicada, e indicador de onda/inimigos na barra inferior.</li>
                 </ul>
               </div>
             <button id="close-changelog-btn" class="btn primary modal-restart-btn" style="margin-top: 14px;">Entendido!</button>

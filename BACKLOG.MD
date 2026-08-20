@@ -68,6 +68,12 @@
 - [x] **Objetivos da Run & Desafio Diário na UI (C3)**: `ObjectiveManager.ts` sorteia 3 metas determinísticas por semente (`seed`) valendo de 1★ a 3★; botão "DESAFIO DIÁRIO" na `WelcomeScreen` conectado à semente do dia (`getDailySeed()`).
 - [x] **Prestígio Cósmico Soft-Infinito & Desbloqueios (C4)**: `TalentManager.ts` suporta Prestígio Cósmico (+1% Dano Global por 10★, nível infinito) e checagem de desbloqueios de mapas e torres por marcos de estrelas.
 - [x] **Mecânica de Última Chance na Derrota (C6)**: Ao atingir 0 HP pela primeira vez na run (`!hasUsedLastChance`), abre modal de emergência oferecendo reviver a base com 3 HP (1 HP no Hardcore) e Congelamento Global de emergência de 5s em troca de todo o ouro acumulado.
+## 🟢 Concluído (v0.8.0 — Spritesheets & Animações Completas dos Monstros)
+
+- [x] **Renderizador Unificado de Spritesheets (`MonsterSpriteRenderer.ts`)**: Expansão do padrão de renderização do Mega Boss para todos os 8 tipos de inimigos (Standard, Runner, Tank, Shielded, Spore Sprinter, Moss Giant, Boss e Black Mega Boss), com suporte completo a matriz 4×5 (20 frames) e ciclo de animação sincronizado a 140ms por frame (~7.14 FPS).
+- [x] **Máquina de Estados de Animação dos Monstros**: Estados `IDLE`, `MOVING`, `ATTACK`, `HURT` e `DEFEAT` com detecção dinâmica de congelamento/dano no ciclo de vida de `Enemy2D`.
+- [x] **Flip Direcional Horizontal**: Inversão horizontal de sprite (`scale -1, 1`) automática ao transitar entre waypoints quando `dx < 0`, mantendo os inimigos virados para o sentido de caminhada.
+- [x] **Pipeline de Processamento & Geração de Assets**: Scripts Python e Node.js (`scripts/process_monster_sprites.py`, `scripts/generate_animated_spritesheets.py` e `scripts/process_sprites.mjs`) com recorte de fundo por flood-fill e normalização de 20 células em RGBA.
 
 ## 🟡 Próximas Funcionalidades (Backlog)
 
@@ -76,4 +82,3 @@
 - [ ] **Telegrafia e Leitura de Campo (D5 / C7)**: Telegrafia de rota no portal de spawn, realce de cobertura de caminho no hover e botão "Reparar Tudo".
 - [ ] **Modo Co-op Multiplayer Local**: Suporte para dois jogadores na mesma tela com divisão de recursos e construção compartilhada.
 - [ ] **Novas Torres Elementais**: Torre Arcana de Teleporte e Torre de Terremoto com desaceleração em área física.
-- [ ] **Renderizadores Procedurais/Spritesheet Dedicados para Minions**: Expansão do padrão de renderização dedicada de `MegaBossSpriteRenderer.ts` para os demais tipos de inimigos (Standard, Runner, Tank, Shielded, Spore Sprinter, Moss Giant), com suporte a estados e animações procedimentais (caminhar, dano, habilidades ativas e derrota).

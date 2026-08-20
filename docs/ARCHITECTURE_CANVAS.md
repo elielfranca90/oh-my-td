@@ -19,7 +19,8 @@ graph TD
     C --> RNG[Rng - Seeded Deterministic LCG/Mulberry32]
     C --> DB[DatabaseManager - Supabase Auth & Cloud Leaderboard]
     
-    E --> MegaBoss[MegaBossSpriteRenderer - Procedural Boss Renderer]
+    E --> MonsterSprites[MonsterSpriteRenderer - 4x5 Spritesheets & Flip Direcional]
+    MonsterSprites --> MegaBoss[MegaBossSpriteRenderer - Adaptador Retrocompatível]
     E --> O[Canvas 2D Renderer]
     F --> O
     G --> O
@@ -28,7 +29,7 @@ graph TD
     N --> O
     N --> TR[ThreeRenderer - WebGL sRGB Map Terrain Layer z:0]
     TR --> WebGLCanvas[WebGL Canvas z:0]
-    MegaBoss --> O
+    MonsterSprites --> O
     
     D --> P[UIManager - DOM Responsive Overlay & HUD Badges]
     J --> P
@@ -46,7 +47,8 @@ graph TD
 * **`DatabaseManager`:** Integração com Supabase para autenticação anônima persistente, sincronização cloud de conquistas e placar global (Leaderboard).
 * **`Specializations`:** Sistema de ramificação de upgrades para torres no nível 3 com habilidades ativas e passivas únicas.
 * **`Rng`:** Gerador pseudo-aleatório semeado (Mulberry32) para partidas determinísticas e simulação headless.
-* **`MegaBossSpriteRenderer`:** Renderizador procedural otimizado com transparência para o chefão `BLACK_MEGA_BOSS`.
+* **`MonsterSpriteRenderer`:** Renderizador centralizado de spritesheets em matriz 4×5 (20 frames) para todos os 8 tipos de inimigos, com suporte a 5 estados (`IDLE`, `MOVING`, `ATTACK`, `HURT`, `DEFEAT`), flip direcional e fallback vetorial seguro.
+* **`MegaBossSpriteRenderer`:** Adaptador retrocompatível com a API original do Mega Boss, delegando internamente para o `MonsterSpriteRenderer`.
 * **`ThreeRenderer`:** Renderizador WebGL (Three.js) dedicado aos tiles do mapa na camada inferior (`z-index: 0`) com texturas configuradas em `THREE.SRGBColorSpace` para fidelidade sRGB de cores.
 
 ---

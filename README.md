@@ -1,4 +1,4 @@
-# 🏰 Tower Defense 2D - Oh My TD (v0.7.0)
+# 🏰 Tower Defense 2D - Oh My TD (v0.8.0)
 
 Protótipo completo, responsivo e de alta performance de um jogo estilo **Tower Defense 2D** desenvolvido com **HTML5 Canvas 2D / WebGL (Three.js)**, **TypeScript 5.x** e **Vite**.
 
@@ -58,17 +58,18 @@ npm run build
 O Nível 3 continua sendo o único ponto de escolha de especialização, mas deixou de ser o teto de progressão: a partir do Nível 4 a torre sobe em **ranks genéricos infinitos** (dano e HP máximo crescem compostos sem limite; alcance e raio de área crescem compostos até um teto nos ranks 25/40) com custo de upgrade que também cresce composto por rank. Detalhes e fórmulas em [`docs/GAME_MECHANICS.md`](./docs/GAME_MECHANICS.md).
 ---
 
-## 👾 8 Tipos de Inimigos
+## 👾 8 Tipos de Inimigos & Spritesheets Animados 4×5
 
-* **Standard:** Tropa equilibrada (10 HP, 10g recompensa).
-* **Runner:** **Esquiva Ágil (25% chance)** de desviar de mísseis e tiros pesados (`DODGED!`).
-* **Tank:** **Placa de Armadura (absorve 40% de dano)** de tiros leves.
-* **Shielded Speeder:** **Escudo de Energia Azul (22 Shield HP)** que absorve impacto antes da vida.
-* **Spore Sprinter:** Libera uma nuvem de esporos dando **+30% de velocidade** aos aliados quando fica com menos de 50% HP.
-* **Moss Giant:** Regenera **~1,5% do HP máximo por segundo** (mínimo 3 HP/s no nível 1) enquanto adjacente à mata.
-* **BOSS:** **160 HP** (escalar no modo infinito), causa 5 de dano à base e **invoca 2 Corredores de reforço** ao morrer.
-* **BLACK MEGA BOSS:** Chefão com alta resistência, gráficos de spritesheet com transparência e renderizador dedicado (`MegaBossSpriteRenderer`).
----
+Todos os 8 tipos de inimigos contam com animações completas em formato spritesheet matriz 4 colunas × 5 linhas (20 frames por criatura, executados centralizadamente a 140ms/frame pelo `MonsterSpriteRenderer`):
+
+* **Standard:** Tropa equilibrada (10 HP, 10g recompensa) com animação bípede carmesim de garras e respiração.
+* **Runner:** **Esquiva Ágil (25% chance)** de desviar de mísseis e tiros pesados (`DODGED!`) com animação quadrúpede veloz e rastro de vento.
+* **Tank:** **Placa de Armadura (absorve 40% de dano)** com passadas sísmicas de golem e carapaça de ametista.
+* **Shielded Speeder:** **Escudo de Energia Azul (22 Shield HP)** com anéis orbitais e pulso de barreira.
+* **Spore Sprinter:** Libera nuvem de esporos com **+30% de velocidade** aos aliados quando fica com menos de 50% HP.
+* **Moss Giant:** Regenera **~1,5% do HP máximo por segundo** enquanto adjacente à mata, com textura de musgo e vinhas.
+* **BOSS:** **160 HP** (escalável), causa 5 de dano à base e **invoca 2 Corredores de reforço** ao morrer, com coroa de ouro flamejante e capa imperial.
+* **BLACK MEGA BOSS:** Chefão supremo colossal com renderização integrada e máquina de estados (`IDLE`, `MOVING`, `ATTACK`, `HURT`, `DEFEAT`).
 
 ## ⚡ Poderes Supremos (*Ultimate Spells*)
 

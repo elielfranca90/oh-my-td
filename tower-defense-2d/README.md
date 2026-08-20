@@ -1,4 +1,4 @@
-# 🏰 Tower Defense 2D (Oh My TD - v0.6.0)
+# 🏰 Tower Defense 2D (Oh My TD - v0.8.0)
 
 Jogo de estratégia *Tower Defense 2D* completo desenvolvido com **HTML5 Canvas**, **WebGL (Three.js)**, **TypeScript** e **Vite**.
 
@@ -26,7 +26,7 @@ npm run build
 
 * **🎮 Tela Inicial 3D Synthwave & Modos de Jogo:** Interface de entrada retro 3D (Three.js) com suporte ao Modo Campanha (10 Ondas densas — 144 inimigos no total — + Boss Final com Modal de Vitória) e Modo Infinito com Seleção de Desafios (`NORMAL`, `HARDCORE`, `MORTE_CERTA`).
 * **🏰 5 Torres Especializadas, Upgrades Ramificados (Lvl 3) & Ranks Infinitos:** Basic, Frost, Solar Prism, Cannon e Artillery com escolha de caminhos de especialização no Nível 3; a partir do Nível 4, ranks genéricos infinitos (dano/HP sem teto, alcance/área com teto) reaproveitam a mesma UI de upgrade.
-* **👾 8 Tipos de Inimigos:** Standard, Runner (Esquiva), Tank (Armadura), Shielded (Escudo de Energia), Spore Sprinter (Velocidade), Moss Giant (Regeneração), BOSS (Reinforcements) e `BLACK_MEGA_BOSS` com renderizador customizado.
+* **👾 8 Tipos de Inimigos com Spritesheets Animados 4×5:** Standard, Runner (Esquiva), Tank (Armadura), Shielded (Escudo de Energia), Spore Sprinter (Velocidade), Moss Giant (Regeneração), BOSS (Reinforcements) e `BLACK_MEGA_BOSS`. Todos os 8 inimigos utilizam o novo renderizador de spritesheets (`MonsterSpriteRenderer`) com matriz 4×5 (20 frames por monstro), máquina de estados (`IDLE`, `MOVING`, `ATTACK`, `HURT`, `DEFEAT`) e flip direcional horizontal.
 * **💰 Economia de Ouro Recalibrada:** curva de recompensa por abate com corte específico por modo — mais agressivo na campanha (compensando a densidade de onda maior) e mais suave no Modo Infinito (expoente efetivo 0,75, corte gradual até um piso), além de bônus de ouro por **chamar a próxima onda antecipadamente** (Manual e Auto).
 * **☁️ Perfil do Jogador & Leaderboard Supabase:** Autenticação anônima persistente com sincronização cloud de conquistas e placar de líderes global online.
 * **⚡ Motor Determinístico & Sub-stepping:** Timestep fixo ($1/60$s) e sub-stepping para movimentação e física sem falhas em acelerações de 2x e 4x.

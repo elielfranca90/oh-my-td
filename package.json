@@ -2,7 +2,7 @@
   "name": "oh-my-td",
   "private": true,
   "license": "MIT",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "scripts": {
     "dev": "cd tower-defense-2d && npm run dev",
     "build": "cd tower-defense-2d && npm install && npm run build",
