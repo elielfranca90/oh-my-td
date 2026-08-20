@@ -9,7 +9,7 @@ import { EnemyManager2D } from './EnemyManager';
 import { FXManager } from './FXManager';
 import { GameState } from './GameState';
 import { MapManager2D, type MapId } from './MapManager';
-import { MegaBossSpriteRenderer } from './MegaBossSpriteRenderer';
+import { MonsterSpriteRenderer } from './MonsterSpriteRenderer';
 import { ParticleManager } from './ParticleManager';
 import { ProjectileManager2D } from './ProjectileManager';
 import { Rng } from './Rng';
@@ -1167,7 +1167,7 @@ export class Game2D implements IGame2D {
   private stepPresentation(stepMs: number) {
     this.fxManager.update();
     this.achievementManager.update(stepMs);
-    MegaBossSpriteRenderer.getInstance().update(stepMs);
+    MonsterSpriteRenderer.getInstance().update(stepMs);
   }
 
   public run() {

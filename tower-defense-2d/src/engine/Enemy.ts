@@ -1,6 +1,5 @@
-import { MegaBossSpriteRenderer } from './MegaBossSpriteRenderer';
+import { MonsterSpriteRenderer, type MonsterAnimationState } from './MonsterSpriteRenderer';
 import { Rng } from './Rng';
-import { SpriteManager } from './SpriteManager';
 
 import type { EnemyType, IEnemy2D, Vector2D } from '../types';
 
@@ -10,6 +9,7 @@ export class Enemy2D {
   public pathIndex: number;
   /** Ligado enquanto o MOSS_GIANT se cura junto à mata; lido apenas pelo render. */
   public isRegenerating = false;
+  public facingDirection: 'left' | 'right' = 'right';
   private hasTriggeredSpore = false;
   private mossRegenTimer = 0;
   private rng: Rng;
@@ -192,6 +192,11 @@ export class Enemy2D {
       const dy = target.y - this.data.position.y;
       const distToNext = Math.hypot(dx, dy);
 
+      if (dx < -0.01) {
+        this.facingDirection = 'left';
+      } else if (dx > 0.01) {
+        this.facingDirection = 'right';
+      }
       if (distToNext <= distanceToMove) {
         this.data.position.x = target.x;
         this.data.position.y = target.y;
@@ -266,36 +271,17 @@ export class Enemy2D {
     }
 
     // Body & Spritesheet Render
-    if (this.data.type === 'BLACK_MEGA_BOSS') {
-      const state = this.data.freezeTimer > 0 ? 'HURT' : 'MOVING';
-      MegaBossSpriteRenderer.getInstance().render(
-        ctx,
-        this.data.position.x,
-        this.data.position.y,
-        76,
-        state
-      );
-    } else {
-      const drawn = SpriteManager.getInstance().drawSpriteAsset(
-        ctx,
-        this.data.type,
-        this.data.position.x,
-        this.data.position.y,
-        this.data.radius * 2.4
-      );
-
-      if (!drawn) {
-        ctx.beginPath();
-        ctx.arc(this.data.position.x, this.data.position.y, this.data.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.data.freezeTimer > 0 ? '#80deea' : this.data.color;
-        ctx.fill();
-
-        ctx.strokeStyle = this.data.type === 'BOSS' ? '#ffd700' : this.data.type === 'MOSS_GIANT' ? '#aed581' : '#ffffff';
-        ctx.lineWidth = this.data.type === 'BOSS' ? 3.5 : 1.5;
-        ctx.stroke();
-      }
-    }
-
+    const state: MonsterAnimationState = this.data.freezeTimer > 0 ? 'HURT' : 'MOVING';
+    const renderSize = this.data.type === 'BLACK_MEGA_BOSS' ? 76 : this.data.radius * 2.5;
+    MonsterSpriteRenderer.getInstance().renderEnemy(
+      ctx,
+      this.data.type,
+      this.data.position.x,
+      this.data.position.y,
+      renderSize,
+      state,
+      this.facingDirection === 'left'
+    );
     // HP Bar & Shield Bar — altura e deslocamento escalados por uiScale (E1):
     // 4px de altura no canvas virava ~1.7px reais num telefone de 360px.
     const barWidth = this.data.radius * 2.2;
