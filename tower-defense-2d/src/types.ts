@@ -215,7 +215,31 @@ export interface TalentData {
   cdLvl: number;
   repairLvl: number;
   critLvl: number;
+  prestigeLvl?: number;
 }
+
+export type RunObjectiveId =
+  | 'SURVIVE_WAVE_5_NO_DAMAGE'
+  | 'KILL_15_SPECIAL_TOWER'
+  | 'REACH_LEVEL_3_TOWER'
+  | 'CAST_SPELLS_3_TIMES'
+  | 'ACCUMULATE_300_GOLD'
+  | 'BUILD_4_DIFFERENT_TOWERS'
+  | 'SURVIVE_WAVE_10'
+  | 'EARLY_CALL_3_TIMES';
+
+export interface RunObjective {
+  id: RunObjectiveId;
+  title: string;
+  description: string;
+  starReward: number;
+  target: number;
+  current: number;
+  completed: boolean;
+  claimed: boolean;
+}
+
+export type WelcomeScreenMode = 'CAMPAIGN' | 'TRADITIONAL' | 'DAILY';
 
 export const TileType = {
   BUILDABLE: 0,

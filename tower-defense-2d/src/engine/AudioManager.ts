@@ -733,4 +733,23 @@ export class AudioManager {
     osc.start();
     osc.stop(this.ctx.currentTime + 0.35);
   }
+
+  public playAchievement() {
+    if (!this.ensureContext() || !this.ctx || this.isSfxMuted || !this.sfxGainNode) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, this.ctx.currentTime);
+    osc.frequency.setValueAtTime(880, this.ctx.currentTime + 0.12);
+
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGainNode);
+
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.4);
+  }
 }

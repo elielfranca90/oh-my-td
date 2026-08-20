@@ -62,9 +62,16 @@
 - [x] **Correção da Estrutura DOM do Modal de Fim de Jogo**: Fechamento adequado de tag `<div>` no modal de mecânicas em `UIManager.ts`, evitando o aninhamento indevido de `#modal-overlay` dentro de `#mechanics-modal-overlay` que mantinha as telas de Vitória e Game Over invisíveis.
 - [x] **Trava de Bônus de Chamada Antecipada na Onda 1**: Adicionada verificação `if (this.currentWaveIndex < 0) return 0;` em `WaveManager.ts`, bloqueando recompensa de ouro indevida antes do início da partida.
 - [x] **Testes de Regressão de Visibilidade e Contratos**: Adicionados testes no Vitest e validação com navegador headless cobrindo a hierarquia de contêineres e a exibição de modais nos modos Normal, Campanha e Morte Certa.
+## 🟢 Concluído (Sprint P2 — Retenção entre Sessões, `docs/GAME_DESIGN_REVIEW.md` Parte F itens 15-18)
+
+- [x] **Onboarding de 40 Segundos (D1)**: `TutorialManager.ts` com passo a passo não intrusivo guiando a construção da primeira torre, o início da primeira onda e dicas de evolução e terrenos, com botão para pular e persistência local `oh_my_td_has_seen_tutorial`.
+- [x] **Objetivos da Run & Desafio Diário na UI (C3)**: `ObjectiveManager.ts` sorteia 3 metas determinísticas por semente (`seed`) valendo de 1★ a 3★; botão "DESAFIO DIÁRIO" na `WelcomeScreen` conectado à semente do dia (`getDailySeed()`).
+- [x] **Prestígio Cósmico Soft-Infinito & Desbloqueios (C4)**: `TalentManager.ts` suporta Prestígio Cósmico (+1% Dano Global por 10★, nível infinito) e checagem de desbloqueios de mapas e torres por marcos de estrelas.
+- [x] **Mecânica de Última Chance na Derrota (C6)**: Ao atingir 0 HP pela primeira vez na run (`!hasUsedLastChance`), abre modal de emergência oferecendo reviver a base com 3 HP (1 HP no Hardcore) e Congelamento Global de emergência de 5s em troca de todo o ouro acumulado.
+
 ## 🟡 Próximas Funcionalidades (Backlog)
 
-- [ ] **P2 — Retenção entre sessões** (`docs/GAME_DESIGN_REVIEW.md` Parte F, itens 15-18, pendente por completo): onboarding de ~40s guiando a primeira torre/onda/especialização; objetivos de run + Desafio Diário visível na UI (a infraestrutura de `ReplayEngine`/Daily Seed já existe, só falta porta de entrada); desbloqueios e prestígio na meta-progressão em vez de uma árvore de talentos que satura em 2-3 partidas; "Última Chance" na derrota (revivência única em troca do ouro acumulado). Inclui também as magias com recurso próprio ("Fúria") adiadas do P1.
+- [ ] **Magias com Recurso Próprio ("Fúria", B3 Opção 2)**: Barra de recurso dedicada na HUD carregada por abates em vez de custo em ouro.
 - [ ] **Grade Espacial (Spatial Hash) para o Laço de Mira das Torres** (item E8 da auditoria): indexação por grade de células para reduzir a quantidade bruta de comparações torre×inimigo se o profiling em dispositivos modestos apontar necessidade.
 - [ ] **Telegrafia e Leitura de Campo (D5 / C7)**: Telegrafia de rota no portal de spawn, realce de cobertura de caminho no hover e botão "Reparar Tudo".
 - [ ] **Modo Co-op Multiplayer Local**: Suporte para dois jogadores na mesma tela com divisão de recursos e construção compartilhada.

@@ -5,11 +5,12 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { DatabaseManager } from '../engine/DatabaseManager';
 import { AudioManager } from '../engine/AudioManager';
+import type { WelcomeScreenMode } from '../types';
 export class WelcomeScreen {
   private overlayEl: HTMLDivElement | null = null;
   private canvasContainerEl: HTMLDivElement | null = null;
   private leaderboardModalEl: HTMLDivElement | null = null;
-  private onStartCallback: (mode: 'CAMPAIGN' | 'TRADITIONAL') => void;
+  private onStartCallback: (mode: WelcomeScreenMode) => void;
   private db: DatabaseManager;
   private audioManager: AudioManager;
   private audioBtnEl: HTMLButtonElement | null = null;
@@ -27,7 +28,7 @@ export class WelcomeScreen {
   private handleResizeBound: () => void;
 
   constructor(
-    onStart: (mode: 'CAMPAIGN' | 'TRADITIONAL') => void,
+    onStart: (mode: WelcomeScreenMode) => void,
     db?: DatabaseManager,
     audioManager?: AudioManager
   ) {
@@ -93,6 +94,14 @@ export class WelcomeScreen {
       this.destroy('TRADITIONAL');
     });
 
+    const dailyBtn = document.createElement('button');
+    dailyBtn.className = 'retro-btn-daily';
+    dailyBtn.textContent = 'DESAFIO DIÁRIO';
+    dailyBtn.title = 'Jogue a semente determinística diária com placar global!';
+    dailyBtn.addEventListener('click', () => {
+      this.destroy('DAILY');
+    });
+
     const leaderboardBtn = document.createElement('button');
     leaderboardBtn.className = 'retro-btn-leaderboard';
     leaderboardBtn.textContent = 'PLACAR GLOBAL';
@@ -102,6 +111,7 @@ export class WelcomeScreen {
 
     btnContainer.appendChild(campaignBtn);
     btnContainer.appendChild(traditionalBtn);
+    btnContainer.appendChild(dailyBtn);
     btnContainer.appendChild(leaderboardBtn);
     uiContent.appendChild(title);
     uiContent.appendChild(subtitle);
@@ -440,8 +450,7 @@ export class WelcomeScreen {
     }
   };
 
-  public destroy(mode: 'CAMPAIGN' | 'TRADITIONAL' = 'CAMPAIGN'): void {
-    if (this.isDestroyed) return;
+  public destroy(mode: WelcomeScreenMode = 'CAMPAIGN'): void {
     this.isDestroyed = true;
 
     // Stop and fade out menu theme music smoothly

@@ -1,5 +1,5 @@
 import type { DatabaseManager } from './DatabaseManager';
-import type { TalentData } from '../types';
+import type { TalentData, TowerType, MapId } from '../types';
 export type { TalentData };
 
 export class TalentManager {
@@ -11,7 +11,10 @@ export class TalentManager {
     cdLvl: 0,
     repairLvl: 0,
     critLvl: 0,
+    prestigeLvl: 0,
   };
+  public unlockedTowers: string[] = ['ARCHER', 'CANNON', 'FROST', 'ARTILLERY', 'SOLAR_PRISM'];
+  public unlockedMaps: string[] = ['MAP_1', 'MAP_2', 'MAP_3', 'MAP_4'];
   private readonly STARS_KEY = 'td2d_stars_v1';
   private readonly TALENTS_KEY = 'td2d_talents_v1';
   private db: DatabaseManager | null = null;
@@ -44,6 +47,7 @@ export class TalentManager {
             cdLvl: this.readLevel(raw.cdLvl, 'cdLvl'),
             repairLvl: this.readLevel(raw.repairLvl, 'repairLvl'),
             critLvl: this.readLevel(raw.critLvl, 'critLvl'),
+            prestigeLvl: typeof raw.prestigeLvl === 'number' && Number.isFinite(raw.prestigeLvl) ? Math.max(0, Math.floor(raw.prestigeLvl)) : 0,
           };
         }
       }
@@ -73,6 +77,7 @@ export class TalentManager {
       const mergedCd = Math.max(this.talents.cdLvl, remote.talents.cdLvl);
       const mergedRepair = Math.max(this.talents.repairLvl, remote.talents.repairLvl);
       const mergedCrit = Math.max(this.talents.critLvl, remote.talents.critLvl);
+      const mergedPrestige = Math.max(this.talents.prestigeLvl || 0, remote.talents.prestigeLvl || 0);
 
       const localHadHigher =
         this.stars > remote.stars ||
@@ -81,7 +86,8 @@ export class TalentManager {
         this.talents.hpLvl > remote.talents.hpLvl ||
         this.talents.cdLvl > remote.talents.cdLvl ||
         this.talents.repairLvl > remote.talents.repairLvl ||
-        this.talents.critLvl > remote.talents.critLvl;
+        this.talents.critLvl > remote.talents.critLvl ||
+        (this.talents.prestigeLvl || 0) > (remote.talents.prestigeLvl || 0);
 
       this.stars = mergedStars;
       this.talents.damageLvl = mergedDamage;
@@ -90,6 +96,7 @@ export class TalentManager {
       this.talents.cdLvl = mergedCd;
       this.talents.repairLvl = mergedRepair;
       this.talents.critLvl = mergedCrit;
+      this.talents.prestigeLvl = mergedPrestige;
 
       this.saveLocalData();
 
@@ -124,8 +131,12 @@ export class TalentManager {
   }
 
   // Bonus Calculators
+  public getPrestigeDamageBonus(): number {
+    return (this.talents.prestigeLvl || 0) * 0.01; // +1% por nível de prestígio
+  }
+
   public getDamageBonusMultiplier(): number {
-    return 1 + this.talents.damageLvl * 0.1; // +10%, +20%, +30%
+    return 1 + this.talents.damageLvl * 0.1 + this.getPrestigeDamageBonus(); // Base + Talentos (+10%/lvl) + Prestígio (+1%/lvl)
   }
 
   public getStartingGoldBonus(): number {
@@ -193,5 +204,29 @@ export class TalentManager {
     this.talents[type]++;
     this.saveData();
     return true;
+  }
+
+  // Prestígio Cósmico Soft-Infinito (C4)
+  public getPrestigeCost(): number {
+    return 10; // Custo fixo de 10★ por nível de prestígio cósmico (+1% Dano Global)
+  }
+
+  public upgradePrestige(): boolean {
+    const cost = this.getPrestigeCost();
+    if (this.stars < cost) return false;
+
+    this.stars -= cost;
+    this.talents.prestigeLvl = (this.talents.prestigeLvl || 0) + 1;
+    this.saveData();
+    return true;
+  }
+
+  // Desbloqueios de Conteúdo por Estrelas (C4)
+  public isTowerUnlocked(type: TowerType): boolean {
+    return this.unlockedTowers.includes(type);
+  }
+
+  public isMapUnlocked(mapId: MapId): boolean {
+    return this.unlockedMaps.includes(mapId);
   }
 }

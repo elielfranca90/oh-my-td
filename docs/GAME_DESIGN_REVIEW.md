@@ -483,12 +483,11 @@ Há `orientationchange` apenas para recalcular tamanho (`Game.ts:337`). Um canva
 - **Magias com recurso próprio ("Fúria", B3 opção 2):** adiada para o P2 por decisão do diretor. É um sistema novo (barra de recurso na HUD, carga por abate, interação com `MORTE_CERTA` desabilitando magias) e pertence ao pacote de retenção, onde a HUD será tocada de qualquer forma. O P1 entregou só a opção 1 (dano proporcional, item 13 acima).
 - **Multiplicador ×2 de bônus "com a onda anterior ainda na tela" (C1):** rejeitado nesta rodada, não só adiado — é estruturalmente impossível sem permitir ondas sobrepostas. `isWaveActive` só vira `false` quando `remainingEnemiesCount === 0` (`WaveManager.onEnemyCleared()`), ou seja, no exato instante em que `startNextWave()` volta a estar disponível **não há, por definição, nenhum inimigo da onda anterior em tela**. Implementar o ×2 literal exigiria trocar `spawnQueue` de fila única para múltipla e permitir duas ondas simultâneas — mudança de arquitetura maior que um getter puro, candidata a rodada própria com spec de risco dedicada (não faz parte do P2 como está especificado hoje).
 
-### P2 — Retenção entre sessões — pendente, próximo pacote
-15. Onboarding de 40 segundos **(D1)**
-16. Objetivos de run + Desafio Diário na UI **(C3)**
-17. Desbloqueios e prestígio na meta-progressão **(C4)**
-18. "Última Chance" na derrota **(C6)**
-18b. *(Adicionado pelo P1, ver pendência acima — não renumerado para não colidir com os itens 19-24 do P3 abaixo)* Magias com recurso próprio ("Fúria") — opção 2 do antigo item B3, para empacotar junto da HUD de retenção.
+### P2 — Retenção entre sessões ✅ Concluído — ciclo 2026-08 (Oh My TD Retention Release)
+15. ✅ **Onboarding de 40 segundos** **(D1)** — `TutorialManager.ts` com passo a passo não intrusivo guiando a 1ª torre, início da onda 1 e dicas estratégicas, com persistência `oh_my_td_has_seen_tutorial` no `localStorage` e botão para pular.
+16. ✅ **Objetivos de run + Desafio Diário na UI** **(C3)** — `ObjectiveManager.ts` sorteia 3 metas determinísticas por seed com recompensas de 1★ a 3★; botão "DESAFIO DIÁRIO" na `WelcomeScreen` conectado à semente do dia.
+17. ✅ **Desbloqueios e prestígio na meta-progressão** **(C4)** — `TalentManager.ts` implementa Prestígio Cósmico (+1% Dano Global permanente por 10★, nível infinito) e checagem de desbloqueios de mapas e torres.
+18. ✅ **"Última Chance" na derrota** **(C6)** — `GameState.takeDamage()` e `applyLastChance()`: ao atingir 0 HP pela primeira vez na run, oferece reviver a base com 3 HP (1 HP no Hardcore) e Congelamento Global de emergência de 5s em troca de todo o ouro acumulado.
 
 ### P3 — Polimento de UX ✅ Concluído — branch `fix/p3-ux-polish-2026-08` (ainda a ser commitado nesta branch)
 19. ✅ Escala de tipografia no canvas **(E1)** — *tratar como P1 se mobile for público principal*. `Game2D.uiScale` aplicado ao tooltip de tile, toast de conquista, texto de dano/"DODGED!" e barra de vida/escudo do inimigo.

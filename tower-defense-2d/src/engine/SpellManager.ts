@@ -124,6 +124,18 @@ export class SpellManager {
     EventBus.getInstance().emit('spell:cast', { spell: 'FREEZE', cost: this.freezeCost, cd: this.freezeCooldownMs });
     return true;
   }
+  public triggerEmergencyFreeze(allEnemies: Enemy2D[]): void {
+    this.fxManager.triggerScreenShake(12);
+    this.audioManager.playFreeze();
+    this.particleManager.triggerFreezeEffect();
+    for (const enemy of allEnemies) {
+      if (!enemy.data.isDead) {
+        enemy.applyFreeze(300); // 5s emergency freeze
+        this.fxManager.addDamageText(enemy.data.position.x, enemy.data.position.y, 'LAST CHANCE!', '#3b82f6');
+      }
+    }
+  }
+
 
   public castMeteorAt(x: number, y: number, allEnemies: Enemy2D[]): boolean {
     if (this.gameState.challengeMode === 'MORTE_CERTA') return false;

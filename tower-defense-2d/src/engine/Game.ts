@@ -1,4 +1,4 @@
-import type { ChallengeMode, TowerType } from '../types';
+import type { ChallengeMode, TowerType, RunObjective } from '../types';
 import { UIManager, type IGame2D } from '../ui/UIManager';
 import { AchievementManager } from './AchievementManager';
 import { AnalyticsManager } from './AnalyticsManager';
@@ -22,6 +22,8 @@ import { WaveManager } from './WaveManager';
 import { ThreeRenderer } from './ThreeRenderer';
 import { SpriteManager } from './SpriteManager';
 import { ReplayEngine } from './ReplayEngine';
+import { ObjectiveManager } from './ObjectiveManager';
+import { TutorialManager } from '../ui/TutorialManager';
 import { initMobileDetection } from '../helpers/device';
 export class Game2D implements IGame2D {
   /**
@@ -75,8 +77,10 @@ export class Game2D implements IGame2D {
   public spellManager!: SpellManager;
   private uiManager!: UIManager;
   public replayEngine!: ReplayEngine;
+  public objectiveManager!: ObjectiveManager;
+  public tutorialManager?: TutorialManager;
+  public isDailyChallenge = false;
   private wasWaveActive = false;
-
   public gameSpeedMultiplier = 1; // 1x, 2x, 4x
 
   /**
@@ -211,15 +215,20 @@ export class Game2D implements IGame2D {
     this.hoveredGrid = null;
   }
 
-  private initGame() {
+  private initGame(customSeed?: number) {
     if (this.audioManager) {
       this.audioManager.dispose();
     }
+    if (this.objectiveManager) {
+      this.objectiveManager.destroy();
+    }
+    if (this.tutorialManager) {
+      this.tutorialManager.destroy();
+    }
 
     // Uma semente por partida, compartilhada por todos os managers.
-    this.runSeed = Date.now() >>> 0;
+    this.runSeed = typeof customSeed === 'number' ? customSeed : ((Date.now() >>> 0) || 1);
     this.rng = new Rng(this.runSeed);
-
     this.analyticsManager = new AnalyticsManager();
     this.talentManager = new TalentManager(this.databaseManager);
     this.achievementManager = new AchievementManager(this.talentManager, this.databaseManager);
@@ -307,6 +316,8 @@ export class Game2D implements IGame2D {
       this,
       this.restartGame.bind(this)
     );
+    this.objectiveManager = new ObjectiveManager(this.rng, this.talentManager);
+    this.tutorialManager = new TutorialManager();
   }
 
   public get currentMapId(): MapId {
@@ -330,6 +341,22 @@ export class Game2D implements IGame2D {
   public setEndlessMode(enabled: boolean) {
     this.currentSavedEndlessMode = enabled;
     this.waveManager.setEndlessMode(enabled || this.waveManager.isMorteCerta);
+  }
+
+  public startDailyChallenge(): void {
+    this.isDailyChallenge = true;
+    const dailySeed = this.databaseManager.getDailySeed();
+    this.currentSavedChallengeMode = 'NORMAL';
+    const mapPool: MapId[] = ['MAP_1', 'MAP_2', 'MAP_3', 'MAP_4'];
+    this.currentSavedMapId = mapPool[dailySeed % mapPool.length];
+    this.initGame(dailySeed);
+  }
+
+  public applyLastChance(): void {
+    this.gameState.applyLastChance();
+    this.spellManager.triggerEmergencyFreeze(this.enemyManager.getEnemies());
+    this.gameState.isPaused = false;
+    EventBus.getInstance().emit('pause:change', false);
   }
 
   private restartGame() {
@@ -560,6 +587,13 @@ export class Game2D implements IGame2D {
     EventBus.getInstance().on('wave:end', () => {
       // Decaimento de custo das magias por ondas sem uso (P1_BALANCE_SPEC.md §5.4).
       this.spellManager.onWaveCompleted();
+    });
+    EventBus.getInstance().on('objective:completed', (obj: unknown) => {
+      const objective = obj as RunObjective;
+      if (objective && objective.title) {
+        this.audioManager.playAchievement();
+        this.fxManager.addDamageText(420, 150, `🎯 ${objective.title} (+${objective.starReward}★)`, '#fbbf24');
+      }
     });
 
 

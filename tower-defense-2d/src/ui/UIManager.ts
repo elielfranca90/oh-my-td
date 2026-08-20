@@ -7,6 +7,7 @@ import { EventBus } from '../engine/EventBus';
 import { GameState } from '../engine/GameState';
 import { isHapticsEnabled, setHapticsEnabled } from '../helpers/haptics';
 import type { MapId } from '../engine/MapManager';
+import type { ObjectiveManager } from '../engine/ObjectiveManager';
 import { Rng } from '../engine/Rng';
 import { SpellManager, type ActiveSpell } from '../engine/SpellManager';
 import { getAllRogueliteModules, getRogueliteModule, getSpecializationOption, getSpecializations } from '../engine/Specializations';
@@ -25,6 +26,9 @@ export interface IGame2D {
   currentSavedAutoMode?: boolean;
   rng?: Rng;
   enemyManager?: EnemyManager2D;
+  objectiveManager?: ObjectiveManager;
+  isDailyChallenge?: boolean;
+  applyLastChance?: () => void;
 }
 
 export class UIManager {
@@ -52,6 +56,8 @@ export class UIManager {
   private changelogOverlayEl!: HTMLElement;
   private leaderboardOverlayEl!: HTMLElement;
   private profileOverlayEl!: HTMLElement;
+  private objectivesOverlayEl!: HTMLElement;
+  private lastChanceOverlayEl!: HTMLElement;
   private storeStateEl!: HTMLElement;
   private inspectorStateEl!: HTMLElement;
   // Cached DOM Elements for 60fps Loop Optimization
@@ -122,7 +128,7 @@ export class UIManager {
 
     const part1Html = `
       <div id="game-title-bar" class="game-title-bar">
-        <h1 class="game-title">OH MY TD <span class="game-version">v0.6.0</span></h1>
+        <h1 class="game-title">OH MY TD <span class="game-version">v0.7.0</span></h1>
       </div>
 
       <header id="hud-top" class="hud-top pointer-events-auto">
@@ -134,6 +140,9 @@ export class UIManager {
         </button>
         <button id="main-profile-btn" class="hud-btn highlight-btn" title="Perfil de Jogador (👤)" aria-label="Perfil">
           👤<span class="hud-btn-text"> Perfil</span>
+        </button>
+        <button id="main-objectives-btn" class="hud-btn highlight-btn" title="Objetivos da Run (🎯)" aria-label="Objetivos">
+          🎯<span class="hud-btn-text"> Objetivos</span>
         </button>
         <button id="changelog-btn" class="hud-btn changelog-gift-btn" title="Últimas Atualizações (🎁)" aria-label="Novidades">
           🎁<span class="changelog-btn-text"> Novidades</span>
@@ -351,6 +360,7 @@ export class UIManager {
               <div class="settings-section">
                 <h3>🌟 Meta-Jogo & Extras</h3>
                 <div class="meta-game-grid">
+                  <button id="settings-objectives-btn" class="btn secondary">🎯 Objetivos</button>
                   <button id="settings-talents-btn" class="btn secondary">🌟 Skill Tree</button>
                   <button id="settings-badges-btn" class="btn secondary">🏆 Badges</button>
                   <button id="settings-profile-btn" class="btn secondary">👤 Perfil</button>
@@ -395,7 +405,38 @@ export class UIManager {
                 <button id="talent-crit-btn" class="btn talent-btn">Upgrade (3★)</button>
               </div>
             </div>
+            <div class="talent-prestige-section" style="margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.15);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span>⭐ Prestígio Cósmico (<strong id="prestige-lvl">0</strong>)</span>
+                <span id="prestige-bonus" style="color: #4ade80; font-size: 0.8rem;">+0% Dano Global</span>
+              </div>
+              <button id="talent-prestige-btn" class="btn talent-btn" style="width: 100%; background: linear-gradient(135deg, #f59e0b, #ec4899); border: 1px solid #fcd34d;">Evoluir Prestígio (10★)</button>
+            </div>
             <button id="close-talents-btn" class="btn primary modal-restart-btn">Fechar</button>
+          </div>
+        </div>
+
+        <!-- RUN OBJECTIVES MODAL -->
+        <div id="objectives-modal-overlay" class="modal-overlay hidden pointer-events-auto">
+          <div class="modal-card objectives-modal-card">
+            <h1>🎯 Objetivos da Partida</h1>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 12px;">Cumpra as metas da run para ganhar Estrelas (★) extras!</p>
+            <div id="objectives-list" class="objectives-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;"></div>
+            <button id="close-objectives-btn" class="btn primary modal-restart-btn">Fechar</button>
+          </div>
+        </div>
+
+        <!-- LAST CHANCE MODAL -->
+        <div id="last-chance-modal-overlay" class="modal-overlay hidden pointer-events-auto" style="z-index: 100002 !important;">
+          <div class="modal-card last-chance-modal-card" style="border: 2px solid #ef4444; box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); max-width: 440px;">
+            <h1 style="color: #ef4444; margin-bottom: 8px;">🔥 ÚLTIMA CHANCE!</h1>
+            <p style="margin: 12px 0; font-size: 0.85rem; line-height: 1.4; color: #e2e8f0;">
+              A base sofreu dano crítico! Você tem <strong>uma única chance</strong> de reviver a base e congelar todos os invasores por 5 segundos ao custo de <strong>todo o ouro</strong> acumulado.
+            </p>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+              <button id="last-chance-accept-btn" class="btn primary" style="flex: 1; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: 2px solid #60a5fa; padding: 10px;">🛡️ REVIVER BASE</button>
+              <button id="last-chance-decline-btn" class="btn danger" style="flex: 1; padding: 10px;">💀 ACEITAR DERROTA</button>
+            </div>
           </div>
         </div>
 
@@ -420,6 +461,19 @@ export class UIManager {
               <div class="changelog-item latest">
                 <div class="changelog-item-header">
                   <span class="badge-tag new">NOVO</span>
+                  <strong class="version-tag">v0.7.0</strong>
+                  <span class="changelog-title">Desafio Diário, Objetivos da Run & Meta-Progressão</span>
+                </div>
+                <ul class="changelog-bullets">
+                  <li><strong>Desafio Diário Global:</strong> Novo modo de jogo na tela inicial com semente determinística diária compartilhada e ranking global.</li>
+                  <li><strong>Objetivos da Run:</strong> Cada partida sorteia 3 metas táticas que concedem Estrelas (★) bônus e feedback dinâmico na HUD.</li>
+                  <li><strong>Prestígio Cósmico Soft-Infinito:</strong> Evolua o prestígio permanentemente por 10★ para ganhar +1% de Dano Global em todas as torres, sem teto.</li>
+                  <li><strong>Mecânica de Última Chance:</strong> Ao sofrer dano letal, uma chance de emergência permite reviver a base com 3 HP e congelar todos os invasores por 5s ao custo do ouro acumulado.</li>
+                  <li><strong>Onboarding Guiado:</strong> Tutorial interativo de 40 segundos orientando novos jogadores na construção inicial, disparo de onda e especializações.</li>
+                </ul>
+              </div>
+              <div class="changelog-item">
+                <div class="changelog-item-header">
                   <strong class="version-tag">v0.6.0</strong>
                   <span class="changelog-title">Arquitetura Mobile Landscape Galaxy S23 & Trilha do Menu</span>
                 </div>
@@ -465,21 +519,6 @@ export class UIManager {
                   <li><strong>Novo Layout:</strong> Botões informativos no canto superior direito, dados de jogo em barra dedicada, e indicador de onda/inimigos na barra inferior.</li>
                 </ul>
               </div>
-              <div class="changelog-item">
-                <div class="changelog-item-header">
-                  <strong class="version-tag">v2.3</strong>
-                  <span class="changelog-title">Especializações de Torres & Efeito Glacial</span>
-                </div>
-                <ul class="changelog-bullets">
-                  <li><strong>Especialização Nível 3:</strong> Escolha entre 2 rotas exclusivas de upgrade para cada classe de torre no nível 3.</li>
-                  <li><strong>Pulso Glacial Visual:</strong> Onda de choque visível na Torre de Gelo indicando desaceleração de área.</li>
-                  <li><strong>Preview de Ondas:</strong> Visualização da composição da próxima horda diretamente na HUD.</li>
-                  <li><strong>Modo Infinito Inteligente:</strong> Hordas estruturadas por arquétipos e salvamento automático da preferência do jogador.</li>
-                  <li><strong>Dicas de Terreno:</strong> Toque longo ou hover em tiles especiais (como o Broto) para visualizar bônus de terreno.</li>
-                  <li><strong>Novos Inimigos:</strong> Inimigo com Escudo e Espectro ativados com suporte a conquistas.</li>
-                </ul>
-              </div>
-            </div>
             <button id="close-changelog-btn" class="btn primary modal-restart-btn" style="margin-top: 14px;">Entendido!</button>
           </div>
         </div>
@@ -590,7 +629,8 @@ export class UIManager {
     this.changelogOverlayEl = document.getElementById('changelog-modal-overlay')!;
     this.leaderboardOverlayEl = document.getElementById('leaderboard-modal-overlay')!;
     this.profileOverlayEl = document.getElementById('profile-modal-overlay')!;
-
+    this.objectivesOverlayEl = document.getElementById('objectives-modal-overlay')!;
+    this.lastChanceOverlayEl = document.getElementById('last-chance-modal-overlay')!;
     this.storeStateEl = document.getElementById('store-state')!;
     this.inspectorStateEl = document.getElementById('inspector-state')!;
   }
@@ -611,8 +651,9 @@ export class UIManager {
       bus.on('pause:change', (isPaused: boolean) => this.onPauseChanged(isPaused)),
       bus.on('challenge:change', (mode: ChallengeMode) => this.onChallengeChanged(mode)),
       bus.on('ranges:toggle', (isShowingAll: boolean) => this.onRangesToggled(isShowingAll)),
+      bus.on('game:last_chance', () => this.showLastChanceModal()),
+      bus.on('objectives:updated', () => this.updateObjectivesModal()),
     ];
-
     // Initial populate
     this.onGoldChanged(this.gameState.gold);
     this.onHpChanged({ current: this.gameState.baseHp, max: this.gameState.maxBaseHp });
@@ -652,8 +693,9 @@ export class UIManager {
     this.changelogOverlayEl?.classList.add('hidden');
     this.leaderboardOverlayEl?.classList.add('hidden');
     this.profileOverlayEl?.classList.add('hidden');
+    this.objectivesOverlayEl?.classList.add('hidden');
+    this.lastChanceOverlayEl?.classList.add('hidden');
   }
-
   private openSubModal(targetModal: HTMLElement) {
     let parent: HTMLElement | null = null;
     if (!this.settingsOverlayEl.classList.contains('hidden')) {
@@ -762,6 +804,25 @@ export class UIManager {
       this.dismissModal();
     });
 
+    // Objectives Modal Events
+    this.addDomListener('main-objectives-btn', 'click', () => {
+      this.openObjectivesModal();
+    });
+    this.addDomListener('settings-objectives-btn', 'click', () => {
+      this.openObjectivesModal();
+    });
+    this.addDomListener('close-objectives-btn', 'click', () => {
+      this.dismissModal();
+    });
+    this.addDomListener('last-chance-accept-btn', 'click', () => {
+      this.lastChanceOverlayEl?.classList.add('hidden');
+      this.game.applyLastChance?.();
+    });
+    this.addDomListener('last-chance-decline-btn', 'click', () => {
+      this.lastChanceOverlayEl?.classList.add('hidden');
+      this.gameState.setStatus('GAME_OVER');
+    });
+
     // Profile & Leaderboard Events
     this.addDomListener('main-profile-btn', 'click', () => {
       this.openProfileModal();
@@ -823,8 +884,9 @@ export class UIManager {
       this.changelogOverlayEl,
       this.leaderboardOverlayEl,
       this.profileOverlayEl,
+      this.objectivesOverlayEl,
+      this.lastChanceOverlayEl,
     ];
-
     modalOverlays.forEach((overlay) => {
       if (!overlay) return;
       this.addDomListener(overlay, 'click', (e) => {
@@ -1055,6 +1117,12 @@ export class UIManager {
         this.updateTalentsModal();
       }
     });
+    this.addDomListener('talent-prestige-btn', 'click', () => {
+      if (this.talentManager.upgradePrestige()) {
+        this.updateTalentsModal();
+      }
+    });
+
 
     this.syncEndlessButton(this.waveManager.isEndlessMode);
   }
@@ -1511,8 +1579,19 @@ export class UIManager {
     updateItem('cdLvl', 'cd');
     updateItem('repairLvl', 'repair');
     updateItem('critLvl', 'crit');
-  }
 
+    const prestigeLvlEl = document.getElementById('prestige-lvl');
+    const prestigeBonusEl = document.getElementById('prestige-bonus');
+    const prestigeBtnEl = document.getElementById('talent-prestige-btn') as HTMLButtonElement;
+    const currentPrestige = this.talentManager.talents.prestigeLvl || 0;
+    if (prestigeLvlEl) prestigeLvlEl.innerText = `${currentPrestige}`;
+    if (prestigeBonusEl) prestigeBonusEl.innerText = `+${currentPrestige}% Dano Global`;
+    if (prestigeBtnEl) {
+      const cost = this.talentManager.getPrestigeCost();
+      prestigeBtnEl.innerText = `Evoluir Prestígio (${cost}★)`;
+      prestigeBtnEl.disabled = this.talentManager.stars < cost;
+    }
+  }
   private openAchievementsModal() {
     this.openSubModal(this.achievementsOverlayEl);
     const grid = document.getElementById('achievements-grid');
@@ -2016,6 +2095,47 @@ export class UIManager {
         </tbody>
       </table>
     `;
+  }
+
+  private openObjectivesModal() {
+    this.openSubModal(this.objectivesOverlayEl);
+    this.updateObjectivesModal();
+  }
+
+  private updateObjectivesModal() {
+    const listEl = document.getElementById('objectives-list');
+    if (!listEl) return;
+
+    const objectives = this.game.objectiveManager?.getObjectives() || [];
+    if (objectives.length === 0) {
+      listEl.innerHTML = '<p style="color:#94a3b8; text-align:center;">Nenhum objetivo ativo para esta run.</p>';
+      return;
+    }
+
+    listEl.innerHTML = objectives
+      .map((obj) => {
+        const pct = Math.min(100, Math.round((obj.current / obj.target) * 100));
+        return `
+          <div class="objective-item-card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid ${obj.completed ? '#22c55e' : 'rgba(255,255,255,0.1)'}; border-radius: 8px; padding: 10px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong style="color: ${obj.completed ? '#4ade80' : '#f8fafc'}; font-size: 0.9rem;">${obj.title}</strong>
+              <span style="color: ${obj.completed ? '#4ade80' : '#fbbf24'}; font-size: 0.8rem; font-weight: bold;">
+                ${obj.completed ? `✅ Concluído (+${obj.starReward}★)` : `+${obj.starReward}★`}
+              </span>
+            </div>
+            <p style="color: #cbd5e1; font-size: 0.78rem; margin: 0 0 8px 0;">${obj.description}</p>
+            <div style="background: rgba(0,0,0,0.4); border-radius: 4px; height: 8px; overflow: hidden; position: relative;">
+              <div style="background: ${obj.completed ? '#22c55e' : '#3b82f6'}; width: ${pct}%; height: 100%; transition: width 0.3s ease;"></div>
+            </div>
+            <div style="text-align: right; color: #94a3b8; font-size: 0.72rem; margin-top: 3px;">${obj.current} / ${obj.target}</div>
+          </div>
+        `;
+      })
+      .join('');
+  }
+
+  private showLastChanceModal() {
+    this.lastChanceOverlayEl?.classList.remove('hidden');
   }
 
   public triggerDraftModal(onSelect?: (moduleId: RogueliteModuleId) => void, rng?: Rng) {

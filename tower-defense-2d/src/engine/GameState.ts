@@ -15,7 +15,7 @@ export class GameState {
   public isPaused = false;
   public challengeMode: ChallengeMode = 'NORMAL';
   public isCampaignMode: boolean = false;
-
+  public hasUsedLastChance: boolean = false;
   constructor(_talentManager?: TalentManager, challengeMode: ChallengeMode = 'NORMAL') {
     this.challengeMode = challengeMode;
 
@@ -61,12 +61,26 @@ export class GameState {
   }
 
   public takeDamage(amount = 1) {
-    this.baseHp = Math.max(0, this.baseHp - amount);
+    const nextHp = Math.max(0, this.baseHp - amount);
+    this.baseHp = nextHp;
     EventBus.getInstance().emit('hp:change', { current: this.baseHp, max: this.maxBaseHp });
     vibrate(HAPTIC_PATTERNS.BASE_DAMAGED);
     if (this.baseHp <= 0) {
       this.setStatus('GAME_OVER');
+      if (!this.hasUsedLastChance) {
+        EventBus.getInstance().emit('game:last_chance');
+      }
     }
+  }
+
+  public applyLastChance(): void {
+    this.hasUsedLastChance = true;
+    this.gold = 0;
+    this.baseHp = this.challengeMode === 'HARDCORE' || this.challengeMode === 'MORTE_CERTA' ? 1 : 3;
+    this.setStatus('PLAYING');
+    EventBus.getInstance().emit('hp:change', { current: this.baseHp, max: this.maxBaseHp });
+    EventBus.getInstance().emit('gold:change', this.gold);
+    EventBus.getInstance().emit('game:last_chance_activated', { hp: this.baseHp });
   }
 
   public nextWave() {

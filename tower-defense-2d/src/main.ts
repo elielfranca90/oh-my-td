@@ -13,6 +13,9 @@ new WelcomeScreen((mode) => {
   if (mode === 'CAMPAIGN') {
     game.gameState.isCampaignMode = true;
     game.changeMap('MAP_1');
+  } else if (mode === 'DAILY') {
+    game.gameState.isCampaignMode = false;
+    game.startDailyChallenge();
   } else {
     game.gameState.isCampaignMode = false;
   }

@@ -365,6 +365,20 @@ $$\text{bônus} = \left\lfloor \min\big(60,\ \text{taxa/s} \times \text{segundos
 
 **Não há multiplicador ×2 por "onda anterior ainda em tela".** `isWaveActive` só vira `false` quando não há mais nenhum inimigo em tela (`WaveManager.onEnemyCleared()` exige `remainingEnemiesCount === 0`), então essa condição é estruturalmente impossível de ocorrer sem permitir ondas sobrepostas — mudança de arquitetura maior (fila única de spawn deixaria de ser única) e fora do escopo desta rodada.
 
+
+### 7.5 Desafio Diário (Daily Challenge) e Objetivos da Run (Run Objectives)
+
+- **Desafio Diário Determinístico:** Na `WelcomeScreen`, o botão "DESAFIO DIÁRIO" permite a todos os jogadores disputarem a mesma semente diária (`getDailySeed()`), com mapa sorteado do dia e placar global dedicado.
+- **Objetivos da Run (`ObjectiveManager`):** Em cada partida, 3 objetivos são sorteados deterministicamente a partir da semente (`seed`) da partida dentre um pool de 8 metas táticas (ex: "Defesa Impecável", "Poder de Artilharia", "Arsenal Versátil", "Mestre Arcano").
+- **Recompensas em Estrelas:** Cumprir cada meta durante a run concede de 1★ a 3★ bônus imediatos e notificação Toast no jogo.
+
+### 7.6 Mecânica de "Última Chance" na Derrota
+
+- Quando o HP da base chega a 0 pela primeira vez na partida (`!hasUsedLastChance`), o jogo não sofre game over instantâneo.
+- Um modal de emergência oferece ao jogador a **Última Chance**:
+  - **Reviver Base:** Consome todo o ouro acumulado na partida e restaura 3 HP (ou 1 HP no Hardcore/Morte Certa), disparando um **Congelamento Global de Emergência (5 segundos)** em todos os invasores da tela para reorganizar a defesa.
+  - **Aceitar Derrota:** Confirma o Game Over e abre a tela de estatísticas e placar.
+  - Válido estritamente **uma única vez** por partida.
 ---
 
 ## 8. Meta-Progressão, Talentos & Conquistas
@@ -381,6 +395,11 @@ As Estrelas (★) obtidas em partidas e conquistas podem ser investidas na árvo
 | **repairLvl** (Engineering)| **25% / 50%** de desconto no Custo de Reparo | Nível 2 | Lvl 1: 3★ • Lvl 2: 5★ |
 | **critLvl** (Precision) | **10% / 20%** de Chance Crítica Global (Dano 2x) | Nível 2 | Lvl 1: 3★ • Lvl 2: 5★ |
 
+
+### 8.1.1 Prestígio Cósmico Soft-Infinito
+- Após investir na árvore básica (ou a qualquer momento com estrelas excedentes), o jogador pode evoluir o **Prestígio Cósmico**:
+- **Custo:** 10★ por nível de prestígio.
+- **Efeito:** Concede **+1% de Dano Global** permanente em todas as torres por nível (`1 + (damageLvl * 0.1) + (prestigeLvl * 0.01)`), sem limite de teto, eliminando qualquer desperdício de estrelas obtidas em runs avançadas.
 ---
 
 ### 8.2 Catálogo de Conquistas & Recompensas em Estrelas
@@ -478,3 +497,11 @@ O canvas interno é fixo em 840×600px e escalado por CSS até o tamanho da tela
 - **Título do Inspetor:** a partir do rank 1 (nível 4), o cabeçalho passa a incluir o rank (`{TIPO} · {ícone especialização} {nome especialização} · Rank {N}`) em vez de só tipo + especialização.
 - **Botão "Iniciar Onda":** o rótulo passa a exibir o bônus de chamada antecipada quando maior que zero (`· +Xg`), tanto em Manual (`Iniciar Onda N · +Xg`) quanto em Auto (`Auto em Ns · toque p/ adiantar · +Xg`).
 - **Botão "Iniciar Onda" em Modo Auto:** deixou de ficar permanentemente desabilitado. Agora aceita toque/clique para adiantar a onda (mesmo `startNextWave()` do fluxo manual) — sem isso, o bônus da §7.4 seria inatingível em mobile no Modo Auto, onde não há tecla `Enter` para chamar a onda manualmente. Só volta a desabilitar quando de fato não há próxima onda (campanha terminada e endless desligado).
+
+### 9.8 Onboarding & Tutorial Guiado de 40 Segundos
+
+- **Primeiro Acesso:** Se o jogador ainda não concluiu o tutorial (`oh_my_td_has_seen_tutorial` ausente no `localStorage`), um overlay não intrusivo guia os primeiros passos:
+  1. **Passo 1:** Destaque visual orientando a construção da primeira torre no terreno para proteger a rota.
+  2. **Passo 2:** Destaque no botão "Iniciar Onda" (ou atalho `Enter`) para começar a batalha.
+  3. **Passo 3:** Dica de Mestre informando sobre Especializações no Nível 3 e bônus de terrenos especiais.
+- **Botão de Pular:** Opção "Pular ✕" disponível a qualquer instante, gravando a preferência no armazenamento local.
